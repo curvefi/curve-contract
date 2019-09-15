@@ -21,18 +21,38 @@ def w3(tester):
     return w3
 
 
-@pytest.fixture
-def erc20(w3):
-    supply = 10 ** 9
-
-    with open(join(CONTRACT_PATH, 'ERC20.vy')) as f:
+def deploy_contract(w3, filename, account, *args):
+    with open(join(CONTRACT_PATH, filename)) as f:
         source = f.read()
     code = compile_code(source, ['bytecode', 'abi'])
     deploy = w3.eth.contract(abi=code['abi'],
                              bytecode=code['bytecode'])
-    tx_hash = deploy.constructor(
-            b'TOKEN', b'TOK', 18, supply).transact({'from': w3.eth.accounts[1]})
+    tx_hash = deploy.constructor(*args).transact({'from': account})
     tx_receipt = w3.eth.getTransactionReceipt(tx_hash)
     return ConciseContract(w3.eth.contract(
         address=tx_receipt.contractAddress,
         abi=deploy.abi))
+
+
+def get_erc20(w3):
+    supply = 10 ** 9
+    return deploy_contract(
+            w3, 'ERC20.vy', w3.eth.accounts[1],
+            b'TOKEN', b'TOK', 18, supply)
+
+
+@pytest.fixture
+def coin_a(w3):
+    return get_erc20(w3)
+
+
+@pytest.fixture
+def coin_b(w3):
+    return get_erc20(w3)
+
+
+@pytest.fixture
+def swap(w3, coin_a, coin_b):
+    return deploy_contract(
+            w3, 'stableswap.vy', w3.eth.accounts[1],
+            coin_a.address, coin_b.address)
