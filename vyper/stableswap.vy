@@ -38,19 +38,6 @@ def __init__(a: address, b: address,
     self.admin_fee = 0
 
 @public
-@constant
-def get_price(from_coin: address, to_coin: address) -> decimal:
-    if self.quantity_a == 0 and self.quantity_b == 0:
-        return 1.0
-    return 1.0
-
-@public
-@constant
-def get_volume(from_coin: address, to_coin: address,
-               from_amount: uint256) -> uint256:
-    return 0
-
-@public
 @nonreentrant('lock')
 def add_liquidity(coin_1: address, quantity_1: uint256,
                   max_quantity_2: uint256, deadline: timestamp):
@@ -71,14 +58,13 @@ def add_liquidity(coin_1: address, quantity_1: uint256,
 
     if coin_1 == self.coin_a:
         quantity_2 = quantity_1 * self.quantity_b / self.quantity_a
-        assert quantity_2 <= max_quantity_2
         self.quantity_a += quantity_1
         self.quantity_b += quantity_2
     else:
         quantity_2 = quantity_1 * self.quantity_a / self.quantity_b
-        assert quantity_2 <= max_quantity_2
         self.quantity_a += quantity_2
         self.quantity_b += quantity_1
+    assert quantity_2 <= max_quantity_2
 
     ok: bool
     ok = ERC20(A).transferFrom(msg.sender, self, quantity_1)
@@ -102,10 +88,14 @@ def remove_liquidity(coin_1: address, quantity_1: uint256,
         A = self.coin_a
         B = self.coin_b
         quantity_2 = quantity_1 * self.quantity_b / self.quantity_a
+        self.quantity_a -= quantity_1
+        self.quantity_b -= quantity_2
     else:
         A = self.coin_b
         B = self.coin_a
         quantity_2 = quantity_1 * self.quantity_a / self.quantity_b
+        self.quantity_a -= quantity_2
+        self.quantity_b -= quantity_1
 
     assert quantity_2 >= min_quantity_2
 
@@ -115,12 +105,19 @@ def remove_liquidity(coin_1: address, quantity_1: uint256,
     ok = ERC20(B).transferFrom(self, msg.sender, quantity_2)
     assert ok
 
-    if coin_1 == self.coin_a:
-        self.quantity_a -= quantity_1
-        self.quantity_b -= quantity_2
-    else:
-        self.quantity_a -= quantity_2
-        self.quantity_b -= quantity_1
+@public
+@constant
+def get_price(from_coin: address, to_coin: address) -> decimal:
+    if self.quantity_a == 0 and self.quantity_b == 0:
+        return 1.0
+    # XXX
+    return 1.0
+
+@public
+@constant
+def get_volume(from_coin: address, to_coin: address,
+               from_amount: uint256) -> uint256:
+    return 0
 
 @public
 @nonreentrant('lock')
