@@ -37,17 +37,12 @@ def __init__(a: address, b: address,
     self.fee = convert(_fee, decimal) / 1e18
     self.admin_fee = 0
 
-@private
-@constant
-def _get_price(from_coin: address, to_coin: address) -> decimal:
-    if self.quantity_a == 0 and self.quantity_b == 0:
-        return 1.0
-    return 1.0
-
 @public
 @constant
 def get_price(from_coin: address, to_coin: address) -> decimal:
-    return self._get_price(from_coin, to_coin)
+    if self.quantity_a == 0 and self.quantity_b == 0:
+        return 1.0
+    return 1.0
 
 @public
 @constant
