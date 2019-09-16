@@ -14,9 +14,17 @@ D: decimal  # "Target" quantity of coins in equilibrium
 
 fee: public(decimal)        # Fee for traders
 admin_fee: public(decimal)  # Admin fee - fraction of fee
+max_admin_fee: constant(decimal) = 0.5
 
 owner: public(address)
+
 admin_actions_delay: constant(uint256) = 7 * 86400
+admin_actions_deadline: public(uint256)
+transfer_ownership_deadline: public(uint256)
+future_X: public(decimal)
+future_fee: public(decimal)
+future_admin_fee: public(decimal)
+future_owner: public(address)
 
 @public
 def __init__(a: address, b: address,
@@ -58,24 +66,49 @@ def exchange(from_coin: address, to_coin: address,
 def commit_new_parameters(amplification: uint256,
                           new_fee: uint256,
                           new_admin_fee: uint256):
-    pass
+    assert msg.sender == self.owner
+    assert self.admin_actions_deadline == 0
+
+    self.admin_actions_deadline = as_unitless_number(block.timestamp) + admin_actions_delay
+    self.future_X = convert(amplification, decimal)
+    self.future_fee = convert(new_fee, decimal) / 1e18
+    self.future_admin_fee = convert(new_admin_fee, decimal) / 1e18
+    assert self.future_admin_fee < max_admin_fee
 
 @public
 def apply_new_parameters():
-    pass
+    assert msg.sender == self.owner
+    assert self.admin_actions_deadline >= block.timestamp
+
+    self.admin_actions_deadline = 0
+    self.X = self.future_X
+    self.fee = self.future_fee
+    self.admin_fee = self.future_admin_fee
 
 @public
 def revert_new_parameters():
-    pass
+    assert msg.sender == self.owner
+
+    self.admin_actions_deadline = 0
 
 @public
 def commit_transfer_ownership(_owner: address):
-    pass
+    assert msg.sender == self.owner
+    assert self.transfer_ownership_deadline == 0
+
+    self.transfer_ownership_deadline = as_unitless_number(block.timestamp) + admin_actions_delay
+    self.future_owner = _owner
 
 @public
 def apply_transfer_ownership():
-    pass
+    assert msg.sender == self.owner
+    assert self.transfer_ownership_deadline >= block.timestamp
+
+    self.transfer_ownership_deadline = 0
+    self.owner = self.future_owner
 
 @public
 def revert_transfer_ownership():
-    pass
+    assert msg.sender == self.owner
+
+    self.transfer_ownership_deadline = 0
