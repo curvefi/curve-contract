@@ -52,4 +52,4 @@ def coin_b(w3):
 def swap(w3, coin_a, coin_b):
     return deploy_contract(
             w3, 'stableswap.vy', w3.eth.accounts[1],
-            coin_a.address, coin_b.address, 100)
+            coin_a.address, coin_b.address, 100, int(0.001 * 10 ** 18))
