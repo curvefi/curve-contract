@@ -38,11 +38,13 @@ def __init__(a: address, b: address,
     self.admin_fee = 0
 
 @public
+@nonreentrant('lock')
 def add_liquidity(coin_1: address, quantity_1: uint256,
                   max_quantity_2: uint256, deadline: timestamp):
     pass
 
 @public
+@nonreentrant('lock')
 def remove_liquidity(coin_1: address, quantity_1: uint256,
                      max_quantity_2: uint256, deadline: timestamp):
     pass
@@ -57,6 +59,7 @@ def get_volume(from_coin: address, to_coin: address,
     return 0
 
 @public
+@nonreentrant('lock')
 def exchange(from_coin: address, to_coin: address,
              from_amount: uint256, to_min_amount: uint256,
              deadline: timestamp):
