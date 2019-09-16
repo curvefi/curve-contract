@@ -40,6 +40,8 @@ def __init__(a: address, b: address,
 @private
 @constant
 def _get_price(from_coin: address, to_coin: address) -> decimal:
+    if self.quantity_a == 0 and self.quantity_b == 0:
+        return 1.0
     return 1.0
 
 @public
@@ -62,6 +64,7 @@ def add_liquidity(coin_1: address, quantity_1: uint256,
 
     A: address
     B: address
+    quantity_2: uint256
 
     if coin_1 == self.coin_a:
         A = self.coin_a
@@ -70,9 +73,17 @@ def add_liquidity(coin_1: address, quantity_1: uint256,
         A = self.coin_b
         B = self.coin_a
 
-    quantity_2: uint256 = convert(
-        convert(quantity_1, decimal) * self._get_price(A, B), uint256)
-    assert quantity_2 <= max_quantity_2
+
+    if coin_1 == self.coin_a:
+        quantity_2 = quantity_1 * self.quantity_b / self.quantity_a
+        assert quantity_2 <= max_quantity_2
+        self.quantity_a += quantity_1
+        self.quantity_b += quantity_2
+    else:
+        quantity_2 = quantity_1 * self.quantity_a / self.quantity_b
+        assert quantity_2 <= max_quantity_2
+        self.quantity_a += quantity_2
+        self.quantity_b += quantity_1
 
     ok: bool
     ok = ERC20(A).transferFrom(msg.sender, self, quantity_1)
@@ -80,32 +91,27 @@ def add_liquidity(coin_1: address, quantity_1: uint256,
     ok = ERC20(B).transferFrom(msg.sender, self, quantity_2)
     assert ok
 
-    if coin_1 == self.coin_a:
-        self.quantity_a += quantity_1
-        self.quantity_b += quantity_2
-    else:
-        self.quantity_a += quantity_2
-        self.quantity_b += quantity_1
-
 @public
 @nonreentrant('lock')
 def remove_liquidity(coin_1: address, quantity_1: uint256,
                      min_quantity_2: uint256, deadline: timestamp):
     assert coin_1 == self.coin_a or coin_1 == self.coin_b
     assert block.timestamp >= deadline
+    assert self.quantity_a > 0 and self.quantity_b > 0
 
     A: address
     B: address
+    quantity_2: uint256
 
     if coin_1 == self.coin_a:
         A = self.coin_a
         B = self.coin_b
+        quantity_2 = quantity_1 * self.quantity_b / self.quantity_a
     else:
         A = self.coin_b
         B = self.coin_a
+        quantity_2 = quantity_1 * self.quantity_a / self.quantity_b
 
-    quantity_2: uint256 = convert(
-        convert(quantity_1, decimal) * self._get_price(A, B), uint256)
     assert quantity_2 >= min_quantity_2
 
     ok: bool
