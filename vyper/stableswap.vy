@@ -90,8 +90,36 @@ def add_liquidity(coin_1: address, quantity_1: uint256,
 @public
 @nonreentrant('lock')
 def remove_liquidity(coin_1: address, quantity_1: uint256,
-                     max_quantity_2: uint256, deadline: timestamp):
-    pass
+                     min_quantity_2: uint256, deadline: timestamp):
+    assert coin_1 == self.coin_a or coin_1 == self.coin_b
+    assert block.timestamp >= deadline
+
+    A: address
+    B: address
+
+    if coin_1 == self.coin_a:
+        A = self.coin_a
+        B = self.coin_b
+    else:
+        A = self.coin_b
+        B = self.coin_a
+
+    quantity_2: uint256 = convert(
+        convert(quantity_1, decimal) * self._get_price(A, B), uint256)
+    assert quantity_2 >= min_quantity_2
+
+    ok: bool
+    ok = ERC20(A).transferFrom(self, msg.sender, quantity_1)
+    assert ok
+    ok = ERC20(B).transferFrom(self, msg.sender, quantity_2)
+    assert ok
+
+    if coin_1 == self.coin_a:
+        self.quantity_a -= quantity_1
+        self.quantity_b -= quantity_2
+    else:
+        self.quantity_a -= quantity_2
+        self.quantity_b -= quantity_1
 
 @public
 @nonreentrant('lock')
