@@ -107,6 +107,11 @@ def remove_liquidity(coin_1: address, quantity_1: uint256,
 @private
 @constant
 def cbrt(x: decimal) -> decimal:
+    """
+    Cubic root by Babylonian Algotithm
+        http://www.mathpath.org/Algor/cuberoot/cube.root.babylon.htm
+    Inspired by Vyper implementation of sqrt
+    """
     y: decimal = x
     z: decimal = (x + 1.0) / 2.0
     for i in range(256):
