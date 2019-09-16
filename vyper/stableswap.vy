@@ -37,26 +37,61 @@ def __init__(a: address, b: address,
     self.fee = convert(_fee, decimal) / 1e18
     self.admin_fee = 0
 
+@private
+@constant
+def _get_price(from_coin: address, to_coin: address) -> decimal:
+    return 1.0
+
+@public
+@constant
+def get_price(from_coin: address, to_coin: address) -> decimal:
+    return self._get_price(from_coin, to_coin)
+
+@public
+@constant
+def get_volume(from_coin: address, to_coin: address,
+               from_amount: uint256) -> uint256:
+    return 0
+
 @public
 @nonreentrant('lock')
 def add_liquidity(coin_1: address, quantity_1: uint256,
                   max_quantity_2: uint256, deadline: timestamp):
-    pass
+    assert coin_1 == self.coin_a or coin_1 == self.coin_b
+    assert block.timestamp >= deadline
+
+    A: address
+    B: address
+
+    if coin_1 == self.coin_a:
+        A = self.coin_a
+        B = self.coin_b
+    else:
+        A = self.coin_b
+        B = self.coin_a
+
+    quantity_2: uint256 = convert(
+        convert(quantity_1, decimal) * self._get_price(A, B), uint256)
+    assert quantity_2 <= max_quantity_2
+
+    ok: bool
+    ok = ERC20(A).transferFrom(msg.sender, self, quantity_1)
+    assert ok
+    ok = ERC20(B).transferFrom(msg.sender, self, quantity_2)
+    assert ok
+
+    if coin_1 == self.coin_a:
+        self.quantity_a += quantity_1
+        self.quantity_b += quantity_2
+    else:
+        self.quantity_a += quantity_2
+        self.quantity_b += quantity_1
 
 @public
 @nonreentrant('lock')
 def remove_liquidity(coin_1: address, quantity_1: uint256,
                      max_quantity_2: uint256, deadline: timestamp):
     pass
-
-@public
-def get_price(from_coin: address, to_coin: address) -> uint256:
-    return 0
-
-@public
-def get_volume(from_coin: address, to_coin: address,
-               from_amount: uint256) -> uint256:
-    return 0
 
 @public
 @nonreentrant('lock')
