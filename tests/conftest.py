@@ -34,25 +34,22 @@ def deploy_contract(w3, filename, account, *args):
         abi=deploy.abi))
 
 
-def get_erc20(w3):
-    supply = 10 ** 9
-    return deploy_contract(
-            w3, 'ERC20.vy', w3.eth.accounts[1],
-            b'TOKEN', b'TOK', 18, supply)
-
-
 @pytest.fixture
 def coin_a(w3):
-    return get_erc20(w3)
+    return deploy_contract(
+            w3, 'ERC20.vy', w3.eth.accounts[1],
+            b'Coin A', b'A', 18, 10 ** 9)
 
 
 @pytest.fixture
 def coin_b(w3):
-    return get_erc20(w3)
+    return deploy_contract(
+            w3, 'ERC20.vy', w3.eth.accounts[1],
+            b'Coin B', b'B', 18, 10 ** 9)
 
 
 @pytest.fixture
 def swap(w3, coin_a, coin_b):
     return deploy_contract(
             w3, 'stableswap.vy', w3.eth.accounts[1],
-            coin_a.address, coin_b.address)
+            coin_a.address, coin_b.address, 100)
