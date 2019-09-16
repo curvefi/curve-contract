@@ -106,69 +106,15 @@ def remove_liquidity(coin_1: address, quantity_1: uint256,
 
 @private
 @constant
-def big_ln(x: decimal) -> decimal:
-
-    pi: decimal = 31415926535897932384626433832795028.0
-    a: decimal = 100000000000000000000.0
-    # Here we are using (max(1.0 / x, x) because:
-    # if x < 1 => ln(0.1) = -ln(1/0.1) = -ln(10)
-    g: decimal = 400000000000000000000.0 / (max(1.0 / x, x) * 524288.0)
-
-    for i in range(9):
-        temp: decimal = a
-        a = (a + g) / 2.0
-        g = sqrt(temp * g)
-
-    result: decimal = (
-        (pi / (2.0 * g)) * 1000000000.0 - 1316979643063896087892741.0
-    ) / 1000000000000000.0 * 10000000000.0
-
-    if x < 1.0:
-        return -result
-
-    return result
-
-
-# Only works for 0 < y < 1 (Bonding mathematics)
-@private
-@constant
-def power_by_exponent(x: decimal, y: decimal) -> decimal:
-
-    exponent: decimal = self.big_ln(x) * y / 10000000000.0
-
-    temp: decimal = 100000000.0
-    result: decimal = 100000000.0
-    counter: decimal = 100000000.0
-
+def cbrt(x: decimal) -> decimal:
+    y: decimal = x
+    z: decimal = (x + 1.0) / 2.0
     for i in range(256):
-        temp = (temp * exponent) / counter
-        counter += 100000000.0
-
-        if result == result + temp:
+        if z == y:
             break
-
-        result += temp
-
-    return result / 100000000.0
-
-
-@private
-@constant
-def pow(x: decimal, y: decimal) -> decimal:
-
-    assert x <= 9999999999999.9999999999
-
-    assert y >= 0.0
-    assert y <= 1.0
-
-    if x == 0.0:
-        return 0.0
-    if y == 0.0:
-        return 1.0
-    if y == 1.0:
-        return x
-
-    return self.power_by_exponent(x, y)
+        y = z
+        z = (2.0 * y + x / (y * y)) / 3.0
+    return y
 
 @private
 @constant
@@ -181,9 +127,8 @@ def D() -> decimal:
     A: decimal = self.X
     p: decimal = (16.0 * A - 4.0) * x * y
     q: decimal = -16.0 * A * x * y * (x + y)
-    Disc: decimal = sqrt(self.pow(q, 2.0) / 4.0 + self.pow(p, 3.0) / 27.0)
-    return self.pow(-q / 2.0 + Disc, 1.0 / 3.0) -\
-           self.pow(q / 2.0 + Disc, 1.0 / 3.0)
+    Disc: decimal = sqrt(q*q / 4.0 + p*p*p / 27.0)
+    return self.cbrt(-q / 2.0 + Disc) - self.cbrt(q / 2.0 + Disc)
 
 @public
 @constant
