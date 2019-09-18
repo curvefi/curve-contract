@@ -25,6 +25,7 @@ future_fee: public(decimal)
 future_admin_fee: public(decimal)
 future_owner: public(address)
 
+
 @public
 def __init__(a: address, b: address,
              amplification: int128, _fee: decimal):
@@ -35,6 +36,7 @@ def __init__(a: address, b: address,
     self.owner = msg.sender
     self.fee = 0.001
     self.admin_fee = 0
+
 
 @public
 @nonreentrant('lock')
@@ -71,6 +73,7 @@ def add_liquidity(coin_1: address, quantity_1: uint256,
     ok = ERC20(B).transferFrom(msg.sender, self, quantity_2)
     assert ok
 
+
 @public
 @nonreentrant('lock')
 def remove_liquidity(coin_1: address, quantity_1: uint256,
@@ -104,6 +107,7 @@ def remove_liquidity(coin_1: address, quantity_1: uint256,
     ok = ERC20(B).transferFrom(self, msg.sender, quantity_2)
     assert ok
 
+
 @private
 @constant
 def sqrt_int(x: uint256) -> uint256:
@@ -115,6 +119,7 @@ def sqrt_int(x: uint256) -> uint256:
         y = z
         z = (y + x / y) / 2
     return y
+
 
 @private
 @constant
@@ -132,6 +137,7 @@ def cbrt_int(x: uint256) -> uint256:
         y = z
         z = (2 * y + x / (y * y)) / 3
     return y
+
 
 @private
 @constant
@@ -151,6 +157,7 @@ def get_D() -> uint256:
     D: uint256 = self.cbrt_int(q / 2 + Disc) - self.cbrt_int(Disc - q / 2)
     return D * xy
 
+
 @public
 @constant
 def get_price(from_coin: address, to_coin: address) -> decimal:
@@ -158,6 +165,7 @@ def get_price(from_coin: address, to_coin: address) -> decimal:
         return 1.0
     # XXX
     return 1.0
+
 
 @public
 @constant
@@ -192,12 +200,14 @@ def get_volume(from_coin: address, to_coin: address,
     else:
         return -convert(new_y - y, int128)
 
+
 @public
 @nonreentrant('lock')
 def exchange(from_coin: address, to_coin: address,
              from_amount: uint256, to_min_amount: uint256,
              deadline: timestamp):
     pass
+
 
 @public
 def commit_new_parameters(amplification: int128,
@@ -212,6 +222,7 @@ def commit_new_parameters(amplification: int128,
     self.future_admin_fee = new_admin_fee
     assert self.future_admin_fee < max_admin_fee
 
+
 @public
 def apply_new_parameters():
     assert msg.sender == self.owner
@@ -222,11 +233,13 @@ def apply_new_parameters():
     self.fee = self.future_fee
     self.admin_fee = self.future_admin_fee
 
+
 @public
 def revert_new_parameters():
     assert msg.sender == self.owner
 
     self.admin_actions_deadline = 0
+
 
 @public
 def commit_transfer_ownership(_owner: address):
@@ -236,6 +249,7 @@ def commit_transfer_ownership(_owner: address):
     self.transfer_ownership_deadline = as_unitless_number(block.timestamp) + admin_actions_delay
     self.future_owner = _owner
 
+
 @public
 def apply_transfer_ownership():
     assert msg.sender == self.owner
@@ -243,6 +257,7 @@ def apply_transfer_ownership():
 
     self.transfer_ownership_deadline = 0
     self.owner = self.future_owner
+
 
 @public
 def revert_transfer_ownership():
