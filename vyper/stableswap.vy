@@ -107,6 +107,30 @@ def remove_liquidity(coin_1: address, quantity_1: uint256,
 
 @private
 @constant
+def sqrt_int(x: uint256) -> uint256:
+    y: uint256 = x
+    z: uint256 = (x + 1) / 2
+    for i in range(256):
+        if z >= y:
+            break
+        y = z
+        z = (y + x / y) / 2
+    return y
+
+@private
+@constant
+def cbrt_int(x: uint256) -> uint256:
+    y: uint256 = x
+    z: uint256 = (x + 1) / 2
+    for i in range(256):
+        if z >= y:
+            break
+        y = z
+        z = (2 * y + x / (y * y)) / 3
+    return y
+
+@private
+@constant
 def cbrt(x: decimal) -> decimal:
     """
     Cubic root by Babylonian Algotithm
@@ -145,8 +169,6 @@ def get_price(from_coin: address, to_coin: address) -> decimal:
     if self.quantity_a == 0 and self.quantity_b == 0:
         return 1.0
     # XXX
-    x: uint256 = 1000
-    y: uint256 = sqrt256(x)
     return 1.0
 
 @public
