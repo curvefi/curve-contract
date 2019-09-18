@@ -139,6 +139,7 @@ def get_D() -> uint256:
     """
     Constant D by solving a cubic equation, using Cardano formula
     """
+    # Gives about 1e20 - enough precision
     x: uint256 = self.quantity_a
     y: uint256 = self.quantity_b
     A: uint256 = convert(self.X, uint256)
@@ -149,9 +150,6 @@ def get_D() -> uint256:
     xy = self.cbrt_int(xy)
     D: uint256 = self.cbrt_int(q / 2 + Disc) - self.cbrt_int(Disc - q / 2)
     return D * xy
-    # Gives about 1e20 - enough precision, hopefully?
-    # Not compatible with hyper-inflation - too bad for Zimbabwe
-    # Need to switch to integers also
 
 @public
 @constant
@@ -164,9 +162,14 @@ def get_price(from_coin: address, to_coin: address) -> decimal:
 @public
 @constant
 def get_volume(from_coin: address, to_coin: address,
-               from_amount: uint256) -> uint256:
+               from_amount: int128) -> int128:
+    """
+    Volume of buying of to_coin when using from_amount of from_coin
+    """
     x: uint256
     y: uint256
+    new_x: uint256
+    new_y: uint256
     if from_coin == self.coin_a and to_coin == self.coin_b:
         x = self.quantity_a
         y = self.quantity_b
@@ -175,7 +178,19 @@ def get_volume(from_coin: address, to_coin: address,
         x = self.quantity_b
     else:
         raise "Unknown coin"
-    return 0
+    if from_amount >= 0:
+        new_x = x + convert(from_amount, uint256)
+    else:
+        new_x = x - convert(-from_amount, uint256)
+    D: uint256 = self.get_D()
+    A: uint256 = convert(self.X, uint256)
+    Disc: uint256 = 16 * A * x - 4 * x - 16 * A * x*x / D
+    Disc = self.sqrt_int(Disc*Disc + 64 * A * D * x)
+    new_y = (D * Disc + 16 * A * D * x - 16 * A * x*x - 4 * D * x) / (32 * A * x)
+    if from_amount >= 0:
+        return convert(y - new_y, int128)
+    else:
+        return -convert(new_y - y, int128)
 
 @public
 @nonreentrant('lock')

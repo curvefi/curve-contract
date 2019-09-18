@@ -11,7 +11,10 @@ CONTRACT_PATH = join(dirname(dirname(realpath(__file__))), 'vyper')
 
 @pytest.fixture
 def tester():
-    return EthereumTester(backend=PyEVMBackend(), auto_mine_transactions=True)
+    genesis_params = PyEVMBackend._generate_genesis_params(overrides={'gas_limit': 7 * 10 ** 6})
+    pyevm_backend = PyEVMBackend(genesis_parameters=genesis_params)
+    pyevm_backend.reset_to_genesis(genesis_params=genesis_params, num_accounts=10)
+    return EthereumTester(backend=pyevm_backend, auto_mine_transactions=True)
 
 
 @pytest.fixture
@@ -28,7 +31,7 @@ def deploy_contract(w3, filename, account, *args):
     code = compile_code(source, ['bytecode', 'abi'])
     deploy = w3.eth.contract(abi=code['abi'],
                              bytecode=code['bytecode'])
-    tx_hash = deploy.constructor(*args).transact({'from': account})
+    tx_hash = deploy.constructor(*args).transact({'from': account, 'gas': 6 * 10**6})
     tx_receipt = w3.eth.getTransactionReceipt(tx_hash)
     return ConciseContract(w3.eth.contract(
         address=tx_receipt.contractAddress,
