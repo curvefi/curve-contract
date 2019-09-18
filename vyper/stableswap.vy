@@ -9,7 +9,7 @@ coin_b: public(address)
 quantity_a: public(uint256)
 quantity_b: public(uint256)
 
-X: decimal  # "Amplification" coefficient
+X: int128  # "Amplification" coefficient
 
 fee: public(decimal)        # Fee for traders
 admin_fee: public(decimal)  # Admin fee - fraction of fee
@@ -20,21 +20,21 @@ owner: public(address)
 admin_actions_delay: constant(uint256) = 7 * 86400
 admin_actions_deadline: public(uint256)
 transfer_ownership_deadline: public(uint256)
-future_X: public(decimal)
+future_X: public(int128)
 future_fee: public(decimal)
 future_admin_fee: public(decimal)
 future_owner: public(address)
 
 @public
 def __init__(a: address, b: address,
-             amplification: uint256, _fee: uint256):
+             amplification: int128, _fee: decimal):
     assert a != ZERO_ADDRESS and b != ZERO_ADDRESS
     # XXX TODO: use up 10 digits of decimal
     self.coin_a = a
     self.coin_b = b
-    self.X = convert(amplification, decimal)
+    self.X = amplification
     self.owner = msg.sender
-    self.fee = convert(_fee, decimal) / 1e18
+    self.fee = _fee
     self.admin_fee = 0
 
 @public
@@ -120,6 +120,11 @@ def sqrt_int(x: uint256) -> uint256:
 @private
 @constant
 def cbrt_int(x: uint256) -> uint256:
+    """
+    Cubic root by Babylonian Algotithm
+        http://www.mathpath.org/Algor/cuberoot/cube.root.babylon.htm
+    Inspired by Vyper implementation of sqrt
+    """
     y: uint256 = x
     z: uint256 = (x + 1) / 2
     for i in range(256):
@@ -131,34 +136,21 @@ def cbrt_int(x: uint256) -> uint256:
 
 @private
 @constant
-def cbrt(x: decimal) -> decimal:
-    """
-    Cubic root by Babylonian Algotithm
-        http://www.mathpath.org/Algor/cuberoot/cube.root.babylon.htm
-    Inspired by Vyper implementation of sqrt
-    """
-    y: decimal = x
-    z: decimal = (x + 1.0) / 2.0
-    for i in range(256):
-        if z == y:
-            break
-        y = z
-        z = (2.0 * y + x / (y * y)) / 3.0
-    return y
-
-@private
-@constant
-def get_D() -> decimal:
+def get_D() -> uint256:
     """
     Constant D by solving a cubic equation, using Cardano formula
     """
-    x: decimal = convert(self.quantity_a, decimal)
-    y: decimal = convert(self.quantity_b, decimal)
-    A: decimal = self.X
-    p: decimal = (16.0 * A - 4.0) * x * y
-    q: decimal = -16.0 * A * x * y * (x + y)
-    Disc: decimal = sqrt(q*q / 4.0 + p*p*p / 27.0)  # take xy out
-    return self.cbrt(-q / 2.0 + Disc) - self.cbrt(q / 2.0 + Disc)  # and here
+    x: uint256 = self.quantity_a
+    y: uint256 = self.quantity_b
+    A: uint256 = convert(self.X, uint256)
+    xy: uint256 = x * y
+    p: uint256 = (16 * A - 4)  # * xy
+    q: uint256 = 16 * A * (x + y)  # * xy
+    Disc: uint256 = self.sqrt_int(q*q / 4 + p*p*p / 27)  # * xy
+    return (
+                self.cbrt_int(q / 2 + Disc)\
+                - self.cbrt_int(Disc - q / 2))\
+           * self.cbrt_int(xy)
     # Gives about 1e20 - enough precision, hopefully?
     # Not compatible with hyper-inflation - too bad for Zimbabwe
     # Need to switch to integers also
@@ -175,17 +167,16 @@ def get_price(from_coin: address, to_coin: address) -> decimal:
 @constant
 def get_volume(from_coin: address, to_coin: address,
                from_amount: uint256) -> uint256:
-    x: decimal
-    y: decimal
+    x: uint256
+    y: uint256
     if from_coin == self.coin_a and to_coin == self.coin_b:
-        x = convert(self.quantity_a, decimal)
-        y = convert(self.quantity_b, decimal)
+        x = self.quantity_a
+        y = self.quantity_b
     elif from_coin == self.coin_b and to_coin == self.coin_a:
-        y = convert(self.quantity_a, decimal)
-        x = convert(self.quantity_b, decimal)
+        y = self.quantity_a
+        x = self.quantity_b
     else:
         raise "Unknown coin"
-    dx: decimal = convert(from_amount, decimal)
     return 0
 
 @public
@@ -196,16 +187,16 @@ def exchange(from_coin: address, to_coin: address,
     pass
 
 @public
-def commit_new_parameters(amplification: uint256,
-                          new_fee: uint256,
-                          new_admin_fee: uint256):
+def commit_new_parameters(amplification: int128,
+                          new_fee: decimal,
+                          new_admin_fee: decimal):
     assert msg.sender == self.owner
     assert self.admin_actions_deadline == 0
 
     self.admin_actions_deadline = as_unitless_number(block.timestamp) + admin_actions_delay
-    self.future_X = convert(amplification, decimal)
-    self.future_fee = convert(new_fee, decimal) / 1e18
-    self.future_admin_fee = convert(new_admin_fee, decimal) / 1e18
+    self.future_X = amplification
+    self.future_fee = new_fee
+    self.future_admin_fee = new_admin_fee
     assert self.future_admin_fee < max_admin_fee
 
 @public
