@@ -29,12 +29,11 @@ future_owner: public(address)
 def __init__(a: address, b: address,
              amplification: int128, _fee: decimal):
     assert a != ZERO_ADDRESS and b != ZERO_ADDRESS
-    # XXX TODO: use up 10 digits of decimal
     self.coin_a = a
     self.coin_b = b
-    self.X = amplification
+    self.X = 100
     self.owner = msg.sender
-    self.fee = _fee
+    self.fee = 0.001
     self.admin_fee = 0
 
 @public
@@ -147,10 +146,9 @@ def get_D() -> uint256:
     p: uint256 = (16 * A - 4)  # * xy
     q: uint256 = 16 * A * (x + y)  # * xy
     Disc: uint256 = self.sqrt_int(q*q / 4 + p*p*p / 27)  # * xy
-    return (
-                self.cbrt_int(q / 2 + Disc)\
-                - self.cbrt_int(Disc - q / 2))\
-           * self.cbrt_int(xy)
+    xy = self.cbrt_int(xy)
+    D: uint256 = self.cbrt_int(q / 2 + Disc) - self.cbrt_int(Disc - q / 2)
+    return D * xy
     # Gives about 1e20 - enough precision, hopefully?
     # Not compatible with hyper-inflation - too bad for Zimbabwe
     # Need to switch to integers also

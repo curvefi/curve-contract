@@ -4,6 +4,7 @@ from web3 import Web3
 from os.path import realpath, dirname, join
 from vyper import compile_code
 from web3.contract import ConciseContract
+from decimal import Decimal
 
 CONTRACT_PATH = join(dirname(dirname(realpath(__file__))), 'vyper')
 
@@ -52,4 +53,4 @@ def coin_b(w3):
 def swap(w3, coin_a, coin_b):
     return deploy_contract(
             w3, 'stableswap.vy', w3.eth.accounts[1],
-            coin_a.address, coin_b.address, 100, 0.001)
+            coin_a.address, coin_b.address, 100, Decimal('0.001'))
