@@ -178,24 +178,13 @@ def get_y(x: uint256) -> uint256:
 
 @public
 @constant
-def get_price(from_coin: address, to_coin: address) -> decimal:
-    if self.quantity_a == 0 and self.quantity_b == 0:
-        return 1.0
-    # XXX
-    return 1.0
-
-
-@public
-@constant
 def get_volume(from_coin: address, to_coin: address,
-               from_amount: int128) -> int128:
+               from_amount: uint256) -> uint256:
     """
     Volume of buying of to_coin when using from_amount of from_coin
     """
     x: uint256
     y: uint256
-    new_x: uint256
-    new_y: uint256
     if from_coin == self.coin_a and to_coin == self.coin_b:
         x = self.quantity_a
         y = self.quantity_b
@@ -204,15 +193,10 @@ def get_volume(from_coin: address, to_coin: address,
         x = self.quantity_b
     else:
         raise "Unknown coin"
-    if from_amount >= 0:
-        new_x = x + convert(from_amount, uint256)
-    else:
-        new_x = x - convert(-from_amount, uint256)
-    new_y = self.get_y(new_x)
-    if from_amount >= 0:
-        return convert(y - new_y, int128)
-    else:
-        return -convert(new_y - y, int128)
+
+    new_x: uint256 = x + from_amount
+    new_y: uint256 = self.get_y(new_x)
+    return y - new_y
 
 
 @public
