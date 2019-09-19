@@ -153,9 +153,27 @@ def get_D() -> uint256:
     p: uint256 = (16 * A - 4)  # * xy
     q: uint256 = 16 * A * (x + y)  # * xy
     Disc: uint256 = self.sqrt_int(q*q / 4 + p*p*p / 27)  # * xy
-    xy = self.cbrt_int(xy)
     D: uint256 = self.cbrt_int(q / 2 + Disc) - self.cbrt_int(Disc - q / 2)
+    xy = self.cbrt_int(xy)
     return D * xy
+
+
+@private
+@constant
+def get_y(x: uint256) -> uint256:
+    D: uint256 = self.get_D()
+    A: uint256 = convert(self.X, uint256)
+    # abs() in uint256
+    d1: uint256 = (16 * A - 4) * x
+    d2: uint256 = 16 * A * x*x / D
+    Disc: uint256
+    if d1 >= d2:
+        Disc = d1 - d2
+    else:
+        Disc = d2 - d1
+    # end abs()
+    Disc = self.sqrt_int(Disc*Disc + 64 * A * D * x)
+    return (D * (Disc + (16 * A - 4) * x) - 16 * A * x*x) / (32 * A * x)
 
 
 @public
