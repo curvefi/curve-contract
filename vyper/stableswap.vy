@@ -43,7 +43,7 @@ def __init__(a: address, b: address,
 def add_liquidity(coin_1: address, quantity_1: uint256,
                   max_quantity_2: uint256, deadline: timestamp):
     assert coin_1 == self.coin_a or coin_1 == self.coin_b
-    assert block.timestamp >= deadline
+    assert block.timestamp <= deadline
 
     A: address
     B: address
@@ -79,7 +79,7 @@ def add_liquidity(coin_1: address, quantity_1: uint256,
 def remove_liquidity(coin_1: address, quantity_1: uint256,
                      min_quantity_2: uint256, deadline: timestamp):
     assert coin_1 == self.coin_a or coin_1 == self.coin_b
-    assert block.timestamp >= deadline
+    assert block.timestamp <= deadline
     assert self.quantity_a > 0 and self.quantity_b > 0
 
     A: address
@@ -204,7 +204,7 @@ def get_volume(from_coin: address, to_coin: address,
 def exchange(from_coin: address, to_coin: address,
              from_amount: uint256, to_min_amount: uint256,
              deadline: timestamp):
-    pass
+    assert block.timestamp <= deadline
 
 
 @public
@@ -224,7 +224,7 @@ def commit_new_parameters(amplification: int128,
 @public
 def apply_new_parameters():
     assert msg.sender == self.owner
-    assert self.admin_actions_deadline >= block.timestamp
+    assert self.admin_actions_deadline <= block.timestamp
 
     self.admin_actions_deadline = 0
     self.X = self.future_X
@@ -251,7 +251,7 @@ def commit_transfer_ownership(_owner: address):
 @public
 def apply_transfer_ownership():
     assert msg.sender == self.owner
-    assert self.transfer_ownership_deadline >= block.timestamp
+    assert self.transfer_ownership_deadline <= block.timestamp
 
     self.transfer_ownership_deadline = 0
     self.owner = self.future_owner
