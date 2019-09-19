@@ -208,11 +208,7 @@ def get_volume(from_coin: address, to_coin: address,
         new_x = x + convert(from_amount, uint256)
     else:
         new_x = x - convert(-from_amount, uint256)
-    D: uint256 = self.get_D()
-    A: uint256 = convert(self.X, uint256)
-    Disc: uint256 = 16 * A * x - 4 * x - 16 * A * x*x / D
-    Disc = self.sqrt_int(Disc*Disc + 64 * A * D * x)
-    new_y = (D * Disc + 16 * A * D * x - 16 * A * x*x - 4 * D * x) / (32 * A * x)
+    new_y = self.get_y(new_x)
     if from_amount >= 0:
         return convert(y - new_y, int128)
     else:
