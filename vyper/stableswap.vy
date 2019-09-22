@@ -58,5 +58,14 @@ def add_liquidity(i: int128, quantity_i: uint256,
 
     ok: bool
     for j in range(N_COINS):
+        self.balances[j] += d_bal[j]
         ok = ERC20(self.coins[j]).transferFrom(msg.sender, self, d_bal[j])
         assert ok
+
+
+@private
+@constant
+def get_y(i: int128, x: uint256) -> uint256:
+    # First, calculate D
+    Dprev: uint256 = 0
+    return 0
