@@ -41,7 +41,7 @@ def deploy_contract(w3, filename, account, *args):
 @pytest.fixture
 def coins(w3):
     return [deploy_contract(
-                w3, 'ERC20.vy', w3.eth.accounts[1],
+                w3, 'ERC20.vy', w3.eth.accounts[0],
                 b'Coin ' + str(i).encode(), str(i).encode(), 18, 10 ** 9)
             for i in range(N_COINS)]
 

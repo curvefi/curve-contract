@@ -36,15 +36,22 @@ def __init__(_coins: address[N_COINS], _A: int128, _fee: int128):
 @nonreentrant('lock')
 def add_liquidity(i: int128, quantity_i: uint256,
                   max_quantity_other: uint256, deadline: timestamp):
-    assert i < N_COINS
-    assert block.timestamp <= deadline
+    # XXX
+    # Tokenizing the liquidity MUST be added
+    # And it's not there yet
+    # XXX TODO
+    assert i < N_COINS, "Coin number out of range"
+    assert block.timestamp <= deadline, "Transaction expired"
     d_bal: uint256[N_COINS]
 
     for j in range(N_COINS):
         if j == i:
             d_bal[j] = quantity_i
         else:
-            d_bal[j] = quantity_i * self.balances[j] / self.balances[i]
+            if self.balances[i] > 0:
+                d_bal[j] = quantity_i * self.balances[j] / self.balances[i]
+            else:
+                d_bal[j] = quantity_i
             assert d_bal[j] <= max_quantity_other
         assert ERC20(self.coins[j]).balanceOf(msg.sender) >= d_bal[j]
         assert ERC20(self.coins[j]).allowance(msg.sender, self) >= d_bal[j]
