@@ -1,264 +1,55 @@
 from vyper.interfaces import ERC20
 
-coin_a: public(address)
-coin_b: public(address)
+# This can (and needs to) be changed at compile time
+N_COINS: constant(int128) = 3
 
-# Need to keep track of quantities of coins A and B separately
-# because ability to send coins to shift equilibium may introduce a
-# vulnerabilty
-quantity_a: public(uint256)
-quantity_b: public(uint256)
-
-X: int128  # "Amplification" coefficient
-
-fee: public(decimal)        # Fee for traders
-admin_fee: public(decimal)  # Admin fee - fraction of fee
-max_admin_fee: constant(decimal) = 0.5
+coins: public(address[N_COINS])
+balances: public(uint256[N_COINS])
+A: public(int128)  # 2 x amplification coefficient
+fee: public(int128)  # fee * 1e10
+admin_fee: public(int128)  # admin_fee * 1e10
+max_admin_fee: constant(int128) = 5 * 10 ** 9
 
 owner: public(address)
 
 admin_actions_delay: constant(uint256) = 7 * 86400
 admin_actions_deadline: public(uint256)
 transfer_ownership_deadline: public(uint256)
-future_X: public(int128)
-future_fee: public(decimal)
-future_admin_fee: public(decimal)
+future_A: public(int128)
+future_fee: public(int128)
+future_admin_fee: public(int128)
 future_owner: public(address)
 
 
 @public
-def __init__(a: address, b: address,
-             amplification: int128, _fee: decimal):
-    assert a != ZERO_ADDRESS and b != ZERO_ADDRESS
-    self.coin_a = a
-    self.coin_b = b
-    self.X = 100
-    self.owner = msg.sender
-    self.fee = 0.001
+def __init__(_coins: address[N_COINS], _A: int128, _fee: int128):
+    for i in range(N_COINS):
+        assert _coins[i] != ZERO_ADDRESS
+    self.coins = _coins
+    self.A = _A
+    self.fee = _fee
     self.admin_fee = 0
+    self.owner = msg.sender
 
 
 @public
 @nonreentrant('lock')
-def add_liquidity(coin_1: address, quantity_1: uint256,
-                  max_quantity_2: uint256, deadline: timestamp):
-    assert coin_1 == self.coin_a or coin_1 == self.coin_b
+def add_liquidity(i: int128, quantity_i: uint256,
+                  max_quantity_other: uint256, deadline: timestamp):
+    assert i < N_COINS
     assert block.timestamp <= deadline
+    d_bal: uint256[N_COINS]
 
-    A: address
-    B: address
-    quantity_2: uint256
-
-    if coin_1 == self.coin_a:
-        A = self.coin_a
-        B = self.coin_b
-    else:
-        A = self.coin_b
-        B = self.coin_a
-
-
-    if coin_1 == self.coin_a:
-        quantity_2 = quantity_1 * self.quantity_b / self.quantity_a
-        self.quantity_a += quantity_1
-        self.quantity_b += quantity_2
-    else:
-        quantity_2 = quantity_1 * self.quantity_a / self.quantity_b
-        self.quantity_a += quantity_2
-        self.quantity_b += quantity_1
-    assert quantity_2 <= max_quantity_2
+    for j in range(N_COINS):
+        if j == i:
+            d_bal[j] = quantity_i
+        else:
+            d_bal[j] = quantity_i * self.balances[j] / self.balances[i]
+            assert d_bal[j] <= max_quantity_other
+        assert ERC20(self.coins[j]).balanceOf(msg.sender) >= d_bal[j]
+        assert ERC20(self.coins[j]).allowance(msg.sender, self) >= d_bal[j]
 
     ok: bool
-    ok = ERC20(A).transferFrom(msg.sender, self, quantity_1)
-    assert ok
-    ok = ERC20(B).transferFrom(msg.sender, self, quantity_2)
-    assert ok
-
-
-@public
-@nonreentrant('lock')
-def remove_liquidity(coin_1: address, quantity_1: uint256,
-                     min_quantity_2: uint256, deadline: timestamp):
-    assert coin_1 == self.coin_a or coin_1 == self.coin_b
-    assert block.timestamp <= deadline
-    assert self.quantity_a > 0 and self.quantity_b > 0
-
-    A: address
-    B: address
-    quantity_2: uint256
-
-    if coin_1 == self.coin_a:
-        A = self.coin_a
-        B = self.coin_b
-        quantity_2 = quantity_1 * self.quantity_b / self.quantity_a
-        self.quantity_a -= quantity_1
-        self.quantity_b -= quantity_2
-    else:
-        A = self.coin_b
-        B = self.coin_a
-        quantity_2 = quantity_1 * self.quantity_a / self.quantity_b
-        self.quantity_a -= quantity_2
-        self.quantity_b -= quantity_1
-
-    assert quantity_2 >= min_quantity_2
-
-    ok: bool
-    ok = ERC20(A).transferFrom(self, msg.sender, quantity_1)
-    assert ok
-    ok = ERC20(B).transferFrom(self, msg.sender, quantity_2)
-    assert ok
-
-
-@private
-@constant
-def sqrt_int(x: uint256) -> uint256:
-    y: uint256 = x
-    z: uint256 = (x + 1) / 2
-    for i in range(256):
-        if z >= y:
-            break
-        y = z
-        z = (y + x / y) / 2
-    return y
-
-
-@private
-@constant
-def cbrt_int(x: uint256) -> uint256:
-    """
-    Cubic root by Babylonian Algotithm
-        http://www.mathpath.org/Algor/cuberoot/cube.root.babylon.htm
-    Inspired by Vyper implementation of sqrt
-    """
-    y: uint256 = x
-    z: uint256 = (x + 1) / 2
-    for i in range(256):
-        if z >= y:
-            break
-        y = z
-        z = (2 * y + x / (y * y)) / 3
-    return y
-
-
-@private
-@constant
-def get_D() -> uint256:
-    """
-    Constant D by solving a cubic equation, using Cardano formula
-    """
-    # Gives about 1e20 - enough precision
-    x: uint256 = self.quantity_a
-    y: uint256 = self.quantity_b
-    A: uint256 = convert(self.X, uint256)
-    xy: uint256 = x * y
-    p: uint256 = (16 * A - 4)  # * xy
-    q: uint256 = 16 * A * (x + y)  # * xy
-    Disc: uint256 = self.sqrt_int(q*q / 4 + p*p*p / 27)  # * xy
-    D: uint256 = self.cbrt_int(q / 2 + Disc) - self.cbrt_int(Disc - q / 2)
-    xy = self.cbrt_int(xy)
-    return D * xy
-
-
-@private
-@constant
-def get_y(x: uint256) -> uint256:
-    D: uint256 = self.get_D()
-    A: uint256 = convert(self.X, uint256)
-    # abs() in uint256
-    d1: uint256 = (16 * A - 4) * x
-    d2: uint256 = 16 * A * x*x / D
-    Disc: uint256
-    if d1 >= d2:
-        Disc = d1 - d2
-    else:
-        Disc = d2 - d1
-    # end abs()
-    Disc = self.sqrt_int(Disc*Disc + 64 * A * D * x)
-    return (D * (Disc + (16 * A - 4) * x) - 16 * A * x*x) / (32 * A * x)
-
-
-@public
-@constant
-def get_volume(from_coin: address, to_coin: address,
-               from_amount: uint256) -> uint256:
-    """
-    Volume of buying of to_coin when using from_amount of from_coin
-    """
-    x: uint256
-    y: uint256
-    if from_coin == self.coin_a and to_coin == self.coin_b:
-        x = self.quantity_a
-        y = self.quantity_b
-    elif from_coin == self.coin_b and to_coin == self.coin_a:
-        y = self.quantity_a
-        x = self.quantity_b
-    else:
-        raise "Unknown coin"
-
-    new_x: uint256 = x + from_amount
-    new_y: uint256 = self.get_y(new_x)
-    return y - new_y
-
-
-@public
-@nonreentrant('lock')
-def exchange(from_coin: address, to_coin: address,
-             from_amount: uint256, to_min_amount: uint256,
-             deadline: timestamp):
-    assert block.timestamp <= deadline
-
-
-@public
-def commit_new_parameters(amplification: int128,
-                          new_fee: decimal,
-                          new_admin_fee: decimal):
-    assert msg.sender == self.owner
-    assert self.admin_actions_deadline == 0
-
-    self.admin_actions_deadline = as_unitless_number(block.timestamp) + admin_actions_delay
-    self.future_X = amplification
-    self.future_fee = new_fee
-    self.future_admin_fee = new_admin_fee
-    assert self.future_admin_fee < max_admin_fee
-
-
-@public
-def apply_new_parameters():
-    assert msg.sender == self.owner
-    assert self.admin_actions_deadline <= block.timestamp
-
-    self.admin_actions_deadline = 0
-    self.X = self.future_X
-    self.fee = self.future_fee
-    self.admin_fee = self.future_admin_fee
-
-
-@public
-def revert_new_parameters():
-    assert msg.sender == self.owner
-
-    self.admin_actions_deadline = 0
-
-
-@public
-def commit_transfer_ownership(_owner: address):
-    assert msg.sender == self.owner
-    assert self.transfer_ownership_deadline == 0
-
-    self.transfer_ownership_deadline = as_unitless_number(block.timestamp) + admin_actions_delay
-    self.future_owner = _owner
-
-
-@public
-def apply_transfer_ownership():
-    assert msg.sender == self.owner
-    assert self.transfer_ownership_deadline <= block.timestamp
-
-    self.transfer_ownership_deadline = 0
-    self.owner = self.future_owner
-
-
-@public
-def revert_transfer_ownership():
-    assert msg.sender == self.owner
-
-    self.transfer_ownership_deadline = 0
+    for j in range(N_COINS):
+        ok = ERC20(self.coins[j]).transferFrom(msg.sender, self, d_bal[j])
+        assert ok

@@ -4,9 +4,9 @@ from web3 import Web3
 from os.path import realpath, dirname, join
 from vyper import compile_code
 from web3.contract import ConciseContract
-from decimal import Decimal
 
 CONTRACT_PATH = join(dirname(dirname(realpath(__file__))), 'vyper')
+N_COINS = 3
 
 
 @pytest.fixture
@@ -39,21 +39,15 @@ def deploy_contract(w3, filename, account, *args):
 
 
 @pytest.fixture
-def coin_a(w3):
-    return deploy_contract(
-            w3, 'ERC20.vy', w3.eth.accounts[1],
-            b'Coin A', b'A', 18, 10 ** 9)
+def coins(w3):
+    return [deploy_contract(
+                w3, 'ERC20.vy', w3.eth.accounts[1],
+                b'Coin ' + str(i).encode(), str(i).encode(), 18, 10 ** 9)
+            for i in range(N_COINS)]
 
 
 @pytest.fixture
-def coin_b(w3):
-    return deploy_contract(
-            w3, 'ERC20.vy', w3.eth.accounts[1],
-            b'Coin B', b'B', 18, 10 ** 9)
-
-
-@pytest.fixture
-def swap(w3, coin_a, coin_b):
+def swap(w3, coins):
     return deploy_contract(
             w3, 'stableswap.vy', w3.eth.accounts[1],
-            coin_a.address, coin_b.address, 100, Decimal('0.001'))
+            [c.address for c in coins], 360 * 2, int(0.001 * 1e10))
