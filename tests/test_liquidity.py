@@ -3,6 +3,7 @@ import pytest
 from eth_tester.exceptions import TransactionFailed
 
 U = 10 ** 18
+N_COINS = 3
 
 
 def test_add_liquidity(w3, coins, swap):
@@ -43,3 +44,6 @@ def test_add_liquidity(w3, coins, swap):
         # Fail because the allowance is now not enough
         swap.add_liquidity(0, 100 * U, 110 * U, int(time.time()) + 3600,
                            transact={'from': w3.eth.accounts[0]})
+
+    for i in range(N_COINS):
+        assert swap.balances(0) == 200 * U
