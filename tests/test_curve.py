@@ -19,8 +19,9 @@ def test_curve_in_contract(w3, coins, swap):
     # Python-based (tested) model with same parameters as contract
     curve = Curve(2 * 360, 300 * U, 3)
 
-    for i, j in permutations(range(3), 2):
-        dx = random.randrange(100 * U)
-        dy_1 = swap.get_dy(i, j, dx)
-        dy_2 = curve.dy(i, j, dx)
-        assert dy_1 == dy_2
+    for k in range(5):
+        for i, j in permutations(range(3), 2):
+            dx = random.randrange(200 * U)
+            dy_1 = swap.get_dy(i, j, dx)
+            dy_2 = curve.dy(i, j, dx)
+            assert abs(dy_1 - dy_2) <= 1

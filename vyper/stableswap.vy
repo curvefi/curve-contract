@@ -103,12 +103,12 @@ def get_y(i: int128, j: int128, x: uint256) -> uint256:
         S_ += _x
         c = c * D / (_x * N_COINS)
     c = c * D / (Ann * N_COINS)
-    b: uint256 = S_ + D / Ann - D
+    b: uint256 = S_ + D / Ann  # - D
     y_prev: uint256 = 0
     y: uint256 = D
-    for _i in range(256):
+    for _i in range(255):
         y_prev = y
-        y = (y*y + c) / (2 * y + b)
+        y = (y*y + c) / (2 * y + b - D)
         # Equality with the precision of 1
         if y > y_prev:
             if y - y_prev <= 1:
@@ -124,4 +124,5 @@ def get_y(i: int128, j: int128, x: uint256) -> uint256:
 @constant
 def get_dy(i: int128, j: int128, dx: uint256) -> uint256:
     x: uint256 = self.balances[i] + dx
-    return self.balances[j] - self.get_y(i, j, x)
+    y: uint256 = self.get_y(i, j, x)
+    return self.balances[j] - y
