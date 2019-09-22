@@ -46,7 +46,7 @@ def coins(w3):
             for i in range(N_COINS)]
 
 
-@pytest.fixture
+@pytest.fixture(scope='function')
 def swap(w3, coins):
     return deploy_contract(
             w3, 'stableswap.vy', w3.eth.accounts[1],
