@@ -65,7 +65,56 @@ def add_liquidity(i: int128, quantity_i: uint256,
 
 @private
 @constant
-def get_y(i: int128, x: uint256) -> uint256:
-    # First, calculate D
+def get_y(i: int128, j: int128, x: uint256) -> uint256:
+    # === Calculate D ===
     Dprev: uint256 = 0
-    return 0
+    S: uint256
+    for _x in self.balances:
+        S += _x
+    assert S > 0
+    D: uint256 = S
+    Ann: uint256 = convert(self.A, uint256) * N_COINS
+    for _i in range(255):
+        D_P: uint256 = D
+        for _x in self.balances:
+            D_P = D_P * D / (_x * N_COINS)
+        Dprev = D
+        D = (Ann * S + D_P * N_COINS) * D / ((Ann - 1) * D + (N_COINS + 1) * D_P)
+        # Equality with the precision of 1
+        if D > Dprev:
+            if D - Dprev <= 1:
+                break
+        else:
+            if Dprev - D <= 1:
+                break
+    # === D is now calculated ===
+
+    # === Calculate y ===
+    c: uint256 = D
+    S_: uint256 = 0
+    for _i in range(N_COINS):
+        _x: uint256
+        if _i == i:
+            _x = x
+        elif _i != j:
+            _x = self.balances[_i]
+        else:
+            continue
+        S_ += _x
+        c = c * D / (_x * N_COINS)
+    c = c * D / (Ann * N_COINS)
+    b: uint256 = S_ + D / Ann - D
+    y_prev: uint256 = 0
+    y: uint256 = D
+    for _i in range(256):
+        y_prev = y
+        y = (y*y + c) / (2 * y + b)
+        # Equality with the precision of 1
+        if y > y_prev:
+            if y - y_prev <= 1:
+                break
+        else:
+            if y_prev - y <= 1:
+                break
+    # === y is now calculated
+    return y
