@@ -118,3 +118,10 @@ def get_y(i: int128, j: int128, x: uint256) -> uint256:
                 break
     # === y is now calculated
     return y
+
+
+@public
+@constant
+def get_dy(i: int128, j: int128, dx: uint256) -> uint256:
+    x: uint256 = self.balances[i] + dx
+    return self.balances[j] - self.get_y(i, j, x)
