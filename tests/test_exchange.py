@@ -73,9 +73,24 @@ def test_simulated_exchange(w3, coins, swap):
     # Start trading!
     for k in range(50):
         i, j = random.choice(list(permutations(range(N_COINS), 2)))
-        value = random.randrange(2 * U)
+        value = random.randrange(5 * U)
+        x_0 = coins[i].balanceOf(bob)
+        y_0 = coins[j].balanceOf(bob)
         swap.exchange(i, j, value,
                       int(0.5 * value), int(time.time()) + 3600,
                       transact={'from': bob})
-        curve.exchange(i, j, value)
-        # TODO: test outputs
+        x_1 = coins[i].balanceOf(bob)
+        y_1 = coins[j].balanceOf(bob)
+
+        dy_m = curve.exchange(i, j, value)
+
+        assert x_0 - x_1 == value
+        assert abs(1 - (y_1 - y_0) / dy_m) < 0.001 / 100
+
+    # Let's see what we have left
+    x = [swap.balances(i) for i in range(N_COINS)]
+    for y_1, y_2 in zip(x, curve.x):
+        assert abs(y_1 - y_2) / y_2 < 0.001 / 100
+
+    assert sum(x) > 300 * U
+    assert sum(curve.x) > 300 * U
