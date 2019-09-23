@@ -42,3 +42,26 @@ def test_few_trades(w3, coins, swap):
     assert coins[0].balanceOf(bob) == 98 * U
     assert coins[1].balanceOf(bob) > int(101.9 * U)
     assert coins[1].balanceOf(bob) < 102 * U
+
+
+def test_simulated_exchange(w3, coins, swap):
+    sam = w3.eth.accounts[0]  # Sam owns the bank
+    bob = w3.eth.accounts[1]  # Bob the customer
+
+    # Allow $1000 of each coin
+    for c in coins:
+        c.approve(swap.address, 1000 * U,
+                  transact={'from': sam})
+
+    # Adding $100 liquidity of each coin
+    swap.add_liquidity(0, 100 * U, 110 * U, int(time.time()) + 3600,
+                       transact={'from': sam})
+
+    for c in coins:
+        # Fund the customer with $100 of each coin
+        c.transfer(bob, 100 * U,
+                   transact={'from': sam})
+        # Approve by Bob
+        c.approve(swap.address, 100 * U, transact={'from': bob})
+
+    # The scene is now set up
