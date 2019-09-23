@@ -143,7 +143,7 @@ def exchange(i: int128, j: int128, dx: uint256,
     dy_fee: uint256 = dy * convert(self.fee, uint256) / (10 ** 10)
     dy_admin_fee: uint256 = dy_fee * convert(self.admin_fee, uint256) / (10 ** 10)
     self.balances[i] += dx
-    self.balances[j] -= dy - (dy_fee - dy_admin_fee)
+    self.balances[j] = y + (dy_fee - dy_admin_fee)
 
     ok = ERC20(self.coins[i]).transferFrom(msg.sender, self, dx)
     assert ok

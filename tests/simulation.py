@@ -8,6 +8,7 @@ class Curve:
         self.A = A  # actually A * n ** (n - 1) because it's an invariant
         self.n = n
         self.x = [D // n] * n
+        self.fee = 0.001
 
     def D(self):
         """
@@ -58,3 +59,13 @@ class Curve:
 
     def dy(self, i, j, dx):
         return self.x[j] - self.y(i, j, self.x[i] + dx)
+
+    def exchange(self, i, j, dx):
+        x = self.x[i] + dx
+        y = self.y(i, j, x)
+        dy = self.x[j] - y
+        fee = int(dy * self.fee)
+        assert dy > 0
+        self.x[i] = x
+        self.x[j] = y + fee
+        return dy - fee
