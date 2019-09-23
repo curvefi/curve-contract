@@ -140,8 +140,8 @@ def exchange(i: int128, j: int128, dx: uint256,
     x: uint256 = self.balances[i] + dx
     y: uint256 = self.get_y(i, j, x)
     dy: uint256 = self.balances[j] - y
-    dy_fee: uint256 = dy * convert(self.fee, uint256) / (10 ** 10)
-    dy_admin_fee: uint256 = dy_fee * convert(self.admin_fee, uint256) / (10 ** 10)
+    dy_fee: uint256 = dy * convert(self.fee, uint256) / 10 ** 10
+    dy_admin_fee: uint256 = dy_fee * convert(self.admin_fee, uint256) / 10 ** 10
     self.balances[i] += dx
     self.balances[j] = y + (dy_fee - dy_admin_fee)
 
