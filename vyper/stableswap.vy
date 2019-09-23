@@ -54,14 +54,15 @@ def add_liquidity(i: int128, quantity_i: uint256,
                 d_bal[j] = quantity_i
             if max_quantity_other > 0:
                 assert d_bal[j] <= max_quantity_other
-        assert ERC20(self.coins[j]).balanceOf(msg.sender) >= d_bal[j]
-        assert ERC20(self.coins[j]).allowance(msg.sender, self) >= d_bal[j]
+        assert_modifiable(
+            ERC20(self.coins[j]).balanceOf(msg.sender) >= d_bal[j])
+        assert_modifiable(
+            ERC20(self.coins[j]).allowance(msg.sender, self) >= d_bal[j])
 
-    ok: bool
     for j in range(N_COINS):
         self.balances[j] += d_bal[j]
-        ok = ERC20(self.coins[j]).transferFrom(msg.sender, self, d_bal[j])
-        assert ok
+        assert_modifiable(
+            ERC20(self.coins[j]).transferFrom(msg.sender, self, d_bal[j]))
 
 
 @private
@@ -135,7 +136,6 @@ def exchange(i: int128, j: int128, dx: uint256,
              min_dy: uint256, deadline: timestamp):
     assert block.timestamp <= deadline, "Transaction expired"
     assert i < N_COINS and j < N_COINS, "Coin number out of range"
-    ok: bool
 
     x: uint256 = self.balances[i] + dx
     y: uint256 = self.get_y(i, j, x)
@@ -145,7 +145,5 @@ def exchange(i: int128, j: int128, dx: uint256,
     self.balances[i] += dx
     self.balances[j] = y + (dy_fee - dy_admin_fee)
 
-    ok = ERC20(self.coins[i]).transferFrom(msg.sender, self, dx)
-    assert ok
-    ok = ERC20(self.coins[j]).transfer(msg.sender, dy - dy_fee)
-    assert ok
+    assert_modifiable(ERC20(self.coins[i]).transferFrom(msg.sender, self, dx))
+    assert_modifiable(ERC20(self.coins[j]).transfer(msg.sender, dy - dy_fee))
