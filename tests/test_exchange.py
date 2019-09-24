@@ -85,12 +85,10 @@ def test_simulated_exchange(w3, coins, swap):
         dy_m = curve.exchange(i, j, value)
 
         assert x_0 - x_1 == value
-        assert abs(1 - (y_1 - y_0) / dy_m) < 0.001 / 100
+        assert y_1 - y_0 == dy_m
 
     # Let's see what we have left
     x = [swap.balances(i) for i in range(N_COINS)]
-    for y_1, y_2 in zip(x, curve.x):
-        assert abs(y_1 - y_2) / y_2 < 0.001 / 100
+    assert tuple(x) == tuple(curve.x)
 
     assert sum(x) > 300 * U
-    assert sum(curve.x) > 300 * U

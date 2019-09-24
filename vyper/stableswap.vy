@@ -2,6 +2,7 @@ from vyper.interfaces import ERC20
 
 # This can (and needs to) be changed at compile time
 N_COINS: constant(int128) = 3
+admin_actions_delay: constant(uint256) = 7 * 86400
 
 coins: public(address[N_COINS])
 balances: public(uint256[N_COINS])
@@ -12,9 +13,8 @@ max_admin_fee: constant(int128) = 5 * 10 ** 9
 
 owner: public(address)
 
-admin_actions_delay: constant(uint256) = 7 * 86400
 admin_actions_deadline: public(uint256)
-transfer_ownership_deadline: public(uint256)
+transfer_ownership_time: public(uint256)
 future_A: public(int128)
 future_fee: public(int128)
 future_admin_fee: public(int128)
@@ -70,7 +70,7 @@ def add_liquidity(i: int128, quantity_i: uint256,
 def get_y(i: int128, j: int128, x: uint256) -> uint256:
     # === Calculate D ===
     Dprev: uint256 = 0
-    S: uint256
+    S: uint256 = 0
     for _x in self.balances:
         S += _x
     assert S > 0

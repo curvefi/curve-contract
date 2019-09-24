@@ -26,4 +26,4 @@ def test_curve_in_contract(w3, coins, swap, n_coins):
             dx = random.randrange(2 * n_coins * U)
             dy_1 = swap.get_dy(i, j, dx)
             dy_2 = curve.dy(i, j, dx)
-            assert abs(dy_1 - dy_2) <= 1
+            assert dy_1 == dy_2

@@ -43,7 +43,9 @@ class Curve:
         x_1 = (x_1**2 + c) / (2*x_1 + b)
         """
         D = self.D()
-        xx = [self.x[k] for k in range(self.n) if k not in (i, j)] + [x]
+        xx = self.x[:]
+        xx[i] = x
+        xx = [xx[k] for k in range(self.n) if k != j]
         Ann = self.A * self.n
         c = D
         for y in xx:
