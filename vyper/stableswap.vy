@@ -67,8 +67,7 @@ def add_liquidity(i: int128, quantity_i: uint256,
 
 @private
 @constant
-def get_y(i: int128, j: int128, x: uint256) -> uint256:
-    # === Calculate D ===
+def get_D() -> uint256:
     Dprev: uint256 = 0
     S: uint256 = 0
     for _x in self.balances:
@@ -89,11 +88,16 @@ def get_y(i: int128, j: int128, x: uint256) -> uint256:
         else:
             if Dprev - D <= 1:
                 break
-    # === D is now calculated ===
+    return D
 
-    # === Calculate y ===
+
+@private
+@constant
+def get_y(i: int128, j: int128, x: uint256) -> uint256:
+    D: uint256 = self.get_D()
     c: uint256 = D
     S_: uint256 = 0
+    Ann: uint256 = convert(self.A, uint256) * N_COINS
     for _i in range(N_COINS):
         _x: uint256
         if _i == i:
@@ -118,7 +122,6 @@ def get_y(i: int128, j: int128, x: uint256) -> uint256:
         else:
             if y_prev - y <= 1:
                 break
-    # === y is now calculated
     return y
 
 

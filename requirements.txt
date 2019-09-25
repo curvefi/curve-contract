@@ -9,3 +9,4 @@ py-ecc
 pytest
 ipython
 pdbpp
+pytest-xdist
