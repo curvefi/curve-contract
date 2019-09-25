@@ -3,7 +3,6 @@ from eth_tester import EthereumTester, PyEVMBackend
 from web3 import Web3
 from os.path import realpath, dirname, join
 from vyper import compile_code
-from web3.contract import ConciseContract
 
 CONTRACT_PATH = join(dirname(dirname(realpath(__file__))), 'vyper')
 N_COINS = 3
@@ -33,9 +32,9 @@ def deploy_contract(w3, filename, account, *args):
                              bytecode=code['bytecode'])
     tx_hash = deploy.constructor(*args).transact({'from': account, 'gas': 3 * 10**6})
     tx_receipt = w3.eth.getTransactionReceipt(tx_hash)
-    return ConciseContract(w3.eth.contract(
+    return w3.eth.contract(
         address=tx_receipt.contractAddress,
-        abi=deploy.abi))
+        abi=deploy.abi)
 
 
 @pytest.fixture
