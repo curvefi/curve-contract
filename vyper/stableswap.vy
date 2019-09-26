@@ -66,8 +66,7 @@ def get_D() -> uint256:
 
 @public
 @nonreentrant('lock')
-def add_liquidity(i: int128, quantity_i: uint256,
-                  max_quantity_other: uint256, deadline: timestamp):
+def add_liquidity(i: int128, quantity_i: uint256, deadline: timestamp):
     assert i < N_COINS, "Coin number out of range"
     assert block.timestamp <= deadline, "Transaction expired"
     assert quantity_i > 0
@@ -84,8 +83,6 @@ def add_liquidity(i: int128, quantity_i: uint256,
                 d_bal[j] = quantity_i * self.balances[j] / self.balances[i]
             else:
                 d_bal[j] = quantity_i
-            if max_quantity_other > 0:
-                assert d_bal[j] <= max_quantity_other
         assert_modifiable(
             ERC20(self.coins[j]).balanceOf(msg.sender) >= d_bal[j])
         assert_modifiable(
@@ -108,6 +105,12 @@ def add_liquidity(i: int128, quantity_i: uint256,
 
     # Mint them
     self.token.mint(msg.sender, mint_amount)
+
+
+@public
+@nonreentrant('lock')
+def remove_liquidity(_amount: uint256, deadline: timestamp):
+    pass
 
 
 @private

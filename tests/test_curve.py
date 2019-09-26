@@ -16,7 +16,7 @@ def test_curve_in_contract(w3, coins, swap, n_coins):
 
     # Add some coins
     swap.functions.\
-        add_liquidity(0, n_coins * U, 2 * n_coins * U, int(time.time()) + 3600).\
+        add_liquidity(0, n_coins * U, int(time.time()) + 3600).\
         transact({'from': w3.eth.accounts[0]})
 
     # Python-based (tested) model with same parameters as contract
