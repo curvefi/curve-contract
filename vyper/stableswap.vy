@@ -1,4 +1,5 @@
 from vyper.interfaces import ERC20
+import ERC20m as ERC20m
 
 # This can (and needs to) be changed at compile time
 N_COINS: constant(int128) = 3
@@ -12,7 +13,7 @@ admin_fee: public(int128)  # admin_fee * 1e10
 max_admin_fee: constant(int128) = 5 * 10 ** 9
 
 owner: public(address)
-token: ERC20
+token: ERC20m
 
 admin_actions_deadline: public(uint256)
 transfer_ownership_time: public(uint256)
@@ -32,50 +33,19 @@ def __init__(_coins: address[N_COINS], _pool_token: address,
     self.fee = _fee
     self.admin_fee = 0
     self.owner = msg.sender
-    self.token = ERC20(create_forwarder_to(_pool_token))
-
-
-@public
-@nonreentrant('lock')
-def add_liquidity(i: int128, quantity_i: uint256,
-                  max_quantity_other: uint256, deadline: timestamp):
-    # XXX
-    # Tokenizing the liquidity MUST be added
-    # And it's not there yet
-    # XXX TODO
-    assert i < N_COINS, "Coin number out of range"
-    assert block.timestamp <= deadline, "Transaction expired"
-    d_bal: uint256[N_COINS]
-
-    for j in range(N_COINS):
-        if j == i:
-            d_bal[j] = quantity_i
-        else:
-            if self.balances[i] > 0:
-                d_bal[j] = quantity_i * self.balances[j] / self.balances[i]
-            else:
-                d_bal[j] = quantity_i
-            if max_quantity_other > 0:
-                assert d_bal[j] <= max_quantity_other
-        assert_modifiable(
-            ERC20(self.coins[j]).balanceOf(msg.sender) >= d_bal[j])
-        assert_modifiable(
-            ERC20(self.coins[j]).allowance(msg.sender, self) >= d_bal[j])
-
-    for j in range(N_COINS):
-        self.balances[j] += d_bal[j]
-        assert_modifiable(
-            ERC20(self.coins[j]).transferFrom(msg.sender, self, d_bal[j]))
+    self.token = ERC20(_pool_token)
 
 
 @private
 @constant
 def get_D() -> uint256:
-    Dprev: uint256 = 0
     S: uint256 = 0
     for _x in self.balances:
         S += _x
-    assert S > 0
+    if S == 0:
+        return 0
+
+    Dprev: uint256 = 0
     D: uint256 = S
     Ann: uint256 = convert(self.A, uint256) * N_COINS
     for _i in range(255):
@@ -92,6 +62,52 @@ def get_D() -> uint256:
             if Dprev - D <= 1:
                 break
     return D
+
+
+@public
+@nonreentrant('lock')
+def add_liquidity(i: int128, quantity_i: uint256,
+                  max_quantity_other: uint256, deadline: timestamp):
+    assert i < N_COINS, "Coin number out of range"
+    assert block.timestamp <= deadline, "Transaction expired"
+    assert quantity_i > 0
+    d_bal: uint256[N_COINS]
+
+    D: uint256 = self.get_D()
+
+    # Calculate, how much of each coin to take from the sender
+    for j in range(N_COINS):
+        if j == i:
+            d_bal[j] = quantity_i
+        else:
+            if self.balances[i] > 0:
+                d_bal[j] = quantity_i * self.balances[j] / self.balances[i]
+            else:
+                d_bal[j] = quantity_i
+            if max_quantity_other > 0:
+                assert d_bal[j] <= max_quantity_other
+        assert_modifiable(
+            ERC20(self.coins[j]).balanceOf(msg.sender) >= d_bal[j])
+        assert_modifiable(
+            ERC20(self.coins[j]).allowance(msg.sender, self) >= d_bal[j])
+
+    # Take those coins from the sender
+    for j in range(N_COINS):
+        self.balances[j] += d_bal[j]
+        assert_modifiable(
+            ERC20(self.coins[j]).transferFrom(msg.sender, self, d_bal[j]))
+
+    # Calculate, how much pool tokens to mint
+    token_supply: uint256 = self.token.totalSupply()
+    mint_amount: uint256
+    if token_supply == 0:
+        mint_amount = quantity_i * N_COINS
+    else:
+        D1: uint256 = self.get_D()
+        mint_amount = token_supply * D1 / D - token_supply
+
+    # Mint them
+    self.token.mint(msg.sender, mint_amount)
 
 
 @private

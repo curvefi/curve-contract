@@ -1,7 +1,7 @@
 import pytest
 from eth_tester import EthereumTester, PyEVMBackend
 from web3 import Web3
-from os.path import realpath, dirname, join
+from os.path import realpath, dirname, join, splitext
 from vyper import compile_code
 
 CONTRACT_PATH = join(dirname(dirname(realpath(__file__))), 'vyper')
@@ -25,9 +25,24 @@ def w3(tester):
 
 
 def deploy_contract(w3, filename, account, *args):
+    if isinstance(filename, list):
+        interface_files = filename[1:]
+        filename = filename[0]
+    else:
+        interface_files = []
+
     with open(join(CONTRACT_PATH, filename)) as f:
         source = f.read()
-    code = compile_code(source, ['bytecode', 'abi'])
+    interface_codes = {}
+    for i in interface_files:
+        name = splitext(i)[0]
+        with open(join(CONTRACT_PATH, i)) as f:
+            interface_codes[name] = {
+                    'type': 'vyper',
+                    'code': f.read()}
+
+    code = compile_code(source, ['bytecode', 'abi'],
+                        interface_codes=interface_codes or None)
     deploy = w3.eth.contract(abi=code['abi'],
                              bytecode=code['bytecode'])
     tx_hash = deploy.constructor(*args).transact({'from': account, 'gas': 3 * 10**6})
@@ -53,6 +68,8 @@ def pool_token(w3):
 
 @pytest.fixture(scope='function')
 def swap(w3, coins, pool_token):
-    return deploy_contract(
-            w3, 'stableswap.vy', w3.eth.accounts[1],
+    swap_contract = deploy_contract(
+            w3, ['stableswap.vy', 'ERC20m.vy'], w3.eth.accounts[1],
             [c.address for c in coins], pool_token.address, 360 * 2, 10 ** 7)
+    pool_token.functions.set_minter(swap_contract.address).transact()
+    return swap_contract
