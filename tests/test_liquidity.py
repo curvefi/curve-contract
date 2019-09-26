@@ -48,8 +48,8 @@ def test_add_liquidity(w3, coins, swap):
         assert swap.caller.balances(0) == 200 * U
 
 
-@pytest.mark.parametrize('iteration', range(40))
-def test_ratio_preservation(w3, coins, swap, pool_token, iteration):
+# @pytest.mark.parametrize('iteration', range(40))
+def test_ratio_preservation(w3, coins, swap, pool_token):
     alice, bob = w3.eth.accounts[:2]
     dust = 5
 
