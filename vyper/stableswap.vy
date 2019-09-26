@@ -110,7 +110,16 @@ def add_liquidity(i: int128, quantity_i: uint256, deadline: timestamp):
 @public
 @nonreentrant('lock')
 def remove_liquidity(_amount: uint256, deadline: timestamp):
-    pass
+    assert self.token.balanceOf(msg.sender) >= _amount
+    assert self.token.allowance(msg.sender, self) >= _amount
+    total_supply: uint256 = self.token.totalSupply()
+
+    for i in range(N_COINS):
+        value: uint256 = self.balances[i] * _amount / total_supply
+        self.balances[i] -= value
+        assert_modifiable(ERC20(self.coins[i]).transfer(msg.sender, value))
+
+    self.token.burnFrom(msg.sender, _amount)
 
 
 @private
