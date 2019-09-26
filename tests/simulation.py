@@ -27,7 +27,7 @@ class Curve:
         while abs(D - Dprev) > 1:
             D_P = D
             for x in self.x:
-                D_P = D_P * D // (self.n * x)
+                D_P = D_P * D // (self.n * x + 1)  # +1 is to prevent /0
             Dprev = D
             D = (Ann * S + D_P * self.n) * D // ((Ann - 1) * D + (self.n + 1) * D_P)
         return D
