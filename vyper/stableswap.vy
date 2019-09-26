@@ -72,8 +72,6 @@ def add_liquidity(i: int128, quantity_i: uint256, deadline: timestamp):
     assert quantity_i > 0
     d_bal: uint256[N_COINS]
 
-    D: uint256 = self.get_D()
-
     # Calculate, how much of each coin to take from the sender
     for j in range(N_COINS):
         if j == i:
@@ -88,22 +86,21 @@ def add_liquidity(i: int128, quantity_i: uint256, deadline: timestamp):
         assert_modifiable(
             ERC20(self.coins[j]).allowance(msg.sender, self) >= d_bal[j])
 
-    # Take those coins from the sender
-    for j in range(N_COINS):
-        self.balances[j] += d_bal[j]
-        assert_modifiable(
-            ERC20(self.coins[j]).transferFrom(msg.sender, self, d_bal[j]))
-
     # Calculate, how much pool tokens to mint
     token_supply: uint256 = self.token.totalSupply()
     mint_amount: uint256
     if token_supply == 0:
         mint_amount = quantity_i * N_COINS
     else:
-        D1: uint256 = self.get_D()
-        mint_amount = token_supply * D1 / D - token_supply
+        mint_amount = token_supply * quantity_i / self.balances[i]
 
-    # Mint them
+    # Take coins from the sender
+    for j in range(N_COINS):
+        self.balances[j] += d_bal[j]
+        assert_modifiable(
+            ERC20(self.coins[j]).transferFrom(msg.sender, self, d_bal[j]))
+
+    # Mint pool tokens
     self.token.mint(msg.sender, mint_amount)
 
 
