@@ -12,6 +12,7 @@ admin_fee: public(int128)  # admin_fee * 1e10
 max_admin_fee: constant(int128) = 5 * 10 ** 9
 
 owner: public(address)
+token: ERC20
 
 admin_actions_deadline: public(uint256)
 transfer_ownership_time: public(uint256)
@@ -22,7 +23,8 @@ future_owner: public(address)
 
 
 @public
-def __init__(_coins: address[N_COINS], _A: int128, _fee: int128):
+def __init__(_coins: address[N_COINS], _pool_token: address,
+             _A: int128, _fee: int128):
     for i in range(N_COINS):
         assert _coins[i] != ZERO_ADDRESS
     self.coins = _coins
@@ -30,6 +32,7 @@ def __init__(_coins: address[N_COINS], _A: int128, _fee: int128):
     self.fee = _fee
     self.admin_fee = 0
     self.owner = msg.sender
+    self.token = ERC20(create_forwarder_to(_pool_token))
 
 
 @public

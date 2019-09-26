@@ -45,8 +45,14 @@ def coins(w3):
             for i in range(N_COINS)]
 
 
+@pytest.fixture
+def pool_token(w3):
+    return deploy_contract(w3, 'ERC20.vy', w3.eth.accounts[0],
+                           b'Stableswap', b'STBL', 18, 0)
+
+
 @pytest.fixture(scope='function')
-def swap(w3, coins):
+def swap(w3, coins, pool_token):
     return deploy_contract(
             w3, 'stableswap.vy', w3.eth.accounts[1],
-            [c.address for c in coins], 360 * 2, 10 ** 7)
+            [c.address for c in coins], pool_token.address, 360 * 2, 10 ** 7)
