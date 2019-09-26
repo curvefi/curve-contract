@@ -53,10 +53,14 @@ def test_ratio_preservation(w3, coins, swap, pool_token):
 
     # Allow $1000 of each coin
     # Also give Bob something to trade with
+    alice_balances = []
+    bob_balances = []
     for c in coins:
         c.functions.approve(swap.address, 1000 * U).transact({'from': alice})
         c.functions.transfer(bob, 1000 * U).transact({'from': alice})
         c.functions.approve(swap.address, 1000 * U).transact({'from': bob})
+        alice_balances.append(c.caller.balanceOf(alice))
+        bob_balances.append(c.caller.balanceOf(bob))
     pool_token.functions.approve(swap.address, 1000 * U).transact({'from': alice})
     pool_token.functions.approve(swap.address, 1000 * U).transact({'from': bob})
 
@@ -82,3 +86,13 @@ def test_ratio_preservation(w3, coins, swap, pool_token):
         value = random.randrange(10 * U)
         swap.functions.remove_liquidity(value, deadline).transact({'from': bob})
         assert_all_equal(bob)
+
+    # And let's withdraw all
+    value = pool_token.caller.balanceOf(alice)
+    swap.functions.remove_liquidity(value, deadline).transact({'from': alice})
+    value = pool_token.caller.balanceOf(bob)
+    swap.functions.remove_liquidity(value, deadline).transact({'from': bob})
+
+    for i in range(N_COINS):
+        assert coins[i].caller.balanceOf(alice) == alice_balances[i]
+        assert coins[i].caller.balanceOf(bob) == bob_balances[i]
