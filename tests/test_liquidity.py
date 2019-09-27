@@ -14,23 +14,23 @@ def test_add_liquidity(w3, coins, swap):
             transact({'from': w3.eth.accounts[0]})
 
     # Adding the first time
-    swap.functions.add_liquidity(0, 100 * U, int(time.time()) + 3600).\
+    swap.functions.add_liquidity([100 * U] * N_COINS, int(time.time()) + 3600).\
         transact({'from': w3.eth.accounts[0]})
 
     # Adding the second time does a different calculation
-    swap.functions.add_liquidity(0, 100 * U, int(time.time()) + 3600).\
+    swap.functions.add_liquidity([100 * U] * N_COINS, int(time.time()) + 3600).\
         transact({'from': w3.eth.accounts[0]})
 
     with pytest.raises(TransactionFailed):
         # Fail because transaction is expired
         swap.functions.\
-            add_liquidity(0, 100 * U, int(time.time()) - 3600).\
+            add_liquidity([100 * U] * N_COINS, int(time.time()) - 3600).\
             transact({'from': w3.eth.accounts[0]})
 
     with pytest.raises(TransactionFailed):
         # Fail because this account has no coins
         swap.functions.\
-            add_liquidity(0, 100 * U, int(time.time()) + 3600).\
+            add_liquidity([100 * U] * N_COINS, int(time.time()) + 3600).\
             transact({'from': w3.eth.accounts[1]})
 
     # Reduce the allowance
@@ -41,7 +41,7 @@ def test_add_liquidity(w3, coins, swap):
     with pytest.raises(TransactionFailed):
         # Fail because the allowance is now not enough
         swap.functions.\
-            add_liquidity(0, 100 * U, int(time.time()) + 3600).\
+            add_liquidity([100 * U] * N_COINS, int(time.time()) + 3600).\
             transact({'from': w3.eth.accounts[0]})
 
     for i in range(N_COINS):
@@ -75,14 +75,14 @@ def test_ratio_preservation(w3, coins, swap, pool_token):
 
     # Test that everything is equal when adding and removing liquidity
     deadline = int(time.time()) + 3600
-    swap.functions.add_liquidity(0, 50 * U, deadline).transact({'from': alice})
-    swap.functions.add_liquidity(0, 50 * U, deadline).transact({'from': bob})
+    swap.functions.add_liquidity([50 * U] * N_COINS, deadline).transact({'from': alice})
+    swap.functions.add_liquidity([50 * U] * N_COINS, deadline).transact({'from': bob})
     for i in range(5):
         value = random.randrange(100 * U)
-        swap.functions.add_liquidity(0, value, deadline).transact({'from': alice})
+        swap.functions.add_liquidity([value] * N_COINS, deadline).transact({'from': alice})
         assert_all_equal(alice)
         value = random.randrange(100 * U)
-        swap.functions.add_liquidity(0, value, deadline).transact({'from': bob})
+        swap.functions.add_liquidity([value] * N_COINS, deadline).transact({'from': bob})
         assert_all_equal(bob)
         value = random.randrange(10 * U)
         swap.functions.remove_liquidity(value, deadline, [0] * N_COINS).\

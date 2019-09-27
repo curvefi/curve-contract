@@ -68,39 +68,42 @@ def get_D() -> uint256:
 
 @public
 @nonreentrant('lock')
-def add_liquidity(i: int128, quantity_i: uint256, deadline: timestamp):
-    assert i < N_COINS, "Coin number out of range"
+def add_liquidity(amounts: uint256[N_COINS], deadline: timestamp):
     assert block.timestamp <= deadline, "Transaction expired"
-    assert quantity_i > 0
-    d_bal: uint256[N_COINS]
 
-    # Calculate, how much of each coin to take from the sender
-    for j in range(N_COINS):
-        if j == i:
-            d_bal[j] = quantity_i
-        else:
-            if self.balances[i] > 0:
-                d_bal[j] = quantity_i * self.balances[j] / self.balances[i]
-            else:
-                d_bal[j] = quantity_i
+    token_supply: uint256 = self.token.totalSupply()
+    # Initial invariant
+    D0: uint256
+    if token_supply > 0:
+        D0 = self.get_D()
+    else:
+        D0 = 0
+
+    for i in range(N_COINS):
+        # Check for allowances before any transfers or calculations
         assert_modifiable(
-            ERC20(self.coins[j]).balanceOf(msg.sender) >= d_bal[j])
+            ERC20(self.coins[i]).balanceOf(msg.sender) >= amounts[i])
         assert_modifiable(
-            ERC20(self.coins[j]).allowance(msg.sender, self) >= d_bal[j])
+            ERC20(self.coins[i]).allowance(msg.sender, self) >= amounts[i])
+        if token_supply == 0:
+            assert amounts[i] > 0
+        self.balances[i] += amounts[i]
+
+    # Invariant after change
+    D1: uint256 = self.get_D()
+    assert D1 > D0
 
     # Calculate, how much pool tokens to mint
-    token_supply: uint256 = self.token.totalSupply()
     mint_amount: uint256
     if token_supply == 0:
-        mint_amount = quantity_i * N_COINS
+        mint_amount = D1  # Take the dust if there was any
     else:
-        mint_amount = token_supply * quantity_i / self.balances[i]
+        mint_amount = token_supply * (D1 - D0) / D0
 
     # Take coins from the sender
-    for j in range(N_COINS):
-        self.balances[j] += d_bal[j]
+    for i in range(N_COINS):
         assert_modifiable(
-            ERC20(self.coins[j]).transferFrom(msg.sender, self, d_bal[j]))
+            ERC20(self.coins[i]).transferFrom(msg.sender, self, amounts[i]))
 
     # Mint pool tokens
     self.token.mint(msg.sender, mint_amount)

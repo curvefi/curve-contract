@@ -16,7 +16,7 @@ def test_few_trades(w3, coins, swap):
         c.functions.approve(swap.address, 1000 * U).transact({'from': sam})
 
     # Adding $100 liquidity of each coin
-    swap.functions.add_liquidity(0, 100 * U, int(time.time()) + 3600).\
+    swap.functions.add_liquidity([100 * U] * N_COINS, int(time.time()) + 3600).\
         transact({'from': sam})
 
     # Fund the customer with $100 of each coin
@@ -55,7 +55,7 @@ def test_simulated_exchange(w3, coins, swap):
 
     # Adding $100 liquidity of each coin
     swap.functions.\
-        add_liquidity(0, 100 * U, int(time.time()) + 3600).\
+        add_liquidity([100 * U] * N_COINS, int(time.time()) + 3600).\
         transact({'from': sam})
 
     # Model
