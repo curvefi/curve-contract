@@ -85,17 +85,25 @@ def test_ratio_preservation(w3, coins, swap, pool_token):
         swap.functions.add_liquidity(0, value, deadline).transact({'from': bob})
         assert_all_equal(bob)
         value = random.randrange(10 * U)
-        swap.functions.remove_liquidity(value, deadline).transact({'from': alice})
+        swap.functions.remove_liquidity(value, deadline, [0] * N_COINS).\
+            transact({'from': alice})
         assert_all_equal(alice)
         value = random.randrange(10 * U)
-        swap.functions.remove_liquidity(value, deadline).transact({'from': bob})
+        swap.functions.remove_liquidity(value, deadline, [0] * N_COINS).\
+            transact({'from': bob})
         assert_all_equal(bob)
 
     # And let's withdraw all
     value = pool_token.caller.balanceOf(alice)
-    swap.functions.remove_liquidity(value, deadline).transact({'from': alice})
+    with pytest.raises(TransactionFailed):
+        # Cannot withdraw more than the limits we've set
+        swap.functions.remove_liquidity(value, deadline, [value + 1] * N_COINS).\
+            transact({'from': alice})
+    swap.functions.remove_liquidity(value, deadline, [0] * N_COINS).\
+        transact({'from': alice})
     value = pool_token.caller.balanceOf(bob)
-    swap.functions.remove_liquidity(value, deadline).transact({'from': bob})
+    swap.functions.remove_liquidity(value, deadline, [0] * N_COINS).\
+        transact({'from': bob})
 
     for i in range(N_COINS):
         assert abs(coins[i].caller.balanceOf(alice) - alice_balances[i]) <= dust

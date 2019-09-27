@@ -3,6 +3,8 @@ import ERC20m as ERC20m
 
 # This can (and needs to) be changed at compile time
 N_COINS: constant(int128) = 3
+Z256: constant(uint256) = 0
+ZEROS256: constant(uint256[3]) = [Z256, Z256, Z256]
 admin_actions_delay: constant(uint256) = 7 * 86400
 
 coins: public(address[N_COINS])
@@ -106,13 +108,15 @@ def add_liquidity(i: int128, quantity_i: uint256, deadline: timestamp):
 
 @public
 @nonreentrant('lock')
-def remove_liquidity(_amount: uint256, deadline: timestamp):
+def remove_liquidity(_amount: uint256, deadline: timestamp,
+                     min_amounts: uint256[N_COINS]):
     assert self.token.balanceOf(msg.sender) >= _amount
     assert self.token.allowance(msg.sender, self) >= _amount
     total_supply: uint256 = self.token.totalSupply()
 
     for i in range(N_COINS):
         value: uint256 = self.balances[i] * _amount / total_supply
+        assert value >= min_amounts[i]
         self.balances[i] -= value
         assert_modifiable(ERC20(self.coins[i]).transfer(msg.sender, value))
 
