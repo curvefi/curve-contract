@@ -45,7 +45,7 @@ def deploy_contract(w3, filename, account, *args):
                         interface_codes=interface_codes or None)
     deploy = w3.eth.contract(abi=code['abi'],
                              bytecode=code['bytecode'])
-    tx_hash = deploy.constructor(*args).transact({'from': account, 'gas': 3 * 10**6})
+    tx_hash = deploy.constructor(*args).transact({'from': account, 'gas': 6 * 10**6})
     tx_receipt = w3.eth.getTransactionReceipt(tx_hash)
     return w3.eth.contract(
         address=tx_receipt.contractAddress,

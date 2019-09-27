@@ -109,23 +109,6 @@ def add_liquidity(amounts: uint256[N_COINS], deadline: timestamp):
     self.token.mint(msg.sender, mint_amount)
 
 
-@public
-@nonreentrant('lock')
-def remove_liquidity(_amount: uint256, deadline: timestamp,
-                     min_amounts: uint256[N_COINS]):
-    assert self.token.balanceOf(msg.sender) >= _amount
-    assert self.token.allowance(msg.sender, self) >= _amount
-    total_supply: uint256 = self.token.totalSupply()
-
-    for i in range(N_COINS):
-        value: uint256 = self.balances[i] * _amount / total_supply
-        assert value >= min_amounts[i]
-        self.balances[i] -= value
-        assert_modifiable(ERC20(self.coins[i]).transfer(msg.sender, value))
-
-    self.token.burnFrom(msg.sender, _amount)
-
-
 @private
 @constant
 def get_y(i: int128, j: int128, x: uint256) -> uint256:
@@ -185,3 +168,51 @@ def exchange(i: int128, j: int128, dx: uint256,
 
     assert_modifiable(ERC20(self.coins[i]).transferFrom(msg.sender, self, dx))
     assert_modifiable(ERC20(self.coins[j]).transfer(msg.sender, dy - dy_fee))
+
+
+@public
+@nonreentrant('lock')
+def remove_liquidity(_amount: uint256, deadline: timestamp,
+                     min_amounts: uint256[N_COINS]):
+    assert block.timestamp <= deadline, "Transaction expired"
+    assert self.token.balanceOf(msg.sender) >= _amount
+    assert self.token.allowance(msg.sender, self) >= _amount
+    total_supply: uint256 = self.token.totalSupply()
+
+    for i in range(N_COINS):
+        value: uint256 = self.balances[i] * _amount / total_supply
+        assert value >= min_amounts[i]
+        self.balances[i] -= value
+        assert_modifiable(ERC20(self.coins[i]).transfer(msg.sender, value))
+
+    self.token.burnFrom(msg.sender, _amount)
+
+
+@public
+@nonreentrant('lock')
+def remove_liquidity_imbalance(amounts: uint256[N_COINS], deadline: timestamp):
+    assert block.timestamp <= deadline, "Transaction expired"
+
+    token_supply: uint256 = self.token.totalSupply()
+    assert token_supply > 0
+    fees: uint256[N_COINS]
+    _fee: uint256 = convert(self.fee, uint256)
+    _admin_fee: uint256 = convert(self.admin_fee, uint256)
+    D0: uint256 = self.get_D()
+    for i in range(N_COINS):
+        fees[i] = amounts[i] * _fee / 10 ** 10
+        self.balances[i] -= amounts[i] + fees[i]  # Charge all fees
+    D1: uint256 = self.get_D()
+
+    token_amount: uint256 = (D0 - D1) * token_supply / D0
+    assert self.token.balanceOf(msg.sender) >= token_amount
+    assert self.token.allowance(msg.sender, self) >= token_amount
+    for i in range(N_COINS):
+        assert_modifiable(ERC20(self.coins[i]).transfer(msg.sender, amounts[i]))
+    self.token.burnFrom(msg.sender, token_amount)
+
+    # Now "charge" fees
+    # In fact, we "refund" fees to the liquidity providers but w/o admin fees
+    # They got paid by burning a higher amount of liquidity token from sender
+    for i in range(N_COINS):
+        self.balances[i] += fees[i] - _admin_fee * fees[i] / 10 ** 10
