@@ -3,8 +3,6 @@ import ERC20m as ERC20m
 
 # This can (and needs to) be changed at compile time
 N_COINS: constant(int128) = 3
-Z256: constant(uint256) = 0
-ZEROS256: constant(uint256[3]) = [Z256, Z256, Z256]
 admin_actions_delay: constant(uint256) = 7 * 86400
 
 coins: public(address[N_COINS])
@@ -18,7 +16,7 @@ owner: public(address)
 token: ERC20m
 
 admin_actions_deadline: public(uint256)
-transfer_ownership_time: public(uint256)
+transfer_ownership_deadline: public(uint256)
 future_A: public(int128)
 future_fee: public(int128)
 future_admin_fee: public(int128)
@@ -216,3 +214,63 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS], deadline: timestamp):
     # They got paid by burning a higher amount of liquidity token from sender
     for i in range(N_COINS):
         self.balances[i] += fees[i] - _admin_fee * fees[i] / 10 ** 10
+
+
+### Admin functions ###
+@public
+def commit_new_parameters(amplification: int128,
+                          new_fee: int128,
+                          new_admin_fee: int128):
+    assert msg.sender == self.owner
+    assert self.admin_actions_deadline == 0
+    assert new_admin_fee <= max_admin_fee
+
+    self.admin_actions_deadline = as_unitless_number(block.timestamp) + admin_actions_delay
+    self.future_A = amplification
+    self.future_fee = new_fee
+    self.future_admin_fee = new_admin_fee
+
+
+@public
+def apply_new_parameters():
+    assert msg.sender == self.owner
+    assert self.admin_actions_deadline <= block.timestamp\
+        and self.admin_actions_deadline > 0
+
+    self.admin_actions_deadline = 0
+    self.A = self.future_A
+    self.fee = self.future_fee
+    self.admin_fee = self.future_admin_fee
+
+
+@public
+def revert_new_parameters():
+    assert msg.sender == self.owner
+
+    self.admin_actions_deadline = 0
+
+
+@public
+def commit_transfer_ownership(_owner: address):
+    assert msg.sender == self.owner
+    assert self.transfer_ownership_deadline == 0
+
+    self.transfer_ownership_deadline = as_unitless_number(block.timestamp) + admin_actions_delay
+    self.future_owner = _owner
+
+
+@public
+def apply_transfer_ownership():
+    assert msg.sender == self.owner
+    assert self.transfer_ownership_deadline <= block.timestamp\
+        and self.transfer_ownership_deadline > 0
+
+    self.transfer_ownership_deadline = 0
+    self.owner = self.future_owner
+
+
+@public
+def revert_transfer_ownership():
+    assert msg.sender == self.owner
+
+    self.transfer_ownership_deadline = 0
