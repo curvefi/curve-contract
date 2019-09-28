@@ -110,3 +110,60 @@ def test_ratio_preservation(w3, coins, swap, pool_token):
         assert abs(coins[i].caller.balanceOf(bob) - bob_balances[i]) <= dust
         assert swap.caller.balances(i) == 0
     assert pool_token.caller.totalSupply() == 0
+
+
+def test_remove_liquidity_imbalance(w3, coins, swap, pool_token):
+    alice, bob, charlie = w3.eth.accounts[:3]
+    deadline = int(time.time()) + 3600
+
+    # Allow $1000 of each coin
+    # Also give Bob something to trade with
+    alice_balances = []
+    bob_balances = []
+    for c in coins:
+        c.functions.approve(swap.address, 1000 * U).transact({'from': alice})
+        c.functions.transfer(bob, 1000 * U).transact({'from': alice})
+        c.functions.approve(swap.address, 1000 * U).transact({'from': bob})
+        alice_balances.append(c.caller.balanceOf(alice))
+        bob_balances.append(c.caller.balanceOf(bob))
+    pool_token.functions.approve(swap.address, 20000 * U).transact({'from': alice})
+    pool_token.functions.approve(swap.address, 20000 * U).transact({'from': bob})
+
+    # First, both fund the thing in equal amount
+    swap.functions.add_liquidity([1000 * U] * N_COINS, deadline).\
+        transact({'from': alice})
+    swap.functions.add_liquidity([1000 * U] * N_COINS, deadline).\
+        transact({'from': bob})
+
+    bob_volumes = [0] * N_COINS
+    for i in range(10):
+        # Now Bob withdraws and adds coins in the same proportion, losing his
+        # fees to Alice
+        values = [random.randrange(900 * U / N_COINS) for i in range(N_COINS)]
+        for i in range(N_COINS):
+            bob_volumes[i] += values[i]
+        swap.functions.remove_liquidity_imbalance(values, deadline).\
+            transact({'from': bob})
+        for c in coins:
+            c.functions.approve(swap.address, 1000 * U).transact({'from': bob})
+        swap.functions.add_liquidity(values, deadline).transact({'from': bob})
+
+    # After this, coins should be in equal proportion, but Alice should have
+    # more
+    value = pool_token.caller.balanceOf(alice)
+    swap.functions.remove_liquidity(value, deadline, [0] * N_COINS).\
+        transact({'from': alice})
+    value = pool_token.caller.balanceOf(bob)
+    swap.functions.remove_liquidity(value, deadline, [0] * N_COINS).\
+        transact({'from': bob})
+
+    for i in range(N_COINS):
+        alice_grow = coins[i].caller.balanceOf(alice) - alice_balances[i]
+        bob_grow = coins[i].caller.balanceOf(bob) - bob_balances[i]
+        assert swap.caller.balances(i) == 0
+        assert alice_grow > 0
+        assert bob_grow < 0
+        assert alice_grow + bob_grow == 0
+        grow_fee_ratio = alice_grow / int(bob_volumes[i] * 0.001)
+        # Part of the fees are earned by Bob: he also had liquidity
+        assert grow_fee_ratio > 0 and grow_fee_ratio <= 1
