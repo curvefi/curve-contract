@@ -167,3 +167,26 @@ def test_remove_liquidity_imbalance(w3, coins, swap, pool_token):
         grow_fee_ratio = alice_grow / int(bob_volumes[i] * 0.001)
         # Part of the fees are earned by Bob: he also had liquidity
         assert grow_fee_ratio > 0 and grow_fee_ratio <= 1
+
+    # Now Alice adds liquiduty and Bob tries to "trade" by adding and removing
+    # liquidity. Should be equivalent of exchange
+    v_before = sum(c.caller.balanceOf(alice) for c in coins)
+    for c in coins:
+        c.functions.approve(swap.address, 1000 * U).transact({'from': alice})
+        c.functions.approve(swap.address, 1000 * U).transact({'from': bob})
+    swap.functions.add_liquidity([100 * U] * N_COINS, deadline).\
+        transact({'from': alice})
+    swap.functions.add_liquidity([U, 0, 0], deadline).\
+        transact({'from': bob})
+    with pytest.raises(TransactionFailed):
+        # Cannot remove all because of fees
+        swap.functions.remove_liquidity_imbalance([0, U, 0], deadline).\
+            transact({'from': bob})
+    swap.functions.remove_liquidity_imbalance([0, int(0.995 * U), 0], deadline).\
+        transact({'from': bob})
+    # Let's see how much Alice got now
+    value = pool_token.caller.balanceOf(alice)
+    swap.functions.remove_liquidity(value, deadline, [0] * N_COINS).\
+        transact({'from': alice})
+    v_after = sum(c.caller.balanceOf(alice) for c in coins)
+    assert abs((v_after - v_before) / (0.995 * U * 0.001) - 1) < 0.05
