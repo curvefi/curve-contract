@@ -274,3 +274,14 @@ def revert_transfer_ownership():
     assert msg.sender == self.owner
 
     self.transfer_ownership_deadline = 0
+
+
+@public
+def withdraw_admin_fees():
+    assert msg.sender == self.owner
+
+    for i in range(N_COINS):
+        c: address = self.coins[i]
+        value: uint256 = ERC20(c).balanceOf(self) - self.balances[i]
+        if value > 0:
+            assert_modifiable(ERC20(c).transfer(msg.sender, value))
