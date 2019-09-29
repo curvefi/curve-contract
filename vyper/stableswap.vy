@@ -28,6 +28,7 @@ def __init__(_coins: address[N_COINS], _pool_token: address,
              _A: int128, _fee: int128):
     for i in range(N_COINS):
         assert _coins[i] != ZERO_ADDRESS
+        self.balances[i] = 0
     self.coins = _coins
     self.A = _A
     self.fee = _fee
