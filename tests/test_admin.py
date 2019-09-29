@@ -35,3 +35,14 @@ def test_transfer_ownership(tester, w3, swap):
     swap.functions.withdraw_admin_fees().transact({'from': alice})
     with pytest.raises(TransactionFailed):
         swap.functions.withdraw_admin_fees().transact({'from': bob})
+
+    # Now test reverting it
+    swap.functions.commit_transfer_ownership(charlie).transact({'from': alice})
+    swap.functions.revert_transfer_ownership().transact({'from': alice})
+
+    tester.time_travel(int(time()) + (86400 * 7 + 2000) * 2)
+    tester.mine_block()
+
+    # Cannot transfer after reverting
+    with pytest.raises(TransactionFailed):
+        swap.functions.apply_transfer_ownership().transact({'from': alice})
