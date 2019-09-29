@@ -263,7 +263,7 @@ def commit_transfer_ownership(_owner: address):
 @public
 def apply_transfer_ownership():
     assert msg.sender == self.owner
-    assert self.transfer_ownership_deadline <= block.timestamp\
+    assert block.timestamp >= self.transfer_ownership_deadline\
         and self.transfer_ownership_deadline > 0
 
     self.transfer_ownership_deadline = 0
