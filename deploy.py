@@ -56,9 +56,14 @@ def deploy_swap(coins, A, fee):
     txhash = pool_token.functions.set_minter(swap_contract.address).transact(
         {'from': SWAP_DEPLOY_ADDRESS})
     w3.eth.waitForTransactionReceipt(txhash)
+
+    abi = json.dumps(swap_contract.abi, indent=True)
+    with open('swap.abi', 'w') as f:
+        f.write(abi)
     print('---=== ABI ===---')
-    print(json.dumps(swap_contract.abi, indent=True))
+    print(abi)
     print('=================')
+
     return swap_contract, pool_token
 
 
