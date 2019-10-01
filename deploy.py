@@ -4,6 +4,7 @@
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 from tests.deploy import deploy_contract
+import json
 
 # Deployment parameters
 # PROVIDER_URI = expanduser('~/.ethereum/testnet/geth.ipc')
@@ -55,6 +56,9 @@ def deploy_swap(coins, A, fee):
     txhash = pool_token.functions.set_minter(swap_contract.address).transact(
         {'from': SWAP_DEPLOY_ADDRESS})
     w3.eth.waitForTransactionReceipt(txhash)
+    print('---=== ABI ===---')
+    print(json.dumps(swap_contract.abi, indent=True))
+    print('=================')
     return swap_contract, pool_token
 
 
