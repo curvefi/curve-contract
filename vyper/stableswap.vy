@@ -5,6 +5,15 @@ import ERC20m as ERC20m
 N_COINS: constant(int128) = 3
 admin_actions_delay: constant(uint256) = 7 * 86400
 
+# Events
+TokenExchange: event({buyer: indexed(address), tokens_sold: uint256, tokens_bought: uint256, sold_id: int128, bought_id: int128, fee: uint256})
+AddLiquidity: event({provider: indexed(address), token_amounts: uint256[N_COINS]})
+RemoveLiquidity: event({provider: indexed(address), token_amounts: uint256[N_COINS], fees: uint256[N_COINS]})
+CommitNewAdmin: event({admin: indexed(address), deadline: indexed(timestamp)})
+NewAdmin: event({admin: indexed(address)})
+CommitNewParameters: event({deadline: indexed(timestamp), A: int128, fee: int128, admin_fee: int128})
+NewParameters: event({A: int128, fee: int128, admin_fee: int128})
+
 coins: public(address[N_COINS])
 balances: public(uint256[N_COINS])
 A: public(int128)  # 2 x amplification coefficient
