@@ -1,7 +1,7 @@
 import time
 import random
 from itertools import permutations
-from simulation import Curve
+from .simulation import Curve
 
 U = 10 ** 18
 N_COINS = 3
