@@ -1,4 +1,5 @@
 import pytest
+import json
 from eth_tester import EthereumTester, PyEVMBackend
 from web3 import Web3
 from os.path import realpath, dirname, join
@@ -44,4 +45,6 @@ def swap(w3, coins, pool_token):
             w3, ['stableswap.vy', 'ERC20m.vy'], w3.eth.accounts[1],
             [c.address for c in coins], pool_token.address, 360 * 2, 10 ** 7)
     pool_token.functions.set_minter(swap_contract.address).transact()
+    with open(join(CONTRACT_PATH, 'stableswap.abi'), 'w') as f:
+        json.dump(swap_contract.abi, f, indent=True)
     return swap_contract
