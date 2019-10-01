@@ -55,7 +55,7 @@ def deploy_swap(coins, A, fee):
     txhash = pool_token.functions.set_minter(swap_contract.address).transact(
         {'from': SWAP_DEPLOY_ADDRESS})
     w3.eth.waitForTransactionReceipt(txhash)
-    return swap_contract.address, pool_token.address
+    return swap_contract, pool_token
 
 
 if __name__ == '__main__':
