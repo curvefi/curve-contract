@@ -24,8 +24,8 @@ max_admin_fee: constant(int128) = 5 * 10 ** 9
 owner: public(address)
 token: ERC20m
 
-admin_actions_deadline: public(uint256)
-transfer_ownership_deadline: public(uint256)
+admin_actions_deadline: public(timestamp)
+transfer_ownership_deadline: public(timestamp)
 future_A: public(int128)
 future_fee: public(int128)
 future_admin_fee: public(int128)
@@ -247,12 +247,13 @@ def commit_new_parameters(amplification: int128,
     assert self.admin_actions_deadline == 0
     assert new_admin_fee <= max_admin_fee
 
-    self.admin_actions_deadline = as_unitless_number(block.timestamp) + admin_actions_delay
+    _deadline: timestamp = block.timestamp + admin_actions_delay
+    self.admin_actions_deadline = _deadline
     self.future_A = amplification
     self.future_fee = new_fee
     self.future_admin_fee = new_admin_fee
 
-    log.CommitNewParameters(self.admin_actions_deadline, amplification, new_fee, new_admin_fee)
+    log.CommitNewParameters(_deadline, amplification, new_fee, new_admin_fee)
 
 
 @public
@@ -262,11 +263,14 @@ def apply_new_parameters():
         and self.admin_actions_deadline > 0
 
     self.admin_actions_deadline = 0
-    self.A = self.future_A
-    self.fee = self.future_fee
-    self.admin_fee = self.future_admin_fee
+    _A: int128 = self.future_A
+    _fee: int128 = self.future_fee
+    _admin_fee: int128 = self.future_admin_fee
+    self.A = _A
+    self.fee = _fee
+    self.admin_fee = _admin_fee
 
-    log.NewParameters(self.A, self.fee, self.admin_fee)
+    log.NewParameters(_A, _fee, _admin_fee)
 
 
 @public
@@ -275,18 +279,17 @@ def revert_new_parameters():
 
     self.admin_actions_deadline = 0
 
-    log.NewParameters(self.A, self.fee, self.admin_fee)
-
 
 @public
 def commit_transfer_ownership(_owner: address):
     assert msg.sender == self.owner
     assert self.transfer_ownership_deadline == 0
 
-    self.transfer_ownership_deadline = as_unitless_number(block.timestamp) + admin_actions_delay
+    _deadline: timestamp = block.timestamp + admin_actions_delay
+    self.transfer_ownership_deadline = _deadline
     self.future_owner = _owner
 
-    log.CommitNewAdmin(self.transfer_ownership_deadline, _owner)
+    log.CommitNewAdmin(_deadline, _owner)
 
 
 @public
@@ -296,9 +299,10 @@ def apply_transfer_ownership():
         and self.transfer_ownership_deadline > 0
 
     self.transfer_ownership_deadline = 0
-    self.owner = self.future_owner
+    _owner: address = self.future_owner
+    self.owner = _owner
 
-    log.NewAdmin(self.owner)
+    log.NewAdmin(_owner)
 
 
 @public
@@ -306,8 +310,6 @@ def revert_transfer_ownership():
     assert msg.sender == self.owner
 
     self.transfer_ownership_deadline = 0
-
-    log.NewAdmin(self.owner)
 
 
 @public
