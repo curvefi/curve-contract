@@ -6,10 +6,10 @@ N_COINS: constant(int128) = 3
 admin_actions_delay: constant(uint256) = 7 * 86400
 
 # Events
-TokenExchange: event({buyer: indexed(address), tokens_sold: uint256, tokens_bought: uint256, sold_id: int128, bought_id: int128, fee: uint256})
+TokenExchange: event({buyer: indexed(address), sold_id: int128, tokens_sold: uint256, bought_id: int128, tokens_bought: uint256, fee: uint256})
 AddLiquidity: event({provider: indexed(address), token_amounts: uint256[N_COINS]})
 RemoveLiquidity: event({provider: indexed(address), token_amounts: uint256[N_COINS], fees: uint256[N_COINS]})
-CommitNewAdmin: event({admin: indexed(address), deadline: indexed(timestamp)})
+CommitNewAdmin: event({deadline: indexed(timestamp), admin: indexed(address)})
 NewAdmin: event({admin: indexed(address)})
 CommitNewParameters: event({deadline: indexed(timestamp), A: int128, fee: int128, admin_fee: int128})
 NewParameters: event({A: int128, fee: int128, admin_fee: int128})
@@ -116,6 +116,8 @@ def add_liquidity(amounts: uint256[N_COINS], deadline: timestamp):
     # Mint pool tokens
     self.token.mint(msg.sender, mint_amount)
 
+    log.AddLiquidity(msg.sender, amounts)
+
 
 @private
 @constant
@@ -177,6 +179,8 @@ def exchange(i: int128, j: int128, dx: uint256,
     assert_modifiable(ERC20(self.coins[i]).transferFrom(msg.sender, self, dx))
     assert_modifiable(ERC20(self.coins[j]).transfer(msg.sender, dy - dy_fee))
 
+    log.TokenExchange(msg.sender, i, dx, j, dy - dy_fee, dy_fee)
+
 
 @public
 @nonreentrant('lock')
@@ -186,14 +190,20 @@ def remove_liquidity(_amount: uint256, deadline: timestamp,
     assert self.token.balanceOf(msg.sender) >= _amount
     assert self.token.allowance(msg.sender, self) >= _amount
     total_supply: uint256 = self.token.totalSupply()
+    amounts: uint256[N_COINS]
+    fees: uint256[N_COINS]
 
     for i in range(N_COINS):
         value: uint256 = self.balances[i] * _amount / total_supply
         assert value >= min_amounts[i]
         self.balances[i] -= value
+        amounts[i] = value
+        fees[i] = 0
         assert_modifiable(ERC20(self.coins[i]).transfer(msg.sender, value))
 
     self.token.burnFrom(msg.sender, _amount)
+
+    log.RemoveLiquidity(msg.sender, amounts, fees)
 
 
 @public
@@ -225,6 +235,8 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS], deadline: timestamp):
     for i in range(N_COINS):
         self.balances[i] += fees[i] - _admin_fee * fees[i] / 10 ** 10
 
+    log.RemoveLiquidity(msg.sender, amounts, fees)
+
 
 ### Admin functions ###
 @public
@@ -240,6 +252,8 @@ def commit_new_parameters(amplification: int128,
     self.future_fee = new_fee
     self.future_admin_fee = new_admin_fee
 
+    log.CommitNewParameters(self.admin_actions_deadline, amplification, new_fee, new_admin_fee)
+
 
 @public
 def apply_new_parameters():
@@ -252,12 +266,16 @@ def apply_new_parameters():
     self.fee = self.future_fee
     self.admin_fee = self.future_admin_fee
 
+    log.NewParameters(self.A, self.fee, self.admin_fee)
+
 
 @public
 def revert_new_parameters():
     assert msg.sender == self.owner
 
     self.admin_actions_deadline = 0
+
+    log.NewParameters(self.A, self.fee, self.admin_fee)
 
 
 @public
@@ -267,6 +285,8 @@ def commit_transfer_ownership(_owner: address):
 
     self.transfer_ownership_deadline = as_unitless_number(block.timestamp) + admin_actions_delay
     self.future_owner = _owner
+
+    log.CommitNewAdmin(self.transfer_ownership_deadline, _owner)
 
 
 @public
@@ -278,12 +298,16 @@ def apply_transfer_ownership():
     self.transfer_ownership_deadline = 0
     self.owner = self.future_owner
 
+    log.NewAdmin(self.owner)
+
 
 @public
 def revert_transfer_ownership():
     assert msg.sender == self.owner
 
     self.transfer_ownership_deadline = 0
+
+    log.NewAdmin(self.owner)
 
 
 @public
