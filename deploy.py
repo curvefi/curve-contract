@@ -8,19 +8,18 @@ import json
 
 # Deployment parameters
 # PROVIDER_URI = expanduser('~/.ethereum/testnet/geth.ipc')
-PROVIDER_URI = '/tmp/geth.ipc'
-POA = True
-FUND_DEV = True
+provider = Web3.HTTPProvider('http://127.0.0.1:8545')
+POA = False
+FUND_DEV = False
 N_COINS = 3
-SWAP_DEPLOY_ADDRESS = '0xFD3DeCC0cF498bb9f54786cb65800599De505706'
-COINS_DEPLOY_ADDRESS = '0x9CA6Eebc54efF56F1D0e844a41364c8aF2321520'
+SWAP_DEPLOY_ADDRESS = '0x17635F54E3daa7fD650032dD837caA9eFf75F5b0'
+COINS_DEPLOY_ADDRESS = '0x08000dBD1b3990e410F1DA8f1720f958e177EcD9'
 
 HELP = """coins = deploy_test_erc20() to deploy test coins
 swap, token = deploy_swap(coins, A, fee) to deploy swap contract from the list
 ====================================================="""
 
 
-provider = Web3.IPCProvider(PROVIDER_URI)
 w3 = Web3(provider)
 if POA:
     w3.middleware_onion.inject(geth_poa_middleware, layer=0)
