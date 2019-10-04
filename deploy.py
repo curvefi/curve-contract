@@ -7,16 +7,19 @@ from tests.deploy import deploy_contract
 import json
 
 # Deployment parameters
-# PROVIDER_URI = expanduser('~/.ethereum/testnet/geth.ipc')
-provider = Web3.HTTPProvider('http://127.0.0.1:8545')
-POA = False
-FUND_DEV = False
+provider = Web3.IPCProvider('../geth/geth.ipc')
+# provider = Web3.HTTPProvider('http://127.0.0.1:8545')
+POA = True
+FUND_DEV = True
 N_COINS = 3
-SWAP_DEPLOY_ADDRESS = '0x17635F54E3daa7fD650032dD837caA9eFf75F5b0'
-COINS_DEPLOY_ADDRESS = '0x08000dBD1b3990e410F1DA8f1720f958e177EcD9'
+SWAP_DEPLOY_ADDRESS = '0x81852cf89dF0FE34716129f1a3f9F065Cf9f8DeC'
+COINS_DEPLOY_ADDRESS = '0xC6C362126eB202b8c416266D0AF929317F4d663a'
+TOKENS_FUND_ADDRS = ['0x08A9bC278d07FF55A344e9ED57cB57594e9ea9dF',
+                     '0x07Aae93f2182e43245Fd35d709d9F8F69aaE4EDD']
 
 HELP = """coins = deploy_test_erc20() to deploy test coins
 swap, token = deploy_swap(coins, A, fee) to deploy swap contract from the list
+transfer(coins) to fund accounts
 ====================================================="""
 
 
@@ -40,11 +43,13 @@ def deploy_test_erc20():
     return [deploy_contract(
                 w3, 'ERC20.vy', COINS_DEPLOY_ADDRESS,
                 b'Coin ' + str(i).encode(), str(i).encode(), 18, 10 ** 9
-                ).address
+                )
             for i in range(N_COINS)]
 
 
 def deploy_swap(coins, A, fee):
+    if not isinstance(coins[0], str):
+        coins = [c.address for c in coins]
     A = A * 2
     fee = int(fee * 10 ** 10)
     pool_token = deploy_contract(
@@ -64,6 +69,14 @@ def deploy_swap(coins, A, fee):
     print('=================')
 
     return swap_contract, pool_token
+
+
+def transfer_erc20(coins):
+    for c in coins:
+        for addr in TOKENS_FUND_ADDRS:
+            print(f'Transferring {c.address} to {addr}')
+            txhash = c.functions.transfer(addr, 10000 * 10 ** 18).transact({'from': COINS_DEPLOY_ADDRESS})
+            w3.eth.waitForTransactionReceipt(txhash)
 
 
 if __name__ == '__main__':
