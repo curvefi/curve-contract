@@ -3,8 +3,16 @@ import ERC20m as ERC20m
 
 # This can (and needs to) be changed at compile time
 N_COINS: constant(int128) = 3
+
 ZERO256: constant(uint256) = 0  # This hack is really bad XXX
 ZEROS: constant(uint256[N_COINS]) = [ZERO256, ZERO256, ZERO256]
+
+PRECISION: constant(uint256) = 10 ** 18  # The precision to convert to
+PRECISION_DIV: constant(uint256[N_COINS]) = [
+    PRECISION / convert(10 ** 18, uint256),  # DAI
+    PRECISION / convert(10 ** 6, uint256),   # USDC
+    PRECISION / convert(10 ** 6, uint256)]   # USDT
+
 admin_actions_delay: constant(uint256) = 7 * 86400
 
 # Events
