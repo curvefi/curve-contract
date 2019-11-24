@@ -183,7 +183,6 @@ def exchange(i: int128, j: int128, dx: uint256,
              min_dy: uint256, deadline: timestamp):
     assert block.timestamp <= deadline, "Transaction expired"
     assert i < N_COINS and j < N_COINS, "Coin number out of range"
-    # XXX TODO check min_dy
 
     _precisions: uint256[N_COINS] = PRECISION_MUL
     _dx: uint256 = dx * _precisions[i]
@@ -196,11 +195,15 @@ def exchange(i: int128, j: int128, dx: uint256,
     self.balances[i] += _dx
     self.balances[j] = y + (dy_fee - dy_admin_fee)
 
+
+    _dy: uint256 = (dy - dy_fee) / _precisions[j]
+    assert _dy >= min_dy
+
     assert_modifiable(ERC20(self.coins[i]).transferFrom(
         msg.sender, self, dx))
     assert_modifiable(ERC20(self.coins[j]).transfer(
         msg.sender,
-        (dy - dy_fee) / _precisions[j]))
+        _dy))
 
     log.TokenExchange(msg.sender, i, dx, j, dy - dy_fee, dy_fee)
 
