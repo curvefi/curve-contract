@@ -3,6 +3,8 @@ import ERC20m as ERC20m
 
 # This can (and needs to) be changed at compile time
 N_COINS: constant(int128) = 3
+ZERO256: constant(uint256) = 0  # This hack is really bad XXX
+ZEROS: constant(uint256[N_COINS]) = [ZERO256, ZERO256, ZERO256]
 admin_actions_delay: constant(uint256) = 7 * 86400
 
 # Events
@@ -81,11 +83,9 @@ def add_liquidity(amounts: uint256[N_COINS], deadline: timestamp):
 
     token_supply: uint256 = self.token.totalSupply()
     # Initial invariant
-    D0: uint256
+    D0: uint256 = 0
     if token_supply > 0:
         D0 = self.get_D()
-    else:
-        D0 = 0
 
     for i in range(N_COINS):
         # Check for allowances before any transfers or calculations
@@ -102,7 +102,7 @@ def add_liquidity(amounts: uint256[N_COINS], deadline: timestamp):
     assert D1 > D0
 
     # Calculate, how much pool tokens to mint
-    mint_amount: uint256
+    mint_amount: uint256 = 0
     if token_supply == 0:
         mint_amount = D1  # Take the dust if there was any
     else:
@@ -126,8 +126,9 @@ def get_y(i: int128, j: int128, x: uint256) -> uint256:
     c: uint256 = D
     S_: uint256 = 0
     Ann: uint256 = convert(self.A, uint256) * N_COINS
+
+    _x: uint256 = 0
     for _i in range(N_COINS):
-        _x: uint256
         if _i == i:
             _x = x
         elif _i != j:
@@ -190,8 +191,8 @@ def remove_liquidity(_amount: uint256, deadline: timestamp,
     assert self.token.balanceOf(msg.sender) >= _amount
     assert self.token.allowance(msg.sender, self) >= _amount
     total_supply: uint256 = self.token.totalSupply()
-    amounts: uint256[N_COINS]
-    fees: uint256[N_COINS]
+    amounts: uint256[N_COINS] = ZEROS
+    fees: uint256[N_COINS] = ZEROS
 
     for i in range(N_COINS):
         value: uint256 = self.balances[i] * _amount / total_supply
@@ -213,7 +214,7 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS], deadline: timestamp):
 
     token_supply: uint256 = self.token.totalSupply()
     assert token_supply > 0
-    fees: uint256[N_COINS]
+    fees: uint256[N_COINS] = ZEROS
     _fee: uint256 = convert(self.fee, uint256)
     _admin_fee: uint256 = convert(self.admin_fee, uint256)
     D0: uint256 = self.get_D()

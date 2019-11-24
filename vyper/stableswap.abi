@@ -196,7 +196,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 10061853
+  "gas": 3162163
  },
  {
   "name": "get_dy",
@@ -223,7 +223,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 11131745
+  "gas": 3382809
  },
  {
   "name": "exchange",
@@ -254,7 +254,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 11269726
+  "gas": 3520296
  },
  {
   "name": "remove_liquidity",
@@ -277,7 +277,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 189600
+  "gas": 186429
  },
  {
   "name": "remove_liquidity_imbalance",
@@ -296,7 +296,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 10171784
+  "gas": 3264362
  },
  {
   "name": "commit_new_parameters",
@@ -318,7 +318,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 144575
+  "gas": 144607
  },
  {
   "name": "apply_new_parameters",
@@ -350,7 +350,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 72920
+  "gas": 72952
  },
  {
   "name": "apply_transfer_ownership",
@@ -377,7 +377,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 13770
+  "gas": 12885
  },
  {
   "name": "coins",
