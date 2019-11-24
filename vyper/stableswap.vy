@@ -8,10 +8,14 @@ ZERO256: constant(uint256) = 0  # This hack is really bad XXX
 ZEROS: constant(uint256[N_COINS]) = [ZERO256, ZERO256, ZERO256]
 
 PRECISION: constant(uint256) = 10 ** 18  # The precision to convert to
-PRECISION_DIV: constant(uint256[N_COINS]) = [
-    PRECISION / convert(10 ** 18, uint256),  # DAI
-    PRECISION / convert(10 ** 6, uint256),   # USDC
-    PRECISION / convert(10 ** 6, uint256)]   # USDT
+# PRECISION_MUL: constant(uint256[N_COINS]) = [
+#     PRECISION / convert(10 ** 18, uint256),  # DAI
+#     PRECISION / convert(10 ** 6, uint256),   # USDC
+#     PRECISION / convert(10 ** 6, uint256)]   # USDT
+PRECISION_MUL: constant(uint256[N_COINS]) = [
+    convert(1, uint256),
+    convert(1, uint256),
+    convert(1, uint256)]
 
 admin_actions_delay: constant(uint256) = 7 * 86400
 
@@ -89,6 +93,7 @@ def get_D() -> uint256:
 def add_liquidity(amounts: uint256[N_COINS], deadline: timestamp):
     assert block.timestamp <= deadline, "Transaction expired"
 
+    _precisions: uint256[N_COINS] = PRECISION_MUL
     token_supply: uint256 = self.token.totalSupply()
     # Initial invariant
     D0: uint256 = 0
@@ -103,7 +108,7 @@ def add_liquidity(amounts: uint256[N_COINS], deadline: timestamp):
             ERC20(self.coins[i]).allowance(msg.sender, self) >= amounts[i])
         if token_supply == 0:
             assert amounts[i] > 0
-        self.balances[i] += amounts[i]
+        self.balances[i] += amounts[i] * _precisions[i]
 
     # Invariant after change
     D1: uint256 = self.get_D()
@@ -165,9 +170,11 @@ def get_y(i: int128, j: int128, x: uint256) -> uint256:
 @public
 @constant
 def get_dy(i: int128, j: int128, dx: uint256) -> uint256:
-    x: uint256 = self.balances[i] + dx
+    _precisions: uint256[N_COINS] = PRECISION_MUL
+
+    x: uint256 = self.balances[i] + dx * _precisions[i]
     y: uint256 = self.get_y(i, j, x)
-    return self.balances[j] - y
+    return (self.balances[j] - y) / _precisions[j]
 
 
 @public
@@ -176,17 +183,24 @@ def exchange(i: int128, j: int128, dx: uint256,
              min_dy: uint256, deadline: timestamp):
     assert block.timestamp <= deadline, "Transaction expired"
     assert i < N_COINS and j < N_COINS, "Coin number out of range"
+    # XXX TODO check min_dy
 
-    x: uint256 = self.balances[i] + dx
+    _precisions: uint256[N_COINS] = PRECISION_MUL
+    _dx: uint256 = dx * _precisions[i]
+
+    x: uint256 = self.balances[i] + _dx
     y: uint256 = self.get_y(i, j, x)
     dy: uint256 = self.balances[j] - y
     dy_fee: uint256 = dy * convert(self.fee, uint256) / 10 ** 10
     dy_admin_fee: uint256 = dy_fee * convert(self.admin_fee, uint256) / 10 ** 10
-    self.balances[i] += dx
+    self.balances[i] += _dx
     self.balances[j] = y + (dy_fee - dy_admin_fee)
 
-    assert_modifiable(ERC20(self.coins[i]).transferFrom(msg.sender, self, dx))
-    assert_modifiable(ERC20(self.coins[j]).transfer(msg.sender, dy - dy_fee))
+    assert_modifiable(ERC20(self.coins[i]).transferFrom(
+        msg.sender, self, dx))
+    assert_modifiable(ERC20(self.coins[j]).transfer(
+        msg.sender,
+        (dy - dy_fee) / _precisions[j]))
 
     log.TokenExchange(msg.sender, i, dx, j, dy - dy_fee, dy_fee)
 
@@ -198,17 +212,20 @@ def remove_liquidity(_amount: uint256, deadline: timestamp,
     assert block.timestamp <= deadline, "Transaction expired"
     assert self.token.balanceOf(msg.sender) >= _amount
     assert self.token.allowance(msg.sender, self) >= _amount
+    _precisions: uint256[N_COINS] = PRECISION_MUL
     total_supply: uint256 = self.token.totalSupply()
     amounts: uint256[N_COINS] = ZEROS
     fees: uint256[N_COINS] = ZEROS
 
     for i in range(N_COINS):
         value: uint256 = self.balances[i] * _amount / total_supply
-        assert value >= min_amounts[i]
+        assert value >= min_amounts[i] * _precisions[i]
         self.balances[i] -= value
         amounts[i] = value
         fees[i] = 0
-        assert_modifiable(ERC20(self.coins[i]).transfer(msg.sender, value))
+        assert_modifiable(ERC20(self.coins[i]).transfer(
+            msg.sender,
+            value / _precisions[i]))
 
     self.token.burnFrom(msg.sender, _amount)
 
@@ -220,6 +237,8 @@ def remove_liquidity(_amount: uint256, deadline: timestamp,
 def remove_liquidity_imbalance(amounts: uint256[N_COINS], deadline: timestamp):
     assert block.timestamp <= deadline, "Transaction expired"
 
+    _precisions: uint256[N_COINS] = PRECISION_MUL
+    total_supply: uint256 = self.token.totalSupply()
     token_supply: uint256 = self.token.totalSupply()
     assert token_supply > 0
     fees: uint256[N_COINS] = ZEROS
@@ -227,7 +246,7 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS], deadline: timestamp):
     _admin_fee: uint256 = convert(self.admin_fee, uint256)
     D0: uint256 = self.get_D()
     for i in range(N_COINS):
-        fees[i] = amounts[i] * _fee / 10 ** 10
+        fees[i] = amounts[i] * _fee * _precisions[i] / 10 ** 10
         self.balances[i] -= amounts[i] + fees[i]  # Charge all fees
     D1: uint256 = self.get_D()
 
@@ -324,9 +343,10 @@ def revert_transfer_ownership():
 @public
 def withdraw_admin_fees():
     assert msg.sender == self.owner
+    _precisions: uint256[N_COINS] = PRECISION_MUL
 
     for i in range(N_COINS):
         c: address = self.coins[i]
-        value: uint256 = ERC20(c).balanceOf(self) - self.balances[i]
+        value: uint256 = ERC20(c).balanceOf(self) - self.balances[i] / _precisions[i]
         if value > 0:
             assert_modifiable(ERC20(c).transfer(msg.sender, value))
