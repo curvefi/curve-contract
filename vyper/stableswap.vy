@@ -8,14 +8,14 @@ ZERO256: constant(uint256) = 0  # This hack is really bad XXX
 ZEROS: constant(uint256[N_COINS]) = [ZERO256, ZERO256, ZERO256]
 
 PRECISION: constant(uint256) = 10 ** 18  # The precision to convert to
-# PRECISION_MUL: constant(uint256[N_COINS]) = [
-#     PRECISION / convert(10 ** 18, uint256),  # DAI
-#     PRECISION / convert(10 ** 6, uint256),   # USDC
-#     PRECISION / convert(10 ** 6, uint256)]   # USDT
 PRECISION_MUL: constant(uint256[N_COINS]) = [
-    convert(1, uint256),
-    convert(1, uint256),
-    convert(1, uint256)]
+    PRECISION / convert(10 ** 18, uint256),  # DAI
+    PRECISION / convert(10 ** 6, uint256),   # USDC
+    PRECISION / convert(10 ** 6, uint256)]   # USDT
+# PRECISION_MUL: constant(uint256[N_COINS]) = [
+#     convert(1, uint256),
+#     convert(1, uint256),
+#     convert(1, uint256)]
 
 admin_actions_delay: constant(uint256) = 7 * 86400
 

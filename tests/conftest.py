@@ -7,7 +7,7 @@ from .deploy import deploy_contract
 
 CONTRACT_PATH = join(dirname(dirname(realpath(__file__))), 'vyper')
 N_COINS = 3
-UU = [10 ** 18, 10 ** 18, 10 ** 18]
+UU = [10 ** 18, 10 ** 6, 10 ** 6]
 
 
 @pytest.fixture
