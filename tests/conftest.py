@@ -7,7 +7,8 @@ from .deploy import deploy_contract
 
 CONTRACT_PATH = join(dirname(dirname(realpath(__file__))), 'vyper')
 N_COINS = 3
-UU = [10 ** 18, 10 ** 6, 10 ** 6]
+UP = [18, 6, 6]
+UU = [10 ** p for p in UP]
 
 
 @pytest.fixture
@@ -30,7 +31,7 @@ def w3(tester):
 def coins(w3):
     return [deploy_contract(
                 w3, 'ERC20.vy', w3.eth.accounts[0],
-                b'Coin ' + str(i).encode(), str(i).encode(), 18, 10 ** 9)
+                b'Coin ' + str(i).encode(), str(i).encode(), UP[i], 10 ** 9)
             for i in range(N_COINS)]
 
 
