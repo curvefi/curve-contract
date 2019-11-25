@@ -80,13 +80,13 @@ def test_simulated_exchange(w3, coins, swap):
         x_1 = coins[i].caller.balanceOf(bob)
         y_1 = coins[j].caller.balanceOf(bob)
 
-        dy_m = curve.exchange(i, j, value) * max(UU) / UU[j]
+        dy_m = curve.exchange(i, j, value * max(UU) // UU[i]) * UU[j] // max(UU)
 
         assert x_0 - x_1 == value
         assert (y_1 - y_0) - dy_m < dy_m * 1e-10
 
     # Let's see what we have left
-    x = [swap.caller.balances(i) * max(UU) // UU[i] for i in range(N_COINS)]
+    x = [swap.caller.balances(i) for i in range(N_COINS)]
     assert tuple(x) == tuple(curve.x)
 
     assert sum(x) > 300 * max(UU)
