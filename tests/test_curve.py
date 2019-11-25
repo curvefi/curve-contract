@@ -9,8 +9,8 @@ from .simulation import Curve
 @pytest.mark.parametrize('n_coins', [100, 10 ** 6, 10 ** 9])
 def test_curve_in_contract(w3, coins, swap, n_coins):
     # Allow $1000 of each coin
-    for c, U in zip(coins, UU):
-        c.functions.approve(swap.address, n_coins * 10 * U).\
+    for c, u in zip(coins, UU):
+        c.functions.approve(swap.address, n_coins * 10 * u).\
                 transact({'from': w3.eth.accounts[0]})
 
     # Add some coins

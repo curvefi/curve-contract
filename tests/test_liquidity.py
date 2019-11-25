@@ -2,50 +2,50 @@ import time
 import pytest
 import random
 from eth_tester.exceptions import TransactionFailed
+from .conftest import UU
 
-U = 10 ** 18
 N_COINS = 3
 
 
 def test_add_liquidity(w3, coins, swap):
     # Allow $1000 of each coin
-    for c in coins:
-        c.functions.approve(swap.address, 1000 * U).\
+    for c, u in zip(coins, UU):
+        c.functions.approve(swap.address, 1000 * u).\
             transact({'from': w3.eth.accounts[0]})
 
     # Adding the first time
-    swap.functions.add_liquidity([100 * U] * N_COINS, int(time.time()) + 3600).\
+    swap.functions.add_liquidity([100 * u for u in UU], int(time.time()) + 3600).\
         transact({'from': w3.eth.accounts[0]})
 
     # Adding the second time does a different calculation
-    swap.functions.add_liquidity([100 * U] * N_COINS, int(time.time()) + 3600).\
+    swap.functions.add_liquidity([100 * u for u in UU], int(time.time()) + 3600).\
         transact({'from': w3.eth.accounts[0]})
 
     with pytest.raises(TransactionFailed):
         # Fail because transaction is expired
         swap.functions.\
-            add_liquidity([100 * U] * N_COINS, int(time.time()) - 3600).\
+            add_liquidity([100 * u for u in UU], int(time.time()) - 3600).\
             transact({'from': w3.eth.accounts[0]})
 
     with pytest.raises(TransactionFailed):
         # Fail because this account has no coins
         swap.functions.\
-            add_liquidity([100 * U] * N_COINS, int(time.time()) + 3600).\
+            add_liquidity([100 * u for u in UU], int(time.time()) + 3600).\
             transact({'from': w3.eth.accounts[1]})
 
     # Reduce the allowance
-    for c in coins:
-        c.functions.approve(swap.address, 99 * U).\
+    for c, u in zip(coins, UU):
+        c.functions.approve(swap.address, 99 * u).\
             transact({'from': w3.eth.accounts[0]})
 
     with pytest.raises(TransactionFailed):
         # Fail because the allowance is now not enough
         swap.functions.\
-            add_liquidity([100 * U] * N_COINS, int(time.time()) + 3600).\
+            add_liquidity([100 * u for u in UU], int(time.time()) + 3600).\
             transact({'from': w3.eth.accounts[0]})
 
     for i in range(N_COINS):
-        assert swap.caller.balances(0) == 200 * U
+        assert swap.caller.balances(0) == 200 * UU[i]
 
 
 # @pytest.mark.parametrize('iteration', range(40))
@@ -57,38 +57,38 @@ def test_ratio_preservation(w3, coins, swap, pool_token):
     # Also give Bob something to trade with
     alice_balances = []
     bob_balances = []
-    for c in coins:
-        c.functions.approve(swap.address, 1000 * U).transact({'from': alice})
-        c.functions.transfer(bob, 1000 * U).transact({'from': alice})
-        c.functions.approve(swap.address, 1000 * U).transact({'from': bob})
+    for c, u in zip(coins, UU):
+        c.functions.approve(swap.address, 1000 * u).transact({'from': alice})
+        c.functions.transfer(bob, 1000 * u).transact({'from': alice})
+        c.functions.approve(swap.address, 1000 * u).transact({'from': bob})
         alice_balances.append(c.caller.balanceOf(alice))
         bob_balances.append(c.caller.balanceOf(bob))
-    pool_token.functions.approve(swap.address, 10000 * U).transact({'from': alice})
-    pool_token.functions.approve(swap.address, 10000 * U).transact({'from': bob})
+    pool_token.functions.approve(swap.address, 10000 * max(UU)).transact({'from': alice})
+    pool_token.functions.approve(swap.address, 10000 * max(UU)).transact({'from': bob})
 
     def assert_all_equal(address):
-        balance_0 = coins[0].caller.balanceOf(address)
+        balance_0 = coins[0].caller.balanceOf(address) * max(UU) / UU[0]
         swap_balance_0 = swap.caller.balances(0)
         for i in range(1, N_COINS):
-            assert balance_0 == coins[i].caller.balanceOf(address)
+            assert balance_0 == coins[i].caller.balanceOf(address) * max(UU) / UU[i]
             assert swap_balance_0 == swap.caller.balances(i)
 
     # Test that everything is equal when adding and removing liquidity
     deadline = int(time.time()) + 3600
-    swap.functions.add_liquidity([50 * U] * N_COINS, deadline).transact({'from': alice})
-    swap.functions.add_liquidity([50 * U] * N_COINS, deadline).transact({'from': bob})
+    swap.functions.add_liquidity([50 * u for u in UU], deadline).transact({'from': alice})
+    swap.functions.add_liquidity([50 * u for u in UU], deadline).transact({'from': bob})
     for i in range(5):
-        value = random.randrange(100 * U)
-        swap.functions.add_liquidity([value] * N_COINS, deadline).transact({'from': alice})
+        value = random.randrange(1, 100)
+        swap.functions.add_liquidity([value * u for u in UU], deadline).transact({'from': alice})
         assert_all_equal(alice)
-        value = random.randrange(100 * U)
-        swap.functions.add_liquidity([value] * N_COINS, deadline).transact({'from': bob})
+        value = random.randrange(1, 100)
+        swap.functions.add_liquidity([value * u for u in UU], deadline).transact({'from': bob})
         assert_all_equal(bob)
-        value = random.randrange(10 * U)
+        value = random.randrange(10 * max(UU))
         swap.functions.remove_liquidity(value, deadline, [0] * N_COINS).\
             transact({'from': alice})
         assert_all_equal(alice)
-        value = random.randrange(10 * U)
+        value = random.randrange(10 * max(UU))
         swap.functions.remove_liquidity(value, deadline, [0] * N_COINS).\
             transact({'from': bob})
         assert_all_equal(bob)
@@ -120,32 +120,32 @@ def test_remove_liquidity_imbalance(w3, coins, swap, pool_token):
     # Also give Bob something to trade with
     alice_balances = []
     bob_balances = []
-    for c in coins:
-        c.functions.approve(swap.address, 1000 * U).transact({'from': alice})
-        c.functions.transfer(bob, 1000 * U).transact({'from': alice})
-        c.functions.approve(swap.address, 1000 * U).transact({'from': bob})
+    for c, u in zip(coins, UU):
+        c.functions.approve(swap.address, 1000 * u).transact({'from': alice})
+        c.functions.transfer(bob, 1000 * u).transact({'from': alice})
+        c.functions.approve(swap.address, 1000 * u).transact({'from': bob})
         alice_balances.append(c.caller.balanceOf(alice))
         bob_balances.append(c.caller.balanceOf(bob))
-    pool_token.functions.approve(swap.address, 20000 * U).transact({'from': alice})
-    pool_token.functions.approve(swap.address, 20000 * U).transact({'from': bob})
+    pool_token.functions.approve(swap.address, 20000 * max(UU)).transact({'from': alice})
+    pool_token.functions.approve(swap.address, 20000 * max(UU)).transact({'from': bob})
 
     # First, both fund the thing in equal amount
-    swap.functions.add_liquidity([1000 * U] * N_COINS, deadline).\
+    swap.functions.add_liquidity([1000 * u for u in UU], deadline).\
         transact({'from': alice})
-    swap.functions.add_liquidity([1000 * U] * N_COINS, deadline).\
+    swap.functions.add_liquidity([1000 * u for u in UU], deadline).\
         transact({'from': bob})
 
     bob_volumes = [0] * N_COINS
     for i in range(10):
         # Now Bob withdraws and adds coins in the same proportion, losing his
         # fees to Alice
-        values = [random.randrange(900 * U / N_COINS) for i in range(N_COINS)]
+        values = [random.randrange(900 * u / N_COINS) for u in UU]
         for i in range(N_COINS):
             bob_volumes[i] += values[i]
         swap.functions.remove_liquidity_imbalance(values, deadline).\
             transact({'from': bob})
-        for c in coins:
-            c.functions.approve(swap.address, 1000 * U).transact({'from': bob})
+        for c, u in zip(coins, UU):
+            c.functions.approve(swap.address, 1000 * u).transact({'from': bob})
         swap.functions.add_liquidity(values, deadline).transact({'from': bob})
 
     # After this, coins should be in equal proportion, but Alice should have
@@ -171,22 +171,22 @@ def test_remove_liquidity_imbalance(w3, coins, swap, pool_token):
     # Now Alice adds liquiduty and Bob tries to "trade" by adding and removing
     # liquidity. Should be equivalent of exchange
     v_before = sum(c.caller.balanceOf(alice) for c in coins)
-    for c in coins:
-        c.functions.approve(swap.address, 1000 * U).transact({'from': alice})
-        c.functions.approve(swap.address, 1000 * U).transact({'from': bob})
-    swap.functions.add_liquidity([100 * U] * N_COINS, deadline).\
+    for c, u in zip(coins, UU):
+        c.functions.approve(swap.address, 1000 * u).transact({'from': alice})
+        c.functions.approve(swap.address, 1000 * u).transact({'from': bob})
+    swap.functions.add_liquidity([100 * u for u in UU], deadline).\
         transact({'from': alice})
-    swap.functions.add_liquidity([U, 0, 0], deadline).\
+    swap.functions.add_liquidity([UU[0], 0, 0], deadline).\
         transact({'from': bob})
     with pytest.raises(TransactionFailed):
         # Cannot remove all because of fees
-        swap.functions.remove_liquidity_imbalance([0, U, 0], deadline).\
+        swap.functions.remove_liquidity_imbalance([0, UU[1], 0], deadline).\
             transact({'from': bob})
-    swap.functions.remove_liquidity_imbalance([0, int(0.995 * U), 0], deadline).\
+    swap.functions.remove_liquidity_imbalance([0, int(0.995 * UU[1]), 0], deadline).\
         transact({'from': bob})
     # Let's see how much Alice got now
     value = pool_token.caller.balanceOf(alice)
     swap.functions.remove_liquidity(value, deadline, [0] * N_COINS).\
         transact({'from': alice})
-    v_after = sum(c.caller.balanceOf(alice) for c in coins)
-    assert abs((v_after - v_before) / (0.995 * U * 0.001) - 1) < 0.05
+    v_after = sum(c.caller.balanceOf(alice) * max(UU) / u for c, u in zip(coins, UU))
+    assert abs((v_after - v_before) / (0.995 * max(UU) * 0.001) - 1) < 0.05

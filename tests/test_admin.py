@@ -3,8 +3,8 @@ import random
 from itertools import permutations
 from time import time
 from eth_tester.exceptions import TransactionFailed
+from .conftest import UU
 
-U = 10 ** 18
 N_COINS = 3
 
 
@@ -63,11 +63,11 @@ def test_trade_and_withdraw_fees(tester, w3, coins, swap):
         2 * 360, int(0.001 * 10 ** 10), int(0.2 * 10 ** 10)
         ).transact({'from': owner})
 
-    for c in coins:
-        c.functions.transfer(bob, 1000 * U).transact({'from': alice})
-        c.functions.approve(swap.address, 1000 * U).transact({'from': alice})
+    for c, u in zip(coins, UU):
+        c.functions.transfer(bob, 1000 * u).transact({'from': alice})
+        c.functions.approve(swap.address, 1000 * u).transact({'from': alice})
 
-    swap.functions.add_liquidity([1000 * U] * N_COINS, int(time()) + 3600).\
+    swap.functions.add_liquidity([1000 * u for u in UU], int(time()) + 3600).\
         transact({'from': alice})
 
     current_time = int(time()) + 86400 * 7 + 2000
@@ -80,11 +80,11 @@ def test_trade_and_withdraw_fees(tester, w3, coins, swap):
 
     for k in range(10):
         i, j = random.choice(list(permutations(range(N_COINS), 2)))
-        value = random.randrange(100 * U)
+        value = random.randrange(1, 100) * UU[i]
         y_0 = coins[j].caller.balanceOf(bob)
         coins[i].functions.approve(swap.address, value).transact({'from': bob})
         swap.functions.exchange(i, j, value,
-                                int(0.5 * value), current_time + 3600).\
+                                int(0.5 * value * UU[j] / UU[i]), current_time + 3600).\
             transact({'from': bob})
         y_1 = coins[j].caller.balanceOf(bob)
 
