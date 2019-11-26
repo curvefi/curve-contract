@@ -45,7 +45,7 @@ def test_add_liquidity(w3, coins, swap):
             transact({'from': w3.eth.accounts[0]})
 
     for i in range(N_COINS):
-        assert swap.caller.balances(0) == 200 * UU[i]
+        assert swap.caller.balances(i) == 200 * max(UU)
 
 
 # @pytest.mark.parametrize('iteration', range(40))
@@ -67,10 +67,10 @@ def test_ratio_preservation(w3, coins, swap, pool_token):
     pool_token.functions.approve(swap.address, 10000 * max(UU)).transact({'from': bob})
 
     def assert_all_equal(address):
-        balance_0 = coins[0].caller.balanceOf(address) * max(UU) / UU[0]
+        balance_0 = coins[0].caller.balanceOf(address) * max(UU) // UU[0]
         swap_balance_0 = swap.caller.balances(0)
         for i in range(1, N_COINS):
-            assert balance_0 == coins[i].caller.balanceOf(address) * max(UU) / UU[i]
+            assert abs(balance_0 * UU[i] // max(UU) - coins[i].caller.balanceOf(address)) <= 5
             assert swap_balance_0 == swap.caller.balances(i)
 
     # Test that everything is equal when adding and removing liquidity
@@ -163,14 +163,14 @@ def test_remove_liquidity_imbalance(w3, coins, swap, pool_token):
         assert swap.caller.balances(i) == 0
         assert alice_grow > 0
         assert bob_grow < 0
-        assert alice_grow + bob_grow == 0
+        assert abs(alice_grow + bob_grow) < 5
         grow_fee_ratio = alice_grow / int(bob_volumes[i] * 0.001)
         # Part of the fees are earned by Bob: he also had liquidity
         assert grow_fee_ratio > 0 and grow_fee_ratio <= 1
 
     # Now Alice adds liquiduty and Bob tries to "trade" by adding and removing
     # liquidity. Should be equivalent of exchange
-    v_before = sum(c.caller.balanceOf(alice) for c in coins)
+    v_before = sum(c.caller.balanceOf(alice) * max(UU) // u for c, u in zip(coins, UU))
     for c, u in zip(coins, UU):
         c.functions.approve(swap.address, 1000 * u).transact({'from': alice})
         c.functions.approve(swap.address, 1000 * u).transact({'from': bob})
@@ -188,5 +188,5 @@ def test_remove_liquidity_imbalance(w3, coins, swap, pool_token):
     value = pool_token.caller.balanceOf(alice)
     swap.functions.remove_liquidity(value, deadline, [0] * N_COINS).\
         transact({'from': alice})
-    v_after = sum(c.caller.balanceOf(alice) * max(UU) / u for c, u in zip(coins, UU))
+    v_after = sum(c.caller.balanceOf(alice) * max(UU) // u for c, u in zip(coins, UU))
     assert abs((v_after - v_before) / (0.995 * max(UU) * 0.001) - 1) < 0.05
