@@ -2,10 +2,10 @@ from vyper.interfaces import ERC20
 import ERC20m as ERC20m
 
 # This can (and needs to) be changed at compile time
-N_COINS: constant(int128) = 3
+N_COINS: constant(int128) = 3  # <- change
 
 ZERO256: constant(uint256) = 0  # This hack is really bad XXX
-ZEROS: constant(uint256[N_COINS]) = [ZERO256, ZERO256, ZERO256]
+ZEROS: constant(uint256[N_COINS]) = [ZERO256, ZERO256, ZERO256]  # <- change
 
 PRECISION: constant(uint256) = 10 ** 18  # The precision to convert to
 PRECISION_MUL: constant(uint256[N_COINS]) = [
