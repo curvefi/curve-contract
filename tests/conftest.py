@@ -44,7 +44,7 @@ def pool_token(w3):
 @pytest.fixture(scope='function')
 def swap(w3, coins, pool_token):
     swap_contract = deploy_contract(
-            w3, ['stableswap.vy', 'ERC20m.vy'], w3.eth.accounts[1],
+            w3, ['stableswap.vy', 'ERC20m.vy', 'cERC20.vy'], w3.eth.accounts[1],
             [c.address for c in coins], pool_token.address, 360 * 2, 10 ** 7)
     pool_token.functions.set_minter(swap_contract.address).transact()
     with open(join(CONTRACT_PATH, 'stableswap.abi'), 'w') as f:

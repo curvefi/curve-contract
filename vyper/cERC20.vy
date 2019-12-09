@@ -1,7 +1,7 @@
 # Interface for the used methods in Compound cERC20
 
 @public
-def mint(uint256 mintAmount) -> uint256:
+def mint(mintAmount: uint256) -> uint256:
     """
      @notice Sender supplies assets into the market and receives cTokens in exchange
      @dev Accrues interest whether or not the operation succeeds, unless reverted
@@ -11,7 +11,7 @@ def mint(uint256 mintAmount) -> uint256:
     pass
 
 @public
-def redeem(uint256 redeemTokens) -> uint256:
+def redeem(redeemTokens: uint256) -> uint256:
     """
      @notice Sender redeems cTokens in exchange for the underlying asset
      @dev Accrues interest whether or not the operation succeeds, unless reverted
@@ -21,7 +21,7 @@ def redeem(uint256 redeemTokens) -> uint256:
     pass
 
 @public
-def redeemUnderlying(uint256 redeemAmount) -> uint256:
+def redeemUnderlying(redeemAmount: uint256) -> uint256:
     """
      @notice Sender redeems cTokens in exchange for a specified amount of underlying asset
      @dev Accrues interest whether or not the operation succeeds, unless reverted

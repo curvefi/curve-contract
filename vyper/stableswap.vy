@@ -1,5 +1,6 @@
 from vyper.interfaces import ERC20
 import ERC20m as ERC20m
+import cERC20 as cERC20
 
 # This can (and needs to) be changed at compile time
 N_COINS: constant(int128) = 3  # <- change
