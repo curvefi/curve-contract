@@ -25,7 +25,7 @@ exchangeRateStored: public(uint256)  # cERC20 spec
 
 @public
 def __init__(_name: string[64], _symbol: string[32], _decimals: uint256, _supply: uint256,
-             _token_addr: address):
+             _token_addr: address, exchange_rate: uint256):
     init_supply: uint256 = _supply * 10 ** _decimals
     self.name = _name
     self.symbol = _symbol
@@ -33,7 +33,7 @@ def __init__(_name: string[64], _symbol: string[32], _decimals: uint256, _supply
     self.balanceOf[msg.sender] = init_supply
     self.total_supply = init_supply
     self.underlying_token = ERC20(_token_addr)
-    self.exchangeRateStored = self.underlying_token.balanceOf(self) * 10 ** 18 / init_supply
+    self.exchangeRateStored = exchange_rate
     log.Transfer(ZERO_ADDRESS, msg.sender, init_supply)
 
 
