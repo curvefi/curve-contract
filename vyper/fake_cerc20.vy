@@ -1,4 +1,14 @@
-import ERC20m as ERC20m
+"""
+Fake cERC20
+
+We should transfer tokens to _token_addr before wrapping
+in order to be able to get interest from somewhere
+
+WARNING
+This is for tests only and not meant to be safe to use
+"""
+
+from vyper.interfaces import ERC20
 
 Transfer: event({_from: indexed(address), _to: indexed(address), _value: uint256})
 Approval: event({_owner: indexed(address), _spender: indexed(address), _value: uint256})
@@ -7,25 +17,24 @@ name: public(string[64])
 symbol: public(string[32])
 decimals: public(uint256)
 
-# NOTE: By declaring `balanceOf` as public, vyper automatically generates a 'balanceOf()' getter
-#       method to allow access to account balances.
-#       The _KeyType will become a required parameter for the getter and it will return _ValueType.
-#       See: https://vyper.readthedocs.io/en/v0.1.0-beta.8/types.html?highlight=getter#mappings
 balanceOf: public(map(address, uint256))
 allowances: map(address, map(address, uint256))
 total_supply: uint256
-minter: address
+
+underlying_token: ERC20
+exchangeRateStored: public(uint256)  # cERC20 spec
 
 @public
 def __init__(_name: string[64], _symbol: string[32], _decimals: uint256, _supply: uint256,
-             token_addr: address):
+             _token_addr: address):
     init_supply: uint256 = _supply * 10 ** _decimals
     self.name = _name
     self.symbol = _symbol
     self.decimals = _decimals
     self.balanceOf[msg.sender] = init_supply
     self.total_supply = init_supply
-    self.minter = msg.sender
+    self.underlying_token = ERC20(_token_addr)
+    self.exchangeRateStored = self.underlying_token.balanceOf(self) * 10 ** 18 / init_supply
     log.Transfer(ZERO_ADDRESS, msg.sender, init_supply)
 
 
@@ -137,7 +146,6 @@ def burnFrom(_to: address, _value: uint256):
 
 
 # cERC20-specific methods
-
 @public
 def mint(mintAmount: uint256) -> uint256:
     """
@@ -146,7 +154,11 @@ def mint(mintAmount: uint256) -> uint256:
      @param mintAmount The amount of the underlying asset to supply
      @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
     """
-    pass
+    self.underlying_token.transferFrom(msg.sender, self, mintAmount)
+    uvalue: uint256 = mintAmount * 10 ** 18 / self.exchangeRateStored
+    self.total_supply += uvalue
+    self.balanceOf[msg.sender] += uvalue
+
 
 @public
 def redeem(redeemTokens: uint256) -> uint256:
@@ -156,7 +168,11 @@ def redeem(redeemTokens: uint256) -> uint256:
      @param redeemTokens The number of cTokens to redeem into underlying
      @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
     """
-    pass
+    uvalue = redeemTokens * self.exchangeRateStored / 10 ** 18
+    self.balanceOf[msg.sender] -= redeemTokens
+    self.total_supply -= redeemTokens
+    self.underlying_token.transfer(msg.sender, uvalue)
+
 
 @public
 def redeemUnderlying(redeemAmount: uint256) -> uint256:
@@ -167,13 +183,12 @@ def redeemUnderlying(redeemAmount: uint256) -> uint256:
      @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
     """
     pass
+    value = redeemAmount * 10 ** 18 / self.exchangeRateStored
+    self.balanceOf[msg.sender] -= value
+    self.total_supply -= value
+    self.underlying_token.transfer(msg.sender, redeemAmount)
 
-@constant
+
 @public
-def exchangeRateStored() -> uint256:
-    """
-     @notice Calculates the exchange rate from the underlying to the CToken
-     @dev This function does not accrue interest before calculating the exchange rate
-     @return Calculated exchange rate scaled by 1e18
-    """
-    pass
+def set_exchange_rate(rate: uint256):
+    self.exchangeRateStored = rate
