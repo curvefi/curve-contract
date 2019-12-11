@@ -1,4 +1,3 @@
-from vyper.interfaces import ERC20
 import ERC20m as ERC20m
 import cERC20 as cERC20
 
@@ -104,9 +103,9 @@ def add_liquidity(amounts: uint256[N_COINS], deadline: timestamp):
     for i in range(N_COINS):
         # Check for allowances before any transfers or calculations
         assert_modifiable(
-            ERC20(self.coins[i]).balanceOf(msg.sender) >= amounts[i])
+            cERC20(self.coins[i]).balanceOf(msg.sender) >= amounts[i])
         assert_modifiable(
-            ERC20(self.coins[i]).allowance(msg.sender, self) >= amounts[i])
+            cERC20(self.coins[i]).allowance(msg.sender, self) >= amounts[i])
         if token_supply == 0:
             assert amounts[i] > 0
         self.balances[i] += amounts[i] * _precisions[i]
@@ -125,7 +124,7 @@ def add_liquidity(amounts: uint256[N_COINS], deadline: timestamp):
     # Take coins from the sender
     for i in range(N_COINS):
         assert_modifiable(
-            ERC20(self.coins[i]).transferFrom(msg.sender, self, amounts[i]))
+            cERC20(self.coins[i]).transferFrom(msg.sender, self, amounts[i]))
 
     # Mint pool tokens
     self.token.mint(msg.sender, mint_amount)
@@ -200,9 +199,9 @@ def exchange(i: int128, j: int128, dx: uint256,
     _dy: uint256 = (dy - dy_fee) / _precisions[j]
     assert _dy >= min_dy
 
-    assert_modifiable(ERC20(self.coins[i]).transferFrom(
+    assert_modifiable(cERC20(self.coins[i]).transferFrom(
         msg.sender, self, dx))
-    assert_modifiable(ERC20(self.coins[j]).transfer(
+    assert_modifiable(cERC20(self.coins[j]).transfer(
         msg.sender,
         _dy))
 
@@ -227,7 +226,7 @@ def remove_liquidity(_amount: uint256, deadline: timestamp,
         self.balances[i] -= value
         amounts[i] = value
         fees[i] = 0
-        assert_modifiable(ERC20(self.coins[i]).transfer(
+        assert_modifiable(cERC20(self.coins[i]).transfer(
             msg.sender,
             value / _precisions[i]))
 
@@ -257,7 +256,7 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS], deadline: timestamp):
     assert self.token.balanceOf(msg.sender) >= token_amount
     assert self.token.allowance(msg.sender, self) >= token_amount
     for i in range(N_COINS):
-        assert_modifiable(ERC20(self.coins[i]).transfer(msg.sender, amounts[i]))
+        assert_modifiable(cERC20(self.coins[i]).transfer(msg.sender, amounts[i]))
     self.token.burnFrom(msg.sender, token_amount)
 
     # Now "charge" fees
@@ -350,6 +349,6 @@ def withdraw_admin_fees():
 
     for i in range(N_COINS):
         c: address = self.coins[i]
-        value: uint256 = ERC20(c).balanceOf(self) - self.balances[i] / _precisions[i]
+        value: uint256 = cERC20(c).balanceOf(self) - self.balances[i] / _precisions[i]
         if value > 0:
-            assert_modifiable(ERC20(c).transfer(msg.sender, value))
+            assert_modifiable(cERC20(c).transfer(msg.sender, value))
