@@ -62,9 +62,21 @@ def __init__(_coins: address[N_COINS], _pool_token: address,
 
 @private
 @constant
+def _xp() -> uint256[N_COINS]:
+    result: uint256[N_COINS] = PRECISION_MUL
+    for i in range(N_COINS):
+        rate: uint256 = cERC20(self.coins[i]).exchangeRateStored()
+        # number of real coins converted to 10 ** 18 precision
+        result[i] = rate * self.balances[i] * result[i] / 10 ** 18
+    return result
+
+
+@private
+@constant
 def get_D() -> uint256:
     S: uint256 = 0
-    for _x in self.balances:
+    xp: uint256[N_COINS] = self._xp()
+    for _x in xp:
         S += _x
     if S == 0:
         return 0
@@ -74,7 +86,7 @@ def get_D() -> uint256:
     Ann: uint256 = convert(self.A, uint256) * N_COINS
     for _i in range(255):
         D_P: uint256 = D
-        for _x in self.balances:
+        for _x in xp:
             D_P = D_P * D / (_x * N_COINS + 1)  # +1 is to prevent /0
         Dprev = D
         D = (Ann * S + D_P * N_COINS) * D / ((Ann - 1) * D + (N_COINS + 1) * D_P)
