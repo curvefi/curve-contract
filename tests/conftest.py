@@ -50,3 +50,13 @@ def swap(w3, coins, pool_token):
     with open(join(CONTRACT_PATH, 'stableswap.abi'), 'w') as f:
         json.dump(swap_contract.abi, f, indent=True)
     return swap_contract
+
+
+@pytest.fixture
+def cerc20s(w3, coins):
+    ccoins = [deploy_contract(
+                w3, 'fake_cerc20.vy', w3.eth.accounts[0],
+                b'C-Coin ' + str(i).encode(), b'c' + str(i).encode(),
+                18, 10 ** 50, coins[i].address)
+              for i in range(N_COINS)]
+    return ccoins
