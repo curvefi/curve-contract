@@ -1,12 +1,11 @@
-"""
-Fake cERC20
+# Fake cERC20
+#
+# We should transfer tokens to _token_addr before wrapping
+# in order to be able to get interest from somewhere
+#
+# WARNING
+# This is for tests only and not meant to be safe to use
 
-We should transfer tokens to _token_addr before wrapping
-in order to be able to get interest from somewhere
-
-WARNING
-This is for tests only and not meant to be safe to use
-"""
 
 from vyper.interfaces import ERC20
 
@@ -155,9 +154,10 @@ def mint(mintAmount: uint256) -> uint256:
      @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
     """
     self.underlying_token.transferFrom(msg.sender, self, mintAmount)
-    uvalue: uint256 = mintAmount * 10 ** 18 / self.exchangeRateStored
-    self.total_supply += uvalue
-    self.balanceOf[msg.sender] += uvalue
+    value: uint256 = mintAmount * 10 ** 18 / self.exchangeRateStored
+    self.total_supply += value
+    self.balanceOf[msg.sender] += value
+    return value
 
 
 @public
@@ -168,10 +168,11 @@ def redeem(redeemTokens: uint256) -> uint256:
      @param redeemTokens The number of cTokens to redeem into underlying
      @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
     """
-    uvalue = redeemTokens * self.exchangeRateStored / 10 ** 18
+    uvalue: uint256 = redeemTokens * self.exchangeRateStored / 10 ** 18
     self.balanceOf[msg.sender] -= redeemTokens
     self.total_supply -= redeemTokens
     self.underlying_token.transfer(msg.sender, uvalue)
+    return uvalue
 
 
 @public
@@ -182,11 +183,11 @@ def redeemUnderlying(redeemAmount: uint256) -> uint256:
      @param redeemAmount The amount of underlying to redeem
      @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
     """
-    pass
-    value = redeemAmount * 10 ** 18 / self.exchangeRateStored
+    value: uint256 = redeemAmount * 10 ** 18 / self.exchangeRateStored
     self.balanceOf[msg.sender] -= value
     self.total_supply -= value
     self.underlying_token.transfer(msg.sender, redeemAmount)
+    return value
 
 
 @public
