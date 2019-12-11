@@ -58,7 +58,7 @@ def __init__(_coins: address[N_COINS], _pool_token: address,
     self.fee = _fee
     self.admin_fee = 0
     self.owner = msg.sender
-    self.token = ERC20(_pool_token)
+    self.token = ERC20m(_pool_token)
 
 
 @private
