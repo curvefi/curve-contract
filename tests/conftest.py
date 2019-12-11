@@ -9,7 +9,7 @@ CONTRACT_PATH = join(dirname(dirname(realpath(__file__))), 'vyper')
 N_COINS = 3
 UP = [18, 6, 6]
 UU = [10 ** p for p in UP]
-c_rates = [5 * 10 ** 36 // UU[0], 10 ** 36 // UU[1], 5 * 10 ** 35 // UU[2]]
+c_rates = [5 * UU[0], UU[1], 20 * UU[2]]
 
 
 @pytest.fixture
@@ -58,6 +58,9 @@ def cerc20s(w3, coins):
     ccoins = [deploy_contract(
                 w3, 'fake_cerc20.vy', w3.eth.accounts[0],
                 b'C-Coin ' + str(i).encode(), b'c' + str(i).encode(),
-                18, 10 ** 50, coins[i].address, c_rates[i])
+                18, 0, coins[i].address, c_rates[i])
               for i in range(N_COINS)]
+    for t, c, u in zip(coins, ccoins, UU):
+        t.functions.transfer(c.address, 10 ** 8 * u)\
+                .transact({'from': w3.eth.accounts[0]})
     return ccoins
