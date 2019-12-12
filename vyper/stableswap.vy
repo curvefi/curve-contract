@@ -145,9 +145,8 @@ def add_liquidity(amounts: uint256[N_COINS], deadline: timestamp):
 
 @private
 @constant
-def get_y(i: int128, j: int128, x: uint256) -> uint256:
-    xp: uint256[N_COINS] = self._xp()
-    D: uint256 = self.get_D(xp)
+def get_y(i: int128, j: int128, x: uint256, _xp: uint256[N_COINS]) -> uint256:
+    D: uint256 = self.get_D(_xp)
     c: uint256 = D
     S_: uint256 = 0
     Ann: uint256 = convert(self.A, uint256) * N_COINS
@@ -157,7 +156,7 @@ def get_y(i: int128, j: int128, x: uint256) -> uint256:
         if _i == i:
             _x = x
         elif _i != j:
-            _x = xp[_i]
+            _x = _xp[_i]
         else:
             continue
         S_ += _x
@@ -185,7 +184,7 @@ def get_dy(i: int128, j: int128, dx: uint256) -> uint256:
     _precisions: uint256[N_COINS] = PRECISION_MUL
 
     x: uint256 = self.balances[i] + dx * _precisions[i]
-    y: uint256 = self.get_y(i, j, x)
+    y: uint256 = self.get_y(i, j, x, self._xp())
     return (self.balances[j] - y) / _precisions[j]
 
 
@@ -197,10 +196,11 @@ def exchange(i: int128, j: int128, dx: uint256,
     assert i < N_COINS and j < N_COINS, "Coin number out of range"
 
     _precisions: uint256[N_COINS] = PRECISION_MUL
-    _dx: uint256 = dx * _precisions[i]
+    _dx: uint256 = dx * _precisions[i]  # XXX do we need this??
+    _xp: uint256[N_COINS] = self._xp()
 
     x: uint256 = self.balances[i] + _dx
-    y: uint256 = self.get_y(i, j, x)
+    y: uint256 = self.get_y(i, j, x, _xp)
     dy: uint256 = self.balances[j] - y
     dy_fee: uint256 = dy * convert(self.fee, uint256) / 10 ** 10
     dy_admin_fee: uint256 = dy_fee * convert(self.admin_fee, uint256) / 10 ** 10
