@@ -62,13 +62,27 @@ def __init__(_coins: address[N_COINS], _pool_token: address,
 
 @private
 @constant
-def _xp() -> uint256[N_COINS]:
+def _rates() -> uint256[N_COINS]:
     result: uint256[N_COINS] = PRECISION_MUL
     for i in range(N_COINS):
         rate: uint256 = cERC20(self.coins[i]).exchangeRateStored()
-        # number of real coins converted to 10 ** 18 precision
-        result[i] = rate * self.balances[i] * result[i] / 10 ** 18
+        result[i] = rate * result[i]
     return result
+
+
+@private
+@constant
+def _xp_raw(rates: uint256[N_COINS]) -> uint256[N_COINS]:
+    result: uint256[N_COINS] = rates
+    for i in range(N_COINS):
+        result[i] = result[i] * self.balances[i] / 10 ** 18
+    return result
+
+
+@private
+@constant
+def _xp() -> uint256[N_COINS]:
+    return self._xp_raw(self._rates())
 
 
 @private
@@ -183,12 +197,13 @@ def get_y(i: int128, j: int128, x: uint256, _xp: uint256[N_COINS]) -> uint256:
 @public
 @constant
 def get_dy(i: int128, j: int128, dx: uint256) -> uint256:
-    _precisions: uint256[N_COINS] = PRECISION_MUL
-    xp: uint256 = self._xp()
+    # dx and dy in c-units
+    rates: uint256[N_COINS] = self._rates()
+    xp: uint256[N_COINS] = self._xp_raw(rates)
 
-    x: uint256 = xp[i] + dx * _precisions[i]
+    x: uint256 = xp[i] + dx * rates[i] / 10 ** 18
     y: uint256 = self.get_y(i, j, x, xp)
-    return (xp[j] - y) / _precisions[j]
+    return (xp[j] - y) * 10 ** 18 / rates[j]
 
 
 @public
@@ -197,6 +212,7 @@ def exchange(i: int128, j: int128, dx: uint256,
              min_dy: uint256, deadline: timestamp):
     assert block.timestamp <= deadline, "Transaction expired"
     assert i < N_COINS and j < N_COINS, "Coin number out of range"
+    # dx and dy are in c-tokens
 
     _precisions: uint256[N_COINS] = PRECISION_MUL
     _dx: uint256 = dx * _precisions[i]
