@@ -184,10 +184,11 @@ def get_y(i: int128, j: int128, x: uint256, _xp: uint256[N_COINS]) -> uint256:
 @constant
 def get_dy(i: int128, j: int128, dx: uint256) -> uint256:
     _precisions: uint256[N_COINS] = PRECISION_MUL
+    xp: uint256 = self._xp()
 
-    x: uint256 = self.balances[i] + dx * _precisions[i]
-    y: uint256 = self.get_y(i, j, x, self._xp())
-    return (self.balances[j] - y) / _precisions[j]
+    x: uint256 = xp[i] + dx * _precisions[i]
+    y: uint256 = self.get_y(i, j, x, xp)
+    return (xp[j] - y) / _precisions[j]
 
 
 @public
