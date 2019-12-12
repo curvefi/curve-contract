@@ -73,9 +73,8 @@ def _xp() -> uint256[N_COINS]:
 
 @private
 @constant
-def get_D() -> uint256:
+def get_D(xp: uint256[N_COINS]) -> uint256:
     S: uint256 = 0
-    xp: uint256[N_COINS] = self._xp()
     for _x in xp:
         S += _x
     if S == 0:
@@ -110,7 +109,7 @@ def add_liquidity(amounts: uint256[N_COINS], deadline: timestamp):
     # Initial invariant
     D0: uint256 = 0
     if token_supply > 0:
-        D0 = self.get_D()
+        D0 = self.get_D(self._xp())
 
     for i in range(N_COINS):
         # Check for allowances before any transfers or calculations
@@ -123,7 +122,7 @@ def add_liquidity(amounts: uint256[N_COINS], deadline: timestamp):
         self.balances[i] += amounts[i] * _precisions[i]
 
     # Invariant after change
-    D1: uint256 = self.get_D()
+    D1: uint256 = self.get_D(self._xp())
     assert D1 > D0
 
     # Calculate, how much pool tokens to mint
@@ -147,7 +146,8 @@ def add_liquidity(amounts: uint256[N_COINS], deadline: timestamp):
 @private
 @constant
 def get_y(i: int128, j: int128, x: uint256) -> uint256:
-    D: uint256 = self.get_D()
+    xp: uint256[N_COINS] = self._xp()
+    D: uint256 = self.get_D(xp)
     c: uint256 = D
     S_: uint256 = 0
     Ann: uint256 = convert(self.A, uint256) * N_COINS
@@ -157,7 +157,7 @@ def get_y(i: int128, j: int128, x: uint256) -> uint256:
         if _i == i:
             _x = x
         elif _i != j:
-            _x = self.balances[_i]
+            _x = xp[_i]
         else:
             continue
         S_ += _x
@@ -258,11 +258,11 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS], deadline: timestamp):
     fees: uint256[N_COINS] = ZEROS
     _fee: uint256 = convert(self.fee, uint256)
     _admin_fee: uint256 = convert(self.admin_fee, uint256)
-    D0: uint256 = self.get_D()
+    D0: uint256 = self.get_D(self._xp())
     for i in range(N_COINS):
         fees[i] = amounts[i] * _fee * _precisions[i] / 10 ** 10
         self.balances[i] -= amounts[i] * _precisions[i] + fees[i]  # Charge all fees
-    D1: uint256 = self.get_D()
+    D1: uint256 = self.get_D(self._xp())
 
     token_amount: uint256 = (D0 - D1) * token_supply / D0
     assert self.token.balanceOf(msg.sender) >= token_amount
