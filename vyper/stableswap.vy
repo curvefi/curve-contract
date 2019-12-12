@@ -214,20 +214,18 @@ def exchange(i: int128, j: int128, dx: uint256,
     assert i < N_COINS and j < N_COINS, "Coin number out of range"
     # dx and dy are in c-tokens
 
-    _precisions: uint256[N_COINS] = PRECISION_MUL
-    _dx: uint256 = dx * _precisions[i]
-    _xp: uint256[N_COINS] = self._xp()
+    rates: uint256[N_COINS] = self._rates()
+    xp: uint256[N_COINS] = self._xp_raw(rates)
 
-    x: uint256 = self.balances[i] + _dx
-    y: uint256 = self.get_y(i, j, x, _xp)
-    dy: uint256 = self.balances[j] - y
+    x: uint256 = xp[i] + dx * rates[i] / 10 ** 18
+    y: uint256 = self.get_y(i, j, x, xp)
+    dy: uint256 = xp[j] - y
     dy_fee: uint256 = dy * convert(self.fee, uint256) / 10 ** 10
     dy_admin_fee: uint256 = dy_fee * convert(self.admin_fee, uint256) / 10 ** 10
-    self.balances[i] += _dx
-    self.balances[j] = y + (dy_fee - dy_admin_fee)
+    self.balances[i] = x * 10 ** 18 / rates[i]
+    self.balances[j] = (y + (dy_fee - dy_admin_fee)) * 10 ** 18 / rates[j]
 
-
-    _dy: uint256 = (dy - dy_fee) / _precisions[j]
+    _dy: uint256 = (dy - dy_fee) * 10 ** 18 / rates[j]
     assert _dy >= min_dy
 
     assert_modifiable(cERC20(self.coins[i]).transferFrom(
@@ -236,7 +234,7 @@ def exchange(i: int128, j: int128, dx: uint256,
         msg.sender,
         _dy))
 
-    log.TokenExchange(msg.sender, i, dx, j, dy - dy_fee, dy_fee)
+    log.TokenExchange(msg.sender, i, dx, j, _dy, dy_fee * 10 ** 18 / rates[j])
 
 
 @public
