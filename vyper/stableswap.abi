@@ -196,7 +196,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 2768296
+  "gas": 2767125
  },
  {
   "name": "get_dy",

@@ -102,9 +102,9 @@ def get_D(xp: uint256[N_COINS]) -> uint256:
 @public
 @nonreentrant('lock')
 def add_liquidity(amounts: uint256[N_COINS], deadline: timestamp):
+    # Amounts is amounts of c-tokens
     assert block.timestamp <= deadline, "Transaction expired"
 
-    _precisions: uint256[N_COINS] = PRECISION_MUL
     token_supply: uint256 = self.token.totalSupply()
     # Initial invariant
     D0: uint256 = 0
@@ -119,7 +119,8 @@ def add_liquidity(amounts: uint256[N_COINS], deadline: timestamp):
             cERC20(self.coins[i]).allowance(msg.sender, self) >= amounts[i])
         if token_supply == 0:
             assert amounts[i] > 0
-        self.balances[i] += amounts[i] * _precisions[i]
+        # balances store amounts of c-tokens
+        self.balances[i] += amounts[i]
 
     # Invariant after change
     D1: uint256 = self.get_D(self._xp())
@@ -146,6 +147,7 @@ def add_liquidity(amounts: uint256[N_COINS], deadline: timestamp):
 @private
 @constant
 def get_y(i: int128, j: int128, x: uint256, _xp: uint256[N_COINS]) -> uint256:
+    # x in the input is converted to the same price/precision
     D: uint256 = self.get_D(_xp)
     c: uint256 = D
     S_: uint256 = 0
@@ -196,7 +198,7 @@ def exchange(i: int128, j: int128, dx: uint256,
     assert i < N_COINS and j < N_COINS, "Coin number out of range"
 
     _precisions: uint256[N_COINS] = PRECISION_MUL
-    _dx: uint256 = dx * _precisions[i]  # XXX do we need this??
+    _dx: uint256 = dx * _precisions[i]
     _xp: uint256[N_COINS] = self._xp()
 
     x: uint256 = self.balances[i] + _dx
