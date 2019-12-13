@@ -266,16 +266,18 @@ def remove_liquidity(_amount: uint256, deadline: timestamp,
 def remove_liquidity_imbalance(amounts: uint256[N_COINS], deadline: timestamp):
     assert block.timestamp <= deadline, "Transaction expired"
 
-    _precisions: uint256[N_COINS] = PRECISION_MUL
+    rates: uint256[N_COINS] = self._rates()
+    xp: uint256[N_COINS] = self._xp_raw(rates)
     token_supply: uint256 = self.token.totalSupply()
     assert token_supply > 0
     fees: uint256[N_COINS] = ZEROS
     _fee: uint256 = convert(self.fee, uint256)
     _admin_fee: uint256 = convert(self.admin_fee, uint256)
-    D0: uint256 = self.get_D(self._xp())
+
+    D0: uint256 = self.get_D(xp)
     for i in range(N_COINS):
-        fees[i] = amounts[i] * _fee * _precisions[i] / 10 ** 10
-        self.balances[i] -= amounts[i] * _precisions[i] + fees[i]  # Charge all fees
+        fees[i] = amounts[i] * _fee / 10 ** 10
+        self.balances[i] -= amounts[i] + fees[i]  # Charge all fees
     D1: uint256 = self.get_D(self._xp())
 
     token_amount: uint256 = (D0 - D1) * token_supply / D0

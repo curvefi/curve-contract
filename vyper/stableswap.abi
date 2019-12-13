@@ -296,7 +296,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 2898844
+  "gas": 2885066
  },
  {
   "name": "commit_new_parameters",
