@@ -228,13 +228,12 @@ def exchange(i: int128, j: int128, dx: uint256,
     _dy: uint256 = (dy - dy_fee) * 10 ** 18 / rates[j]
     assert _dy >= min_dy
 
-    assert_modifiable(cERC20(self.coins[i]).transferFrom(
-        msg.sender, self, dx))
-    assert_modifiable(cERC20(self.coins[j]).transfer(
-        msg.sender,
-        _dy))
+    assert_modifiable(cERC20(self.coins[i]).transferFrom(msg.sender, self, dx))
+    assert_modifiable(cERC20(self.coins[j]).transfer(msg.sender, _dy))
 
     log.TokenExchange(msg.sender, i, dx, j, _dy, dy_fee * 10 ** 18 / rates[j])
+
+    # If needed, redepmption should happen as an external call
 
 
 @public
