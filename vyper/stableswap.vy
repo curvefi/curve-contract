@@ -244,20 +244,17 @@ def remove_liquidity(_amount: uint256, deadline: timestamp,
     assert block.timestamp <= deadline, "Transaction expired"
     assert self.token.balanceOf(msg.sender) >= _amount
     assert self.token.allowance(msg.sender, self) >= _amount
-    _precisions: uint256[N_COINS] = PRECISION_MUL
     total_supply: uint256 = self.token.totalSupply()
     amounts: uint256[N_COINS] = ZEROS
     fees: uint256[N_COINS] = ZEROS
 
     for i in range(N_COINS):
         value: uint256 = self.balances[i] * _amount / total_supply
-        assert value >= min_amounts[i] * _precisions[i]
+        assert value >= min_amounts[i]
         self.balances[i] -= value
         amounts[i] = value
-        fees[i] = 0
         assert_modifiable(cERC20(self.coins[i]).transfer(
-            msg.sender,
-            value / _precisions[i]))
+            msg.sender, value))
 
     self.token.burnFrom(msg.sender, _amount)
 

@@ -277,7 +277,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 188094
+  "gas": 186357
  },
  {
   "name": "remove_liquidity_imbalance",
