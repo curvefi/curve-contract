@@ -42,17 +42,6 @@ def pool_token(w3):
                            b'Stableswap', b'STBL', 18, 0)
 
 
-@pytest.fixture(scope='function')
-def swap(w3, coins, pool_token):
-    swap_contract = deploy_contract(
-            w3, ['stableswap.vy', 'ERC20m.vy', 'cERC20.vy'], w3.eth.accounts[1],
-            [c.address for c in coins], pool_token.address, 360 * 2, 10 ** 7)
-    pool_token.functions.set_minter(swap_contract.address).transact()
-    with open(join(CONTRACT_PATH, 'stableswap.abi'), 'w') as f:
-        json.dump(swap_contract.abi, f, indent=True)
-    return swap_contract
-
-
 @pytest.fixture
 def cerc20s(w3, coins):
     ccoins = [deploy_contract(
@@ -64,3 +53,15 @@ def cerc20s(w3, coins):
         t.functions.transfer(c.address, 10 ** 8 * u)\
                 .transact({'from': w3.eth.accounts[0]})
     return ccoins
+
+
+@pytest.fixture(scope='function')
+def swap(w3, coins, cerc20s, pool_token):
+    swap_contract = deploy_contract(
+            w3, ['stableswap.vy', 'ERC20m.vy', 'cERC20.vy'], w3.eth.accounts[1],
+            [c.address for c in cerc20s], [c.address for c in coins],
+            pool_token.address, 360 * 2, 10 ** 7)
+    pool_token.functions.set_minter(swap_contract.address).transact()
+    with open(join(CONTRACT_PATH, 'stableswap.abi'), 'w') as f:
+        json.dump(swap_contract.abi, f, indent=True)
+    return swap_contract

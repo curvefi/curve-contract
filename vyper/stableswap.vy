@@ -1,5 +1,6 @@
 import ERC20m as ERC20m
 import cERC20 as cERC20
+from vyper.interfaces import ERC20
 
 # This can (and needs to) be changed at compile time
 N_COINS: constant(int128) = 3  # <- change
@@ -29,6 +30,7 @@ CommitNewParameters: event({deadline: indexed(timestamp), A: int128, fee: int128
 NewParameters: event({A: int128, fee: int128, admin_fee: int128})
 
 coins: public(address[N_COINS])
+underlying_coins: address[N_COINS]
 balances: public(uint256[N_COINS])
 A: public(int128)  # 2 x amplification coefficient
 fee: public(int128)  # fee * 1e10
@@ -47,12 +49,15 @@ future_owner: public(address)
 
 
 @public
-def __init__(_coins: address[N_COINS], _pool_token: address,
+def __init__(_coins: address[N_COINS], _underlying_coins: address[N_COINS],
+             _pool_token: address,
              _A: int128, _fee: int128):
     for i in range(N_COINS):
         assert _coins[i] != ZERO_ADDRESS
+        assert _underlying_coins[i] != ZERO_ADDRESS
         self.balances[i] = 0
     self.coins = _coins
+    self.underlying_coins = _underlying_coins
     self.A = _A
     self.fee = _fee
     self.admin_fee = 0

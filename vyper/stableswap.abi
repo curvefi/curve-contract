@@ -163,6 +163,10 @@
     "name": "_coins"
    },
    {
+    "type": "address[3]",
+    "name": "_underlying_coins"
+   },
+   {
     "type": "address",
     "name": "_pool_token"
    },
