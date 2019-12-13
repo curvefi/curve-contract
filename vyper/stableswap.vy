@@ -211,10 +211,10 @@ def get_dy(i: int128, j: int128, dx: uint256) -> uint256:
     return (xp[j] - y) * 10 ** 18 / rates[j]
 
 
-@public
-@nonreentrant('lock')
-def exchange(i: int128, j: int128, dx: uint256,
-             min_dy: uint256, deadline: timestamp):
+@private
+def _exchange(i: int128, j: int128, dx: uint256,
+             min_dy: uint256, deadline: timestamp,
+             sender: address) -> uint256:
     assert block.timestamp <= deadline, "Transaction expired"
     assert i < N_COINS and j < N_COINS, "Coin number out of range"
     # dx and dy are in c-tokens
@@ -233,12 +233,46 @@ def exchange(i: int128, j: int128, dx: uint256,
     _dy: uint256 = (dy - dy_fee) * 10 ** 18 / rates[j]
     assert _dy >= min_dy
 
+    log.TokenExchange(sender, i, dx, j, _dy, dy_fee * 10 ** 18 / rates[j])
+
+    return _dy
+
+
+@public
+@nonreentrant('lock')
+def exchange(i: int128, j: int128, dx: uint256,
+             min_dy: uint256, deadline: timestamp):
+    dy: uint256 = self._exchange(i, j, dx, min_dy, deadline, msg.sender)
     assert_modifiable(cERC20(self.coins[i]).transferFrom(msg.sender, self, dx))
-    assert_modifiable(cERC20(self.coins[j]).transfer(msg.sender, _dy))
+    assert_modifiable(cERC20(self.coins[j]).transfer(msg.sender, dy))
 
-    log.TokenExchange(msg.sender, i, dx, j, _dy, dy_fee * 10 ** 18 / rates[j])
 
-    # If needed, redepmption should happen as an external call
+@public
+@nonreentrant('lock')
+def exchange_underlying(i: int128, j: int128, dx: uint256,
+                        min_dy: uint256, deadline: timestamp):
+    rates: uint256[N_COINS] = self._rates()
+    dx_: uint256 = dx * 10 ** 18 / rates[i]
+    min_dy_: uint256 = min_dy * 10 ** 18 / rates[j]
+
+    dy_: uint256 = self._exchange(i, j, dx_, min_dy_, deadline, msg.sender)
+    dy: uint256 = dy_ * rates[j] / 10 ** 18
+
+    ok: uint256 = 0
+    assert_modifiable(ERC20(self.underlying_coins[i])\
+        .transferFrom(msg.sender, self, dx))
+    ok = cERC20(self.coins[i]).mint(dx)
+    if ok > 0:
+        # Fail. Transfer back
+        ERC20(self.underlying_coins[i]).transfer(msg.sender, dx)
+        return
+    ok = cERC20(self.coins[j]).redeemUnderlying(dy_)
+    if ok > 0:
+        # Fail. Transfer c-token back at this point
+        cERC20(self.coins[j]).transfer(msg.sender, dy_)
+        return
+    assert_modifiable(ERC20(self.underlying_coins[j])\
+        .transfer(msg.sender, dy))
 
 
 @public
