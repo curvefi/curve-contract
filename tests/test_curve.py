@@ -12,18 +12,22 @@ def test_curve_in_contract(w3, coins, cerc20s, swap, n_coins):
     from_alice = {'from': alice}
 
     # Prepare x10 of each coin
+    n_ccoins = []
     for c, cc, u in zip(coins, cerc20s, UU):
         c.functions.approve(cc.address, n_coins * 10 * u).transact(from_alice)
         cc.functions.mint(n_coins * 10 * u).transact(from_alice)
         rate = cc.caller.exchangeRateStored()
-        assert cc.caller.balanceOf(alice) == n_coins * 10 * u * 10 ** 18 / rate
-
-    raise
+        n = n_coins * 10 * u * 10 ** 18 // rate
+        n_ccoins.append(n)
+        assert cc.caller.balanceOf(alice) == n
+        cc.functions.approve(swap.address, n // 10).transact(from_alice)
 
     # Add some coins
     swap.functions.\
-        add_liquidity([n_coins * u for u in UU], int(time.time()) + 3600).\
-        transact({'from': w3.eth.accounts[0]})
+        add_liquidity([n // 10 for n in n_ccoins], int(time.time()) + 3600).\
+        transact(from_alice)
+
+    raise
 
     # Python-based (tested) model with same parameters as contract
     curve = Curve(2 * 360, 3 * n_coins * max(UU), 3)
