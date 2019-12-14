@@ -157,7 +157,7 @@ def mint(mintAmount: uint256) -> uint256:
     value: uint256 = mintAmount * 10 ** 18 / self.exchangeRateStored
     self.total_supply += value
     self.balanceOf[msg.sender] += value
-    return value
+    return 0
 
 
 @public
@@ -172,7 +172,7 @@ def redeem(redeemTokens: uint256) -> uint256:
     self.balanceOf[msg.sender] -= redeemTokens
     self.total_supply -= redeemTokens
     self.underlying_token.transfer(msg.sender, uvalue)
-    return uvalue
+    return 0
 
 
 @public
@@ -187,7 +187,7 @@ def redeemUnderlying(redeemAmount: uint256) -> uint256:
     self.balanceOf[msg.sender] -= value
     self.total_supply -= value
     self.underlying_token.transfer(msg.sender, redeemAmount)
-    return value
+    return 0
 
 
 @public

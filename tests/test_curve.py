@@ -7,11 +7,18 @@ from .simulation import Curve
 
 
 @pytest.mark.parametrize('n_coins', [100, 10 ** 6, 10 ** 9])
-def test_curve_in_contract(w3, coins, swap, n_coins):
-    # Allow $1000 of each coin
-    for c, u in zip(coins, UU):
-        c.functions.approve(swap.address, n_coins * 10 * u).\
-                transact({'from': w3.eth.accounts[0]})
+def test_curve_in_contract(w3, coins, cerc20s, swap, n_coins):
+    alice = w3.eth.accounts[0]
+    from_alice = {'from': alice}
+
+    # Prepare x10 of each coin
+    for c, cc, u in zip(coins, cerc20s, UU):
+        c.functions.approve(cc.address, n_coins * 10 * u).transact(from_alice)
+        cc.functions.mint(n_coins * 10 * u).transact(from_alice)
+        rate = cc.caller.exchangeRateStored()
+        assert cc.caller.balanceOf(alice) == n_coins * 10 * u * 10 ** 18 / rate
+
+    raise
 
     # Add some coins
     swap.functions.\
