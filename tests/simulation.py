@@ -78,11 +78,12 @@ class Curve:
         return xp[j] - self.y(i, j, xp[i] + dx)
 
     def exchange(self, i, j, dx):
-        x = self.x[i] + dx
+        xp = self.xp()
+        x = xp[i] + dx
         y = self.y(i, j, x)
-        dy = self.x[j] - y
+        dy = xp[j] - y
         fee = dy * self.fee // 10 ** 10
         assert dy > 0
-        self.x[i] = x
-        self.x[j] = y + fee
+        self.x[i] = x * 10 ** 18 // self.p[i]
+        self.x[j] = (y + fee) * 10 ** 18 // self.p[j]
         return dy - fee
