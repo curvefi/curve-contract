@@ -27,14 +27,16 @@ def test_curve_in_contract(w3, coins, cerc20s, swap, n_coins):
         add_liquidity([n // 10 for n in n_ccoins], int(time.time()) + 3600).\
         transact(from_alice)
 
-    raise
-
     # Python-based (tested) model with same parameters as contract
     curve = Curve(2 * 360, 3 * n_coins * max(UU), 3)
 
     for k in range(5):
         for i, j in permutations(range(3), 2):
             dx = random.randrange(2 * n_coins * UU[i])
-            dy_1 = swap.caller.get_dy(i, j, dx)
+            rate_x = cerc20s[i].caller.exchangeRateStored() * UU[i]
+            dx_c = dx * 10 ** 18 // rate_x
+            dy_1_c = swap.caller.get_dy(i, j, dx_c)
             dy_2 = curve.dy(i, j, dx * max(UU) // UU[i]) * UU[j] // max(UU)
-            assert dy_1 == dy_2
+            rate_y = cerc20s[j].caller.exchangeRateStored() * UU[j]
+            dy_2_c = dy_2 * rate_y // 10 ** 18
+            assert dy_1_c == dy_2_c
