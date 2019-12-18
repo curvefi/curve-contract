@@ -10,6 +10,7 @@ N_COINS = 3
 UP = [18, 6, 6]
 UU = [10 ** p for p in UP]
 c_rates = [5 * UU[0], UU[1], 20 * UU[2]]
+PRECISIONS = [10 ** 18 // u for u in UU]
 
 
 @pytest.fixture
