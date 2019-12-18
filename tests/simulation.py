@@ -1,14 +1,22 @@
 class Curve:
-    def __init__(self, A, D, n):
+    def __init__(self, A, D, n, p=None):
         """
         A: Amplification coefficient
         D: Total deposit size
         n: number of currencies
+        p: target prices
         """
         self.A = A  # actually A * n ** (n - 1) because it's an invariant
         self.n = n
         self.x = [D // n] * n
         self.fee = 10 ** 7
+        if p:
+            self.p = p
+        else:
+            self.p = [10 ** 18] * n
+
+    def xp(self):
+        return [x * p // 10 ** 18 for x, p in zip(self.x, self.p)]
 
     def D(self):
         """
@@ -21,15 +29,17 @@ class Curve:
         D[j+1] = (A * n**n * sum(x_i) - D[j]**(n+1) / (n**n prod(x_i))) / (A * n**n - 1)
         """
         Dprev = 0
-        S = sum(self.x)
+        xp = self.xp()
+        S = sum(xp)
         D = S
         Ann = self.A * self.n
         while abs(D - Dprev) > 1:
             D_P = D
-            for x in self.x:
-                D_P = D_P * D // (self.n * x + 1)  # +1 is to prevent /0
+            for x in xp:
+                D_P = D_P * D // (self.n * x)
             Dprev = D
             D = (Ann * S + D_P * self.n) * D // ((Ann - 1) * D + (self.n + 1) * D_P)
+
         return D
 
     def y(self, i, j, x):
@@ -43,8 +53,8 @@ class Curve:
         x_1 = (x_1**2 + c) / (2*x_1 + b)
         """
         D = self.D()
-        xx = self.x[:]
-        xx[i] = x
+        xx = self.xp()
+        xx[i] = x  # x is quantity of underlying asset brought to 1e18 precision
         xx = [xx[k] for k in range(self.n) if k != j]
         Ann = self.A * self.n
         c = D
@@ -57,7 +67,7 @@ class Curve:
         while abs(y - y_prev) > 1:
             y_prev = y
             y = (y ** 2 + c) // (2 * y + b)
-        return y
+        return y  # the result is in underlying units too
 
     def dy(self, i, j, dx):
         return self.x[j] - self.y(i, j, self.x[i] + dx)
