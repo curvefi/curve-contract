@@ -30,12 +30,13 @@ def test_curve_in_contract(w3, coins, cerc20s, swap, n_coins):
         transact(from_alice)
 
     # Python-based (tested) model with same parameters as contract
+    balances = [swap.caller.balances(i) * PRECISIONS[i] for i in range(3)]
+    raise
     curve = Curve(2 * 360, 3 * n_coins * max(UU), 3,
                   [10 * 10 ** 17, 11 * 10 ** 17, 12 * 10 ** 17])
 
     for k in range(5):
         for i, j in permutations(range(3), 2):
-            print(k, i, j)
             dx = random.randrange(2 * n_coins * UU[i])
             rate_x = cerc20s[i].caller.exchangeRateStored()
             dx_c = dx * 10 ** 18 // rate_x

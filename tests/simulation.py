@@ -8,12 +8,15 @@ class Curve:
         """
         self.A = A  # actually A * n ** (n - 1) because it's an invariant
         self.n = n
-        self.x = [D // n] * n
         self.fee = 10 ** 7
         if p:
             self.p = p
         else:
             self.p = [10 ** 18] * n
+        if isinstance(D, list):
+            self.x = D
+        else:
+            self.x = [D // n * 10 ** 18 // _p for _p in self.p]
 
     def xp(self):
         return [x * p // 10 ** 18 for x, p in zip(self.x, self.p)]
@@ -70,7 +73,9 @@ class Curve:
         return y  # the result is in underlying units too
 
     def dy(self, i, j, dx):
-        return self.x[j] - self.y(i, j, self.x[i] + dx)
+        # dx and dy are in underlying units
+        xp = self.xp()
+        return xp[j] - self.y(i, j, xp[i] + dx)
 
     def exchange(self, i, j, dx):
         x = self.x[i] + dx
