@@ -33,7 +33,7 @@ def w3(tester):
 def coins(w3):
     return [deploy_contract(
                 w3, 'ERC20.vy', w3.eth.accounts[0],
-                b'Coin ' + str(i).encode(), str(i).encode(), UP[i], 10 ** 9)
+                b'Coin ' + str(i).encode(), str(i).encode(), UP[i], 10 ** 12)
             for i in range(N_COINS)]
 
 
@@ -51,7 +51,7 @@ def cerc20s(w3, coins):
                 18, 0, coins[i].address, c_rates[i])
               for i in range(N_COINS)]
     for t, c, u in zip(coins, ccoins, UU):
-        t.functions.transfer(c.address, 10 ** 8 * u)\
+        t.functions.transfer(c.address, 10 ** 11 * u)\
                 .transact({'from': w3.eth.accounts[0]})
     return ccoins
 
