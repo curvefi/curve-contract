@@ -14,9 +14,11 @@ def test_curve_in_contract(w3, coins, cerc20s, swap, n_coins):
     # Prepare x10 of each coin
     n_ccoins = []
     for c, cc, u in zip(coins, cerc20s, UU):
+        # Set price to non-1.0: 1.0, 1.1 and 1.2
+        rate = int(cc.caller.exchangeRateStored() * (1 + 0.1 * len(n_ccoins)))
+        cc.functions.set_exchange_rate(rate).transact(from_alice)
         c.functions.approve(cc.address, n_coins * 10 * u).transact(from_alice)
         cc.functions.mint(n_coins * 10 * u).transact(from_alice)
-        rate = cc.caller.exchangeRateStored()
         n = n_coins * 10 * u * 10 ** 18 // rate
         n_ccoins.append(n)
         assert cc.caller.balanceOf(alice) == n
@@ -28,7 +30,8 @@ def test_curve_in_contract(w3, coins, cerc20s, swap, n_coins):
         transact(from_alice)
 
     # Python-based (tested) model with same parameters as contract
-    curve = Curve(2 * 360, 3 * n_coins * max(UU), 3)
+    curve = Curve(2 * 360, 3 * n_coins * max(UU), 3,
+                  [10 * 10 ** 17, 11 * 10 ** 17, 12 * 10 ** 17])
 
     for k in range(5):
         for i, j in permutations(range(3), 2):
