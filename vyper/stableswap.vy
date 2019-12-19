@@ -261,12 +261,13 @@ def exchange_underlying(i: int128, j: int128, dx: uint256,
     ok: uint256 = 0
     assert_modifiable(ERC20(self.underlying_coins[i])\
         .transferFrom(msg.sender, self, dx))
+    ERC20(self.underlying_coins[i]).approve(self.coins[i], dx)
     ok = cERC20(self.coins[i]).mint(dx)
     if ok > 0:
         # Fail. Transfer back
         ERC20(self.underlying_coins[i]).transfer(msg.sender, dx)
         return
-    ok = cERC20(self.coins[j]).redeemUnderlying(dy_)
+    ok = cERC20(self.coins[j]).redeem(dy_)
     if ok > 0:
         # Fail. Transfer c-token back at this point
         cERC20(self.coins[j]).transfer(msg.sender, dy_)
