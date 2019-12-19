@@ -233,7 +233,7 @@ def _exchange(i: int128, j: int128, dx: uint256,
     _dy: uint256 = (dy - dy_fee) * 10 ** 18 / rates[j]
     assert _dy >= min_dy
 
-    log.TokenExchange(sender, i, dx, j, _dy, dy_fee * 10 ** 18 / rates[j])
+    # log.TokenExchange(sender, i, dx, j, _dy, dy_fee * 10 ** 18 / rates[j])
 
     return _dy
 
@@ -251,12 +251,13 @@ def exchange(i: int128, j: int128, dx: uint256,
 @nonreentrant('lock')
 def exchange_underlying(i: int128, j: int128, dx: uint256,
                         min_dy: uint256, deadline: timestamp):
-    rates: uint256[N_COINS] = self._rates()
-    dx_: uint256 = dx * 10 ** 18 / rates[i]
-    min_dy_: uint256 = min_dy * 10 ** 18 / rates[j]
+    rate_i: uint256 = cERC20(self.coins[i]).exchangeRateStored()
+    rate_j: uint256 = cERC20(self.coins[j]).exchangeRateStored()
+    dx_: uint256 = dx * 10 ** 18 / rate_i
+    min_dy_: uint256 = min_dy * 10 ** 18 / rate_i
 
     dy_: uint256 = self._exchange(i, j, dx_, min_dy_, deadline, msg.sender)
-    dy: uint256 = dy_ * rates[j] / 10 ** 18
+    dy: uint256 = dy_ * rate_j / 10 ** 18
 
     ok: uint256 = 0
     assert_modifiable(ERC20(self.underlying_coins[i])\

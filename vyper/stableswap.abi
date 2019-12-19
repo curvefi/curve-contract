@@ -258,7 +258,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 6094781
+  "gas": 6090266
  },
  {
   "name": "exchange_underlying",
@@ -289,7 +289,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 6158559
+  "gas": 6149633
  },
  {
   "name": "remove_liquidity",

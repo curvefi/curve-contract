@@ -38,11 +38,11 @@ def test_few_trades(w3, coins, cerc20s, swap):
     swap.functions.exchange_underlying(
         0, 1, 1 * UU[0], int(0.9 * UU[1]), int(time.time()) + 3600
     ).transact({'from': bob})
-    raise
 
     assert coins[0].caller.balanceOf(bob) == 99 * UU[0]
     assert coins[1].caller.balanceOf(bob) > int(100.9 * UU[1])
     assert coins[1].caller.balanceOf(bob) < 101 * UU[1]
+    raise
 
     # Why not more
     swap.functions.exchange(0, 1, 1 * UU[0],
