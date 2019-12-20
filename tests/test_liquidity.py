@@ -7,45 +7,53 @@ from .conftest import UU
 N_COINS = 3
 
 
-def test_add_liquidity(w3, coins, swap):
-    # Allow $1000 of each coin
-    for c, u in zip(coins, UU):
-        c.functions.approve(swap.address, 1000 * u).\
-            transact({'from': w3.eth.accounts[0]})
+def test_add_liquidity(w3, coins, cerc20s, swap):
+    sam = w3.eth.accounts[0]  # Sam owns the bank
+    from_sam = {'from': sam}
 
-    # Adding the first time
-    swap.functions.add_liquidity([100 * u for u in UU], int(time.time()) + 3600).\
-        transact({'from': w3.eth.accounts[0]})
+    # Allow $1000 of each coin
+    deposits = []
+    for c, cc, u in zip(coins, cerc20s, UU):
+        c.functions.approve(cc.address, 1000 * u).transact(from_sam)
+        cc.functions.mint(1000 * u).transact(from_sam)
+        balance = cc.caller.balanceOf(sam)
+        deposits.append(balance)
+        cc.functions.approve(swap.address, balance).transact(from_sam)
+
+    # Adding the first time - $100 liquidity of each coin
+    swap.functions.add_liquidity(
+        [b // 10 for b in deposits], int(time.time()) + 3600
+    ).transact(from_sam)
 
     # Adding the second time does a different calculation
-    swap.functions.add_liquidity([100 * u for u in UU], int(time.time()) + 3600).\
-        transact({'from': w3.eth.accounts[0]})
+    swap.functions.add_liquidity(
+        [b // 10 for b in deposits], int(time.time()) + 3600
+    ).transact(from_sam)
 
     with pytest.raises(TransactionFailed):
         # Fail because transaction is expired
-        swap.functions.\
-            add_liquidity([100 * u for u in UU], int(time.time()) - 3600).\
-            transact({'from': w3.eth.accounts[0]})
+        swap.functions.add_liquidity(
+            [b // 10 for b in deposits], int(time.time()) - 3600
+        ).transact(from_sam)
 
     with pytest.raises(TransactionFailed):
         # Fail because this account has no coins
-        swap.functions.\
-            add_liquidity([100 * u for u in UU], int(time.time()) + 3600).\
-            transact({'from': w3.eth.accounts[1]})
+        swap.functions.add_liquidity(
+            [b // 10 for b in deposits], int(time.time()) + 3600
+        ).transact({'from': w3.eth.accounts[1]})
 
     # Reduce the allowance
-    for c, u in zip(coins, UU):
-        c.functions.approve(swap.address, 99 * u).\
-            transact({'from': w3.eth.accounts[0]})
+    for cc, b in zip(cerc20s, deposits):
+        cc.functions.approve(swap.address, int(b * 0.099)).transact(from_sam)
 
     with pytest.raises(TransactionFailed):
         # Fail because the allowance is now not enough
-        swap.functions.\
-            add_liquidity([100 * u for u in UU], int(time.time()) + 3600).\
-            transact({'from': w3.eth.accounts[0]})
+        swap.functions.add_liquidity(
+            [b // 10 for b in deposits], int(time.time()) + 3600
+        ).transact(from_sam)
 
-    for i in range(N_COINS):
-        assert swap.caller.balances(i) == 200 * max(UU)
+    for i, b in enumerate(deposits):
+        assert swap.caller.balances(i) == b // 5
 
 
 # @pytest.mark.parametrize('iteration', range(40))
