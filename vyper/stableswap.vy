@@ -254,7 +254,7 @@ def exchange_underlying(i: int128, j: int128, dx: uint256,
     rate_i: uint256 = cERC20(self.coins[i]).exchangeRateStored()
     rate_j: uint256 = cERC20(self.coins[j]).exchangeRateStored()
     dx_: uint256 = dx * 10 ** 18 / rate_i
-    min_dy_: uint256 = min_dy * 10 ** 18 / rate_i
+    min_dy_: uint256 = min_dy * 10 ** 18 / rate_j
 
     dy_: uint256 = self._exchange(i, j, dx_, min_dy_, deadline, msg.sender)
     dy: uint256 = dy_ * rate_j / 10 ** 18
