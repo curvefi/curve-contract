@@ -2,7 +2,7 @@ import time
 import random
 from itertools import permutations
 from .simulation import Curve
-from .conftest import UU
+from .conftest import UU, PRECISIONS
 
 N_COINS = 3
 
@@ -59,7 +59,7 @@ def test_simulated_exchange(w3, coins, cerc20s, swap):
     sam = w3.eth.accounts[0]  # Sam owns the bank
     bob = w3.eth.accounts[1]  # Bob the customer
     from_sam = {'from': sam}
-    # from_bob = {'from': bob}
+    from_bob = {'from': bob}
 
     # Allow $1000 of each coin
     deposits = []
@@ -77,13 +77,15 @@ def test_simulated_exchange(w3, coins, cerc20s, swap):
     ).transact(from_sam)
 
     # Model
-    curve = Curve(2 * 360, N_COINS * 100 * max(UU), N_COINS)
+    balances = [int(swap.caller.balances(i)) for i in range(3)]
+    rates = [int(c.caller.exchangeRateStored()) * p for c, p in zip(cerc20s, PRECISIONS)]
+    curve = Curve(2 * 360, balances, N_COINS, rates)
 
     for c, u in zip(coins, UU):
         # Fund the customer with $100 of each coin
-        c.functions.transfer(bob, 100 * u).transact({'from': sam})
+        c.functions.transfer(bob, 100 * u).transact(from_sam)
         # Approve by Bob
-        c.functions.approve(swap.address, 100 * u).transact({'from': bob})
+        c.functions.approve(swap.address, 100 * u).transact(from_bob)
 
     # Start trading!
     for k in range(50):
@@ -91,10 +93,12 @@ def test_simulated_exchange(w3, coins, cerc20s, swap):
         value = random.randrange(5 * UU[i])
         x_0 = coins[i].caller.balanceOf(bob)
         y_0 = coins[j].caller.balanceOf(bob)
-        swap.functions.exchange(i, j, value,
-                                int(0.5 * value * UU[j] / UU[i]),
-                                int(time.time()) + 3600).\
-            transact({'from': bob})
+        coins[i].functions.approve(swap.address, value).transact(from_bob)
+        swap.functions.exchange_underlying(
+            i, j, value,
+            int(0.5 * value * UU[j] / UU[i]),
+            int(time.time()) + 3600
+        ).transact(from_bob)
         x_1 = coins[i].caller.balanceOf(bob)
         y_1 = coins[j].caller.balanceOf(bob)
 
@@ -105,6 +109,6 @@ def test_simulated_exchange(w3, coins, cerc20s, swap):
 
     # Let's see what we have left
     x = [swap.caller.balances(i) for i in range(N_COINS)]
-    assert tuple(x) == tuple(curve.x)
+    assert tuple(round(a / b, 10) for a, b in zip(x, curve.x)) == (1.0,) * N_COINS
 
-    assert sum(x) > 300 * max(UU)
+    assert sum(x[i] * rates[i] / 1e18 for i in range(N_COINS)) > 300 * max(UU)
