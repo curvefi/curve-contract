@@ -89,6 +89,13 @@ def test_simulated_exchange(w3, coins, cerc20s, swap):
 
     # Start trading!
     for k in range(50):
+        # Tune exchange rates
+        for i, cc in enumerate(cerc20s):
+            rate = int(cc.caller.exchangeRateStored() * 1.0001)
+            cc.functions.set_exchange_rate(rate).transact(from_sam)
+            curve.p[i] = rate * PRECISIONS[i]
+
+        # Simulate the exchange
         i, j = random.choice(list(permutations(range(N_COINS), 2)))
         value = random.randrange(5 * UU[i])
         x_0 = coins[i].caller.balanceOf(bob)
