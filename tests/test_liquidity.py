@@ -57,7 +57,7 @@ def test_add_liquidity(w3, coins, cerc20s, swap):
 
 
 # @pytest.mark.parametrize('iteration', range(40))
-def test_ratio_preservation(w3, coins, swap, pool_token):
+def test_ratio_preservation(w3, coins, cerc20s, swap, pool_token):
     alice, bob = w3.eth.accounts[:2]
     dust = 5
 
@@ -65,14 +65,17 @@ def test_ratio_preservation(w3, coins, swap, pool_token):
     # Also give Bob something to trade with
     alice_balances = []
     bob_balances = []
-    for c, u in zip(coins, UU):
-        c.functions.approve(swap.address, 1000 * u).transact({'from': alice})
-        c.functions.transfer(bob, 1000 * u).transact({'from': alice})
-        c.functions.approve(swap.address, 1000 * u).transact({'from': bob})
-        alice_balances.append(c.caller.balanceOf(alice))
-        bob_balances.append(c.caller.balanceOf(bob))
-    pool_token.functions.approve(swap.address, 10000 * max(UU)).transact({'from': alice})
-    pool_token.functions.approve(swap.address, 10000 * max(UU)).transact({'from': bob})
+    deposits = []
+    for c, cc, u in zip(coins, cerc20s, UU):
+        c.functions.approve(cc.address, 2000 * u).transact({'from': alice})
+        cc.functions.mint(2000 * u).transact({'from': alice})
+        balance = cc.caller.balanceOf(alice) // 2
+        deposits.append(balance)
+        cc.functions.approve(swap.address, balance).transact({'from': alice})
+        cc.functions.transfer(bob, balance).transact({'from': alice})
+        cc.functions.approve(swap.address, balance).transact({'from': bob})
+        alice_balances.append(cc.caller.balanceOf(alice))
+        bob_balances.append(cc.caller.balanceOf(bob))
 
     def assert_all_equal(address):
         balance_0 = coins[0].caller.balanceOf(address) * max(UU) // UU[0]
@@ -80,6 +83,7 @@ def test_ratio_preservation(w3, coins, swap, pool_token):
         for i in range(1, N_COINS):
             assert abs(balance_0 * UU[i] // max(UU) - coins[i].caller.balanceOf(address)) <= 5
             assert swap_balance_0 == swap.caller.balances(i)
+    raise
 
     # Test that everything is equal when adding and removing liquidity
     deadline = int(time.time()) + 3600
