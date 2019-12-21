@@ -233,7 +233,7 @@ def _exchange(i: int128, j: int128, dx: uint256,
     _dy: uint256 = (dy - dy_fee) * 10 ** 18 / rates[j]
     assert _dy >= min_dy
 
-    # log.TokenExchange(sender, i, dx, j, _dy, dy_fee * 10 ** 18 / rates[j])
+    log.TokenExchange(sender, i, dx, j, _dy, dy_fee * 10 ** 18 / rates[j])
 
     return _dy
 
