@@ -77,29 +77,43 @@ def test_ratio_preservation(w3, coins, cerc20s, swap, pool_token):
         alice_balances.append(cc.caller.balanceOf(alice))
         bob_balances.append(cc.caller.balanceOf(bob))
 
+    pool_token.functions.approve(swap.address, 10000 * max(UU)).transact({'from': alice})
+    pool_token.functions.approve(swap.address, 10000 * max(UU)).transact({'from': bob})
+
+    rates = [cc.caller.exchangeRateStored() for cc in cerc20s]
+
     def assert_all_equal(address):
-        balance_0 = coins[0].caller.balanceOf(address) * max(UU) // UU[0]
-        swap_balance_0 = swap.caller.balances(0)
+        balance_0 = cerc20s[0].caller.balanceOf(address) * rates[0] // UU[0]
+        swap_balance_0 = swap.caller.balances(0) * rates[0] // UU[0]
         for i in range(1, N_COINS):
-            assert abs(balance_0 * UU[i] // max(UU) - coins[i].caller.balanceOf(address)) <= 5
-            assert swap_balance_0 == swap.caller.balances(i)
-    raise
+            balance_i = cerc20s[i].caller.balanceOf(address) * rates[i] // UU[i]
+            swap_balance_i = swap.caller.balances(i) * rates[i] // UU[i]
+            assert abs(balance_0 - balance_i) / (balance_0 + balance_i) < 1e-10
+            assert abs(swap_balance_0 - swap_balance_i) / (swap_balance_0 + swap_balance_i) < 1e-10
 
     # Test that everything is equal when adding and removing liquidity
     deadline = int(time.time()) + 3600
-    swap.functions.add_liquidity([50 * u for u in UU], deadline).transact({'from': alice})
-    swap.functions.add_liquidity([50 * u for u in UU], deadline).transact({'from': bob})
+    swap.functions.add_liquidity([d // 20 for d in deposits], deadline).transact({'from': alice})
+    swap.functions.add_liquidity([d // 20 for d in deposits], deadline).transact({'from': bob})
     for i in range(5):
+        # Add liquidity from Alice
         value = random.randrange(1, 100)
-        swap.functions.add_liquidity([value * u for u in UU], deadline).transact({'from': alice})
+        swap.functions.add_liquidity(
+            [value * d // 1000 for d in deposits], deadline
+        ).transact({'from': alice})
         assert_all_equal(alice)
+        # Add liquidity from Bob
         value = random.randrange(1, 100)
-        swap.functions.add_liquidity([value * u for u in UU], deadline).transact({'from': bob})
+        swap.functions.add_liquidity(
+            [value * d // 1000 for d in deposits], deadline
+        ).transact({'from': bob})
         assert_all_equal(bob)
+        # Remove liquidity from Alice
         value = random.randrange(10 * max(UU))
         swap.functions.remove_liquidity(value, deadline, [0] * N_COINS).\
             transact({'from': alice})
         assert_all_equal(alice)
+        # Remove liquidity from Bob
         value = random.randrange(10 * max(UU))
         swap.functions.remove_liquidity(value, deadline, [0] * N_COINS).\
             transact({'from': bob})
@@ -108,7 +122,7 @@ def test_ratio_preservation(w3, coins, cerc20s, swap, pool_token):
     # And let's withdraw all
     value = pool_token.caller.balanceOf(alice)
     with pytest.raises(TransactionFailed):
-        # Cannot withdraw more than the limits we've set
+        # Cannot withdraw less than the limits we've set
         swap.functions.remove_liquidity(value, deadline, [value + 1] * N_COINS).\
             transact({'from': alice})
     swap.functions.remove_liquidity(value, deadline, [0] * N_COINS).\
