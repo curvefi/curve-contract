@@ -412,7 +412,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 13794
+  "gas": 13389
  },
  {
   "name": "coins",

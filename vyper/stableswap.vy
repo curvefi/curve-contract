@@ -415,6 +415,6 @@ def withdraw_admin_fees():
 
     for i in range(N_COINS):
         c: address = self.coins[i]
-        value: uint256 = cERC20(c).balanceOf(self) - self.balances[i] / _precisions[i]
+        value: uint256 = cERC20(c).balanceOf(self) - self.balances[i]
         if value > 0:
             assert_modifiable(cERC20(c).transfer(msg.sender, value))
