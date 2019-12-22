@@ -53,7 +53,7 @@ def test_transfer_ownership(tester, w3, swap):
         swap.functions.apply_transfer_ownership().transact({'from': alice})
 
 
-def test_trade_and_withdraw_fees(tester, w3, coins, swap):
+def test_trade_and_withdraw_fees(tester, w3, coins, cerc20s, swap):
     alice, owner, bob = w3.eth.accounts[:3]
     # Owner is the exchange admin
     # Alice and Bob trade
@@ -63,11 +63,17 @@ def test_trade_and_withdraw_fees(tester, w3, coins, swap):
         2 * 360, int(0.001 * 10 ** 10), int(0.2 * 10 ** 10)
         ).transact({'from': owner})
 
-    for c, u in zip(coins, UU):
-        c.functions.transfer(bob, 1000 * u).transact({'from': alice})
-        c.functions.approve(swap.address, 1000 * u).transact({'from': alice})
+    deposits = []
+    for c, cc, u in zip(coins, cerc20s, UU):
+        c.functions.approve(cc.address, 2000 * u).transact({'from': alice})
+        cc.functions.mint(2000 * u).transact({'from': alice})
+        balance = cc.caller.balanceOf(alice) // 2
+        deposits.append(balance)
+        cc.functions.approve(swap.address, balance).transact({'from': alice})
+        cc.functions.transfer(bob, balance).transact({'from': alice})
+        cc.functions.approve(swap.address, balance).transact({'from': bob})
 
-    swap.functions.add_liquidity([1000 * u for u in UU], int(time()) + 3600).\
+    swap.functions.add_liquidity(deposits, int(time()) + 3600).\
         transact({'from': alice})
 
     current_time = int(time()) + 86400 * 7 + 2000
@@ -80,19 +86,19 @@ def test_trade_and_withdraw_fees(tester, w3, coins, swap):
 
     for k in range(10):
         i, j = random.choice(list(permutations(range(N_COINS), 2)))
-        value = random.randrange(1, 100) * UU[i]
-        y_0 = coins[j].caller.balanceOf(bob)
-        coins[i].functions.approve(swap.address, value).transact({'from': bob})
-        swap.functions.exchange(i, j, value,
-                                int(0.5 * value * UU[j] / UU[i]), current_time + 3600).\
-            transact({'from': bob})
-        y_1 = coins[j].caller.balanceOf(bob)
+        value = int(random.random() * deposits[i] / 10)
+        y_0 = cerc20s[j].caller.balanceOf(bob)
+        cerc20s[i].functions.approve(swap.address, value).transact({'from': bob})
+        swap.functions.exchange(
+            i, j, value, 0, current_time + 3600
+        ).transact({'from': bob})
+        y_1 = cerc20s[j].caller.balanceOf(bob)
 
         volumes[j] += y_1 - y_0
 
     swap.functions.withdraw_admin_fees().transact({'from': owner})
 
-    for v, c in zip(volumes, coins):
+    for v, c in zip(volumes, cerc20s):
         b = c.caller.balanceOf(owner)
         f = int((v / 0.999 - v) * 0.2)
         assert abs(1 - b / f) < 1e-3
