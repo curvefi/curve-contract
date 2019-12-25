@@ -61,7 +61,11 @@ def swap(w3, coins, cerc20s, pool_token):
     swap_contract = deploy_contract(
             w3, ['stableswap.vy', 'ERC20m.vy', 'cERC20.vy'], w3.eth.accounts[1],
             [c.address for c in cerc20s], [c.address for c in coins],
-            pool_token.address, 360 * 2, 10 ** 7)
+            pool_token.address, 360 * 2, 10 ** 7,
+            replacements={
+                '___N_COINS___': str(N_COINS),
+                '___N_ZEROS___': '[' + ', '.join(['ZERO256'] * N_COINS) + ']'
+            })
     pool_token.functions.set_minter(swap_contract.address).transact()
     with open(join(CONTRACT_PATH, 'stableswap.abi'), 'w') as f:
         json.dump(swap_contract.abi, f, indent=True)

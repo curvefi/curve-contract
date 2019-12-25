@@ -4,7 +4,7 @@ from vyper import compile_code
 CONTRACT_PATH = join(dirname(dirname(realpath(__file__))), 'vyper')
 
 
-def deploy_contract(w3, filename, account, *args):
+def deploy_contract(w3, filename, account, *args, replacements=None):
     if isinstance(filename, list):
         interface_files = filename[1:]
         filename = filename[0]
@@ -13,6 +13,9 @@ def deploy_contract(w3, filename, account, *args):
 
     with open(join(CONTRACT_PATH, filename)) as f:
         source = f.read()
+    if replacements:
+        for k, v in replacements.items():
+            source = source.replace(k, v)
     interface_codes = {}
     for i in interface_files:
         name = splitext(i)[0]
