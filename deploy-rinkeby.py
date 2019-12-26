@@ -14,7 +14,8 @@ UNDERLYING_COINS = ['0x5592EC0cfb4dbc12D3aB100b257153436a1f0FEa', '0x4DBCdF9B62e
 C_COINS = ['0x6D7F0754FFeb405d23C51CE938289d4835bE3b14', '0x5B281A6DdA0B271e91ae35DE655Ad301C976edb1']
 PRECISIONS = [10 ** 18, 10 ** 6]
 N_COINS = len(C_COINS)
-SWAP_DEPLOY_ADDRESS = '0x8E082A9f19f62C21e8b6bB542ca9F57148c64131'  # password - "test"
+SWAP_DEPLOY_ADDRESS = '0x8E082A9f19f62C21e8b6bB542ca9F57148c64131'
+GETH_PASSWORD = 'test'
 
 HELP = """swap, token = deploy_swap(coins, A, fee) to deploy swap contract from the list
 ====================================================="""
@@ -26,6 +27,7 @@ if POA:
 
 
 def deploy_swap(A, fee):
+    w3.geth.personal.unlockAccount(w3.eth.accounts[0], GETH_PASSWORD)
     A = A * 2
     fee = int(fee * 10 ** 10)
     pool_token = deploy_contract(
