@@ -7,7 +7,7 @@ from tests.deploy import deploy_contract
 import json
 
 # Deployment parameters
-provider = Web3.HTTPProvider('http://127.0.0.1:8545')
+provider = Web3.IPCProvider('~/.ethereum/rinkeby/geth.ipc')
 POA = True
 # DAI, USDC
 UNDERLYING_COINS = ['0x5592EC0cfb4dbc12D3aB100b257153436a1f0FEa', '0x4DBCdF9B62e891a7cec5A2568C3F4FAF9E8Abe2b']
