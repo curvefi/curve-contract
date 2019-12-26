@@ -50,6 +50,8 @@ def deploy_swap(A, fee):
     print('---=== ABI ===---')
     print(abi)
     print('=================')
+    print('Pool token:', pool_token.address)
+    print('Swap contract:', swap_contract.address)
 
     return swap_contract, pool_token
 
