@@ -17,7 +17,7 @@ N_COINS = len(C_COINS)
 SWAP_DEPLOY_ADDRESS = '0x8E082A9f19f62C21e8b6bB542ca9F57148c64131'
 GETH_PASSWORD = 'test'
 
-HELP = """swap, token = deploy_swap(coins, A, fee) to deploy swap contract from the list
+HELP = """swap, token = deploy_swap(A, fee) to deploy swap contract from the list
 ====================================================="""
 
 
