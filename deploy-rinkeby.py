@@ -29,7 +29,7 @@ def deploy_swap(A, fee):
     A = A * 2
     fee = int(fee * 10 ** 10)
     pool_token = deploy_contract(
-        w3, 'ERC20.vy', SWAP_DEPLOY_ADDRESS, b'Stableswap', b'STBL', 18, 0)
+        w3, 'ERC20.vy', SWAP_DEPLOY_ADDRESS, b'Stablecoins.exchange cDAI/cUSDC', b'cDAIUSDC', 18, 0)
     swap_contract = deploy_contract(
             w3, ['stableswap.vy', 'ERC20m.vy'], SWAP_DEPLOY_ADDRESS,
             C_COINS, UNDERLYING_COINS, pool_token.address, A, fee,
