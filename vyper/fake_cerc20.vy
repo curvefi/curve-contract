@@ -193,3 +193,10 @@ def redeemUnderlying(redeemAmount: uint256) -> uint256:
 @public
 def set_exchange_rate(rate: uint256):
     self.exchangeRateStored = rate
+
+
+@public
+def exchangeRateCurrent() -> uint256:
+    rate: uint256 = self.exchangeRateStored
+    self.exchangeRateStored = rate  # Simulate blockchain write
+    return rate
