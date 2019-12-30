@@ -84,17 +84,11 @@ def _current_rates() -> uint256[N_COINS]:
 
 @private
 @constant
-def _xp_raw(rates: uint256[N_COINS]) -> uint256[N_COINS]:
+def _xp(rates: uint256[N_COINS]) -> uint256[N_COINS]:
     result: uint256[N_COINS] = rates
     for i in range(N_COINS):
         result[i] = result[i] * self.balances[i] / 10 ** 18
     return result
-
-
-@private
-@constant
-def _xp() -> uint256[N_COINS]:
-    return self._xp_raw(self._stored_rates())
 
 
 @private
@@ -136,7 +130,7 @@ def add_liquidity(amounts: uint256[N_COINS], deadline: timestamp):
     # Initial invariant
     D0: uint256 = 0
     if token_supply > 0:
-        D0 = self.get_D(self._xp_raw(rates))
+        D0 = self.get_D(self._xp(rates))
 
     for i in range(N_COINS):
         # Check for allowances before any transfers or calculations
@@ -150,7 +144,7 @@ def add_liquidity(amounts: uint256[N_COINS], deadline: timestamp):
         self.balances[i] += amounts[i]
 
     # Invariant after change
-    D1: uint256 = self.get_D(self._xp_raw(rates))
+    D1: uint256 = self.get_D(self._xp(rates))
     assert D1 > D0
 
     # Calculate, how much pool tokens to mint
@@ -212,7 +206,7 @@ def get_y(i: int128, j: int128, x: uint256, _xp: uint256[N_COINS]) -> uint256:
 def get_dy(i: int128, j: int128, dx: uint256) -> uint256:
     # dx and dy in c-units
     rates: uint256[N_COINS] = self._stored_rates()
-    xp: uint256[N_COINS] = self._xp_raw(rates)
+    xp: uint256[N_COINS] = self._xp(rates)
 
     x: uint256 = xp[i] + dx * rates[i] / 10 ** 18
     y: uint256 = self.get_y(i, j, x, xp)
@@ -227,7 +221,7 @@ def _exchange(i: int128, j: int128, dx: uint256,
     assert i < N_COINS and j < N_COINS, "Coin number out of range"
     # dx and dy are in c-tokens
 
-    xp: uint256[N_COINS] = self._xp_raw(rates)
+    xp: uint256[N_COINS] = self._xp(rates)
 
     x: uint256 = xp[i] + dx * rates[i] / 10 ** 18
     y: uint256 = self.get_y(i, j, x, xp)
@@ -323,11 +317,11 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS], deadline: timestamp):
     _admin_fee: uint256 = convert(self.admin_fee, uint256)
     rates: uint256[N_COINS] = self._current_rates()
 
-    D0: uint256 = self.get_D(self._xp_raw(rates))
+    D0: uint256 = self.get_D(self._xp(rates))
     for i in range(N_COINS):
         fees[i] = amounts[i] * _fee / 10 ** 10
         self.balances[i] -= amounts[i] + fees[i]  # Charge all fees
-    D1: uint256 = self.get_D(self._xp_raw(rates))
+    D1: uint256 = self.get_D(self._xp(rates))
 
     token_amount: uint256 = (D0 - D1) * token_supply / D0
     assert self.token.balanceOf(msg.sender) >= token_amount
