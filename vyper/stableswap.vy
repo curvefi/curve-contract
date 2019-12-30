@@ -65,10 +65,19 @@ def __init__(_coins: address[N_COINS], _underlying_coins: address[N_COINS],
 
 @private
 @constant
-def _rates() -> uint256[N_COINS]:
+def _stored_rates() -> uint256[N_COINS]:
     result: uint256[N_COINS] = PRECISION_MUL
     for i in range(N_COINS):
         rate: uint256 = cERC20(self.coins[i]).exchangeRateStored()
+        result[i] = rate * result[i]
+    return result
+
+
+@private
+def _current_rates() -> uint256[N_COINS]:
+    result: uint256[N_COINS] = PRECISION_MUL
+    for i in range(N_COINS):
+        rate: uint256 = cERC20(self.coins[i]).exchangeRateCurrent()
         result[i] = rate * result[i]
     return result
 
@@ -85,7 +94,7 @@ def _xp_raw(rates: uint256[N_COINS]) -> uint256[N_COINS]:
 @private
 @constant
 def _xp() -> uint256[N_COINS]:
-    return self._xp_raw(self._rates())
+    return self._xp_raw(self._stored_rates())
 
 
 @private
@@ -123,10 +132,11 @@ def add_liquidity(amounts: uint256[N_COINS], deadline: timestamp):
     assert block.timestamp <= deadline, "Transaction expired"
 
     token_supply: uint256 = self.token.totalSupply()
+    rates: uint256[N_COINS] = self._current_rates()
     # Initial invariant
     D0: uint256 = 0
     if token_supply > 0:
-        D0 = self.get_D(self._xp())
+        D0 = self.get_D(self._xp_raw(rates))
 
     for i in range(N_COINS):
         # Check for allowances before any transfers or calculations
@@ -140,7 +150,7 @@ def add_liquidity(amounts: uint256[N_COINS], deadline: timestamp):
         self.balances[i] += amounts[i]
 
     # Invariant after change
-    D1: uint256 = self.get_D(self._xp())
+    D1: uint256 = self.get_D(self._xp_raw(rates))
     assert D1 > D0
 
     # Calculate, how much pool tokens to mint
@@ -201,7 +211,7 @@ def get_y(i: int128, j: int128, x: uint256, _xp: uint256[N_COINS]) -> uint256:
 @constant
 def get_dy(i: int128, j: int128, dx: uint256) -> uint256:
     # dx and dy in c-units
-    rates: uint256[N_COINS] = self._rates()
+    rates: uint256[N_COINS] = self._stored_rates()
     xp: uint256[N_COINS] = self._xp_raw(rates)
 
     x: uint256 = xp[i] + dx * rates[i] / 10 ** 18
@@ -212,12 +222,11 @@ def get_dy(i: int128, j: int128, dx: uint256) -> uint256:
 @private
 def _exchange(i: int128, j: int128, dx: uint256,
              min_dy: uint256, deadline: timestamp,
-             sender: address) -> uint256:
+             sender: address, rates: uint256[N_COINS]) -> uint256:
     assert block.timestamp <= deadline, "Transaction expired"
     assert i < N_COINS and j < N_COINS, "Coin number out of range"
     # dx and dy are in c-tokens
 
-    rates: uint256[N_COINS] = self._rates()
     xp: uint256[N_COINS] = self._xp_raw(rates)
 
     x: uint256 = xp[i] + dx * rates[i] / 10 ** 18
@@ -240,7 +249,8 @@ def _exchange(i: int128, j: int128, dx: uint256,
 @nonreentrant('lock')
 def exchange(i: int128, j: int128, dx: uint256,
              min_dy: uint256, deadline: timestamp):
-    dy: uint256 = self._exchange(i, j, dx, min_dy, deadline, msg.sender)
+    rates: uint256[N_COINS] = self._current_rates()
+    dy: uint256 = self._exchange(i, j, dx, min_dy, deadline, msg.sender, rates)
     assert_modifiable(cERC20(self.coins[i]).transferFrom(msg.sender, self, dx))
     assert_modifiable(cERC20(self.coins[j]).transfer(msg.sender, dy))
 
@@ -249,12 +259,14 @@ def exchange(i: int128, j: int128, dx: uint256,
 @nonreentrant('lock')
 def exchange_underlying(i: int128, j: int128, dx: uint256,
                         min_dy: uint256, deadline: timestamp):
-    rate_i: uint256 = cERC20(self.coins[i]).exchangeRateStored()
-    rate_j: uint256 = cERC20(self.coins[j]).exchangeRateStored()
+    rates: uint256[N_COINS] = self._current_rates()
+    precisions: uint256[N_COINS] = PRECISION_MUL
+    rate_i: uint256 = rates[i] / precisions[i]
+    rate_j: uint256 = rates[j] / precisions[j]
     dx_: uint256 = dx * 10 ** 18 / rate_i
     min_dy_: uint256 = min_dy * 10 ** 18 / rate_j
 
-    dy_: uint256 = self._exchange(i, j, dx_, min_dy_, deadline, msg.sender)
+    dy_: uint256 = self._exchange(i, j, dx_, min_dy_, deadline, msg.sender, rates)
     dy: uint256 = dy_ * rate_j / 10 ** 18
 
     ok: uint256 = 0
@@ -309,12 +321,13 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS], deadline: timestamp):
     fees: uint256[N_COINS] = ZEROS
     _fee: uint256 = convert(self.fee, uint256)
     _admin_fee: uint256 = convert(self.admin_fee, uint256)
+    rates: uint256[N_COINS] = self._current_rates()
 
-    D0: uint256 = self.get_D(self._xp())
+    D0: uint256 = self.get_D(self._xp_raw(rates))
     for i in range(N_COINS):
         fees[i] = amounts[i] * _fee / 10 ** 10
         self.balances[i] -= amounts[i] + fees[i]  # Charge all fees
-    D1: uint256 = self.get_D(self._xp())
+    D1: uint256 = self.get_D(self._xp_raw(rates))
 
     token_amount: uint256 = (D0 - D1) * token_supply / D0
     assert self.token.balanceOf(msg.sender) >= token_amount

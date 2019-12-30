@@ -96,3 +96,11 @@ def exchangeRateStored() -> uint256:
      @return Calculated exchange rate scaled by 1e18
     """
     pass
+
+@public
+def exchangeRateCurrent() -> uint256:
+    """
+     * @notice Accrue interest then return the up-to-date exchange rate
+     * @return Calculated exchange rate scaled by 1e18
+    """
+    pass
