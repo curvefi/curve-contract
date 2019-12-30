@@ -40,7 +40,9 @@ def test_curve_in_contract(w3, coins, cerc20s, swap, n_coins):
             rate_x = cerc20s[i].caller.exchangeRateStored()
             dx_c = dx * 10 ** 18 // rate_x
             dy_1_c = swap.caller.get_dy(i, j, dx_c)
+            dy_1_u = swap.caller.get_dy_underlying(i, j, dx)
             dy_2 = curve.dy(i, j, dx * PRECISIONS[i]) // PRECISIONS[j]
             rate_y = cerc20s[j].caller.exchangeRateStored()
             dy_1 = dy_1_c * rate_y // 10 ** 18
             assert (dy_1 - dy_2) / (dy_1 + dy_2) < 1e-10
+            assert (dy_1_u - dy_2) / (dy_1_u + dy_2) < 1e-10

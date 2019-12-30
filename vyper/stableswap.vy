@@ -205,12 +205,25 @@ def get_y(i: int128, j: int128, x: uint256, _xp: uint256[N_COINS]) -> uint256:
 @constant
 def get_dy(i: int128, j: int128, dx: uint256) -> uint256:
     # dx and dy in c-units
-    rates: uint256[N_COINS] = self._stored_rates()
+    rates: uint256[N_COINS] = self._stored_rates()  # XXX calculate real rates
     xp: uint256[N_COINS] = self._xp(rates)
 
     x: uint256 = xp[i] + dx * rates[i] / 10 ** 18
     y: uint256 = self.get_y(i, j, x, xp)
     return (xp[j] - y) * 10 ** 18 / rates[j]
+
+
+@public
+@constant
+def get_dy_underlying(i: int128, j: int128, dx: uint256) -> uint256:
+    # dx and dy in underlying units
+    rates: uint256[N_COINS] = self._stored_rates()  # XXX calculate real rates
+    xp: uint256[N_COINS] = self._xp(rates)
+    precisions: uint256[N_COINS] = PRECISION_MUL
+
+    x: uint256 = xp[i] + dx * precisions[i]
+    y: uint256 = self.get_y(i, j, x, xp)
+    return (xp[j] - y) / precisions[j]
 
 
 @private
