@@ -210,7 +210,9 @@ def get_dy(i: int128, j: int128, dx: uint256) -> uint256:
 
     x: uint256 = xp[i] + dx * rates[i] / 10 ** 18
     y: uint256 = self.get_y(i, j, x, xp)
-    return (xp[j] - y) * 10 ** 18 / rates[j]
+    dy: uint256 = (xp[j] - y) * 10 ** 18 / rates[j]
+    _fee: uint256 = convert(self.fee, uint256) * dy / 10 ** 10
+    return dy - _fee
 
 
 @public
@@ -223,7 +225,9 @@ def get_dy_underlying(i: int128, j: int128, dx: uint256) -> uint256:
 
     x: uint256 = xp[i] + dx * precisions[i]
     y: uint256 = self.get_y(i, j, x, xp)
-    return (xp[j] - y) / precisions[j]
+    dy: uint256 = (xp[j] - y) / precisions[j]
+    _fee: uint256 = convert(self.fee, uint256) * dy / 10 ** 10
+    return dy - _fee
 
 
 @private
