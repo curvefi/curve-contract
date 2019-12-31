@@ -173,7 +173,7 @@ def test_remove_liquidity_imbalance(w3, coins, cerc20s, swap, pool_token):
     for i in range(10):
         # Now Bob withdraws and adds coins in the same proportion, losing his
         # fees to Alice
-        values = [int(b * random.random() * 0.3) for b in deposits]
+        values = [max(int(b * random.random() * 0.3), 1000) for b in deposits]
         for i in range(N_COINS):
             bob_volumes[i] += values[i]
         swap.functions.remove_liquidity_imbalance(values, deadline).\
