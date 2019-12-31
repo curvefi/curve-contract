@@ -101,4 +101,4 @@ def test_trade_and_withdraw_fees(tester, w3, coins, cerc20s, swap):
     for v, c in zip(volumes, cerc20s):
         b = c.caller.balanceOf(owner)
         f = int((v / 0.999 - v) * 0.2)
-        assert abs(1 - b / f) < 1e-3
+        assert abs(f - b) * 2 <= 1e-3 * (f + b)
