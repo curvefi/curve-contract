@@ -330,7 +330,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 6144822
+  "gas": 6099637
  },
  {
   "name": "remove_liquidity",

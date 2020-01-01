@@ -304,14 +304,10 @@ def exchange_underlying(i: int128, j: int128, dx: uint256,
     ERC20(self.underlying_coins[i]).approve(self.coins[i], dx)
     ok = cERC20(self.coins[i]).mint(dx)
     if ok > 0:
-        # Fail. Transfer back
-        ERC20(self.underlying_coins[i]).transfer(msg.sender, dx)
-        return
+        raise "Could not mint coin"
     ok = cERC20(self.coins[j]).redeem(dy_)
     if ok > 0:
-        # Fail. Transfer c-token back at this point
-        cERC20(self.coins[j]).transfer(msg.sender, dy_)
-        return
+        raise "Could not redeem coin"
     assert_modifiable(ERC20(self.underlying_coins[j])\
         .transfer(msg.sender, dy))
 
