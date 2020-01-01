@@ -104,3 +104,11 @@ def exchangeRateCurrent() -> uint256:
      * @return Calculated exchange rate scaled by 1e18
     """
     pass
+
+@public
+def supplyRatePerBlock() -> uint256:
+    pass
+
+@public
+def accrualBlockNumber() -> uint256:
+    pass

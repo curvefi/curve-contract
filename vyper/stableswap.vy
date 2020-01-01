@@ -66,6 +66,7 @@ def __init__(_coins: address[N_COINS], _underlying_coins: address[N_COINS],
 @private
 @constant
 def _stored_rates() -> uint256[N_COINS]:
+    # exchangeRateStored * (1 + supplyRatePerBlock * (getBlockNumber - accrualBlockNumber) / 1e18)
     result: uint256[N_COINS] = PRECISION_MUL
     for i in range(N_COINS):
         rate: uint256 = cERC20(self.coins[i]).exchangeRateStored()

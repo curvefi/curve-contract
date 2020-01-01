@@ -21,7 +21,9 @@ allowances: map(address, map(address, uint256))
 total_supply: uint256
 
 underlying_token: ERC20
-exchangeRateStored: public(uint256)  # cERC20 spec
+exchangeRateStored: public(uint256)  # cERC20 mock
+supplyRatePerBlock: public(uint256)  # cERC20 mock
+accrualBlockNumber: public(uint256)  # cERC20 mock
 
 @public
 def __init__(_name: string[64], _symbol: string[32], _decimals: uint256, _supply: uint256,
@@ -34,6 +36,8 @@ def __init__(_name: string[64], _symbol: string[32], _decimals: uint256, _supply
     self.total_supply = init_supply
     self.underlying_token = ERC20(_token_addr)
     self.exchangeRateStored = exchange_rate
+    self.accrualBlockNumber = block.number
+    self.supplyRatePerBlock = 0
     log.Transfer(ZERO_ADDRESS, msg.sender, init_supply)
 
 
