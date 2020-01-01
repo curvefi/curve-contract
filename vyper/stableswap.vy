@@ -28,7 +28,7 @@ CommitNewParameters: event({deadline: indexed(timestamp), A: int128, fee: int128
 NewParameters: event({A: int128, fee: int128, admin_fee: int128})
 
 coins: public(address[N_COINS])
-underlying_coins: address[N_COINS]
+underlying_coins: public(address[N_COINS])
 balances: public(uint256[N_COINS])
 A: public(int128)  # 2 x amplification coefficient
 fee: public(int128)  # fee * 1e10

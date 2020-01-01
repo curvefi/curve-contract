@@ -475,6 +475,25 @@
   "gas": 1380
  },
  {
+  "name": "underlying_coins",
+  "outputs": [
+   {
+    "type": "address",
+    "name": "out"
+   }
+  ],
+  "inputs": [
+   {
+    "type": "int128",
+    "name": "arg0"
+   }
+  ],
+  "constant": true,
+  "payable": false,
+  "type": "function",
+  "gas": 1410
+ },
+ {
   "name": "balances",
   "outputs": [
    {
@@ -491,7 +510,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 1410
+  "gas": 1440
  },
  {
   "name": "A",
@@ -505,7 +524,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 1241
+  "gas": 1271
  },
  {
   "name": "fee",
@@ -519,7 +538,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 1271
+  "gas": 1301
  },
  {
   "name": "admin_fee",
@@ -533,7 +552,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 1301
+  "gas": 1331
  },
  {
   "name": "owner",
@@ -547,7 +566,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 1331
+  "gas": 1361
  },
  {
   "name": "admin_actions_deadline",
@@ -562,7 +581,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 1361
+  "gas": 1391
  },
  {
   "name": "transfer_ownership_deadline",
@@ -577,7 +596,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 1391
+  "gas": 1421
  },
  {
   "name": "future_A",
@@ -591,7 +610,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 1421
+  "gas": 1451
  },
  {
   "name": "future_fee",
@@ -605,7 +624,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 1451
+  "gas": 1481
  },
  {
   "name": "future_admin_fee",
@@ -619,7 +638,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 1481
+  "gas": 1511
  },
  {
   "name": "future_owner",
@@ -633,6 +652,6 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 1511
+  "gas": 1541
  }
 ]
