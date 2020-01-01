@@ -195,7 +195,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 1306337
+  "gas": 1306561
  },
  {
   "name": "add_liquidity",

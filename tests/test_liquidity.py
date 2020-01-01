@@ -97,6 +97,7 @@ def test_ratio_preservation(w3, coins, cerc20s, swap, pool_token):
     swap.functions.add_liquidity([d // 20 for d in deposits], deadline).transact({'from': bob})
     k_pool = [(deposits[i] // 20) / pool_token.caller.balanceOf(alice)
               for i in range(N_COINS)]
+    old_virtual_price = swap.caller.get_virtual_price()
     for i in range(5):
         # Add liquidity from Alice
         value = random.randrange(1, 100)
@@ -104,22 +105,26 @@ def test_ratio_preservation(w3, coins, cerc20s, swap, pool_token):
             [value * d // 1000 for d in deposits], deadline
         ).transact({'from': alice})
         assert_all_equal(alice)
+        assert swap.caller.get_virtual_price() == old_virtual_price
         # Add liquidity from Bob
         value = random.randrange(1, 100)
         swap.functions.add_liquidity(
             [value * d // 1000 for d in deposits], deadline
         ).transact({'from': bob})
         assert_all_equal(bob)
+        assert swap.caller.get_virtual_price() == old_virtual_price
         # Remove liquidity from Alice
         value = random.randrange(10 * max(UU))
         swap.functions.remove_liquidity(value, deadline, [0] * N_COINS).\
             transact({'from': alice})
         assert_all_equal(alice)
+        assert swap.caller.get_virtual_price() == old_virtual_price
         # Remove liquidity from Bob
         value = random.randrange(10 * max(UU))
         swap.functions.remove_liquidity(value, deadline, [0] * N_COINS).\
             transact({'from': bob})
         assert_all_equal(bob)
+        assert swap.caller.get_virtual_price() == old_virtual_price
 
     # And let's withdraw all
     value = pool_token.caller.balanceOf(alice)

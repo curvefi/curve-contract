@@ -126,11 +126,15 @@ def get_D(xp: uint256[N_COINS]) -> uint256:
 @public
 @constant
 def get_virtual_price() -> uint256:
+    """
+    Returns portfolio virtual price (for calculating profit)
+    scaled up by 1e18
+    """
     D: uint256 = self.get_D(self._xp(self._stored_rates()))
     # D is in the units similar to DAI (e.g. converted to precision 1e18)
     # When balanced, D = n * x_u - total virtual value of the portfolio
     token_supply: uint256 = self.token.totalSupply()
-    return D / token_supply
+    return D * 10 ** 18 / token_supply
 
 
 @public
