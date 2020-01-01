@@ -70,6 +70,9 @@ def _stored_rates() -> uint256[N_COINS]:
     result: uint256[N_COINS] = PRECISION_MUL
     for i in range(N_COINS):
         rate: uint256 = cERC20(self.coins[i]).exchangeRateStored()
+        supply_rate: uint256 = cERC20(self.coins[i]).supplyRatePerBlock()
+        old_block: uint256 = cERC20(self.coins[i]).accrualBlockNumber()
+        rate += rate * supply_rate * (block.number - old_block) / 10 ** 18
         result[i] = rate * result[i]
     return result
 
@@ -206,7 +209,7 @@ def get_y(i: int128, j: int128, x: uint256, _xp: uint256[N_COINS]) -> uint256:
 @constant
 def get_dy(i: int128, j: int128, dx: uint256) -> uint256:
     # dx and dy in c-units
-    rates: uint256[N_COINS] = self._stored_rates()  # XXX calculate real rates
+    rates: uint256[N_COINS] = self._stored_rates()
     xp: uint256[N_COINS] = self._xp(rates)
 
     x: uint256 = xp[i] + dx * rates[i] / 10 ** 18
@@ -220,7 +223,7 @@ def get_dy(i: int128, j: int128, dx: uint256) -> uint256:
 @constant
 def get_dy_underlying(i: int128, j: int128, dx: uint256) -> uint256:
     # dx and dy in underlying units
-    rates: uint256[N_COINS] = self._stored_rates()  # XXX calculate real rates
+    rates: uint256[N_COINS] = self._stored_rates()
     xp: uint256[N_COINS] = self._xp(rates)
     precisions: uint256[N_COINS] = PRECISION_MUL
 

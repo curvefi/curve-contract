@@ -106,9 +106,11 @@ def exchangeRateCurrent() -> uint256:
     pass
 
 @public
+@constant
 def supplyRatePerBlock() -> uint256:
     pass
 
 @public
+@constant
 def accrualBlockNumber() -> uint256:
     pass

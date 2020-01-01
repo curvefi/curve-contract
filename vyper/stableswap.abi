@@ -227,7 +227,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 2979669
+  "gas": 2994844
  },
  {
   "name": "get_dy_underlying",
@@ -254,7 +254,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 2979743
+  "gas": 2994918
  },
  {
   "name": "exchange",
