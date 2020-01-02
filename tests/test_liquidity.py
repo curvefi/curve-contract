@@ -90,6 +90,7 @@ def test_ratio_preservation(w3, coins, cerc20s, swap, pool_token):
             swap_balance_i = swap.caller.balances(i) * rates[i] // UU[i]
             assert abs(balance_0 - balance_i) / (balance_0 + balance_i) < 1e-10
             assert abs(swap_balance_0 - swap_balance_i) / (swap_balance_0 + swap_balance_i) < 1e-10
+            assert cerc20s[i].caller.balanceOf(swap.address) >= swap.caller.balances(i)
 
     # Test that everything is equal when adding and removing liquidity
     deadline = int(time.time()) + 3600
@@ -231,3 +232,5 @@ def test_remove_liquidity_imbalance(w3, coins, cerc20s, swap, pool_token):
         transact({'from': alice})
     v_after = sum(c.caller.balanceOf(alice) * r // u for c, r, u in zip(cerc20s, rates, UU))
     assert abs((v_after - v_before) / (0.995 * max(UU) * 0.001) - 1) < 0.05
+    for i in range(N_COINS):
+        assert cerc20s[i].caller.balanceOf(swap.address) >= swap.caller.balances(i)
