@@ -115,6 +115,8 @@ def test_simulated_exchange(w3, coins, cerc20s, swap):
         assert x_0 - x_1 == value
         assert (y_1 - y_0) - dy_m < dy_m * 1e-10
         assert swap.caller.get_virtual_price() > old_virtual_price
+        assert cerc20s[i].caller.balanceOf(swap.address) >= swap.caller.balances(i)
+        assert cerc20s[j].caller.balanceOf(swap.address) >= swap.caller.balances(j)
 
     # Let's see what we have left
     x = [swap.caller.balances(i) for i in range(N_COINS)]
