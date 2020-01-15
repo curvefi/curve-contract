@@ -1,3 +1,5 @@
+# (c) Curve.Fi, 2020
+
 import ERC20m as ERC20m
 import cERC20 as cERC20
 from vyper.interfaces import ERC20
