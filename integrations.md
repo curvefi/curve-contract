@@ -1,9 +1,9 @@
 # How to integrate Curve smart contracts
 
 First of all, you'll need to know the contract's
-[ABI](https://github.com/curvefi/curve-contract/tree/compounded/contract/deployed/2020-01-03_mainnet/swap.abi).
+[ABI](https://github.com/curvefi/curve-contract/blob/compounded/deployed/2020-01-03_mainnet/swap.abi).
 Addresses of the contract and the token representing liquidity are
-[here](https://github.com/curvefi/curve-contract/tree/compounded/contract/deployed/2020-01-03_mainnet/mainnet.log).
+[here](https://github.com/curvefi/curve-contract/blob/compounded/deployed/2020-01-03_mainnet/mainnet.log).
 
 Next is the breif description of methods you need to fascilitate exchanges.
 
