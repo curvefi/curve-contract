@@ -115,17 +115,17 @@
     "unit": "sec"
    },
    {
-    "type": "int128",
+    "type": "uint256",
     "name": "A",
     "indexed": false
    },
    {
-    "type": "int128",
+    "type": "uint256",
     "name": "fee",
     "indexed": false
    },
    {
-    "type": "int128",
+    "type": "uint256",
     "name": "admin_fee",
     "indexed": false
    }
@@ -137,17 +137,17 @@
   "name": "NewParameters",
   "inputs": [
    {
-    "type": "int128",
+    "type": "uint256",
     "name": "A",
     "indexed": false
    },
    {
-    "type": "int128",
+    "type": "uint256",
     "name": "fee",
     "indexed": false
    },
    {
-    "type": "int128",
+    "type": "uint256",
     "name": "admin_fee",
     "indexed": false
    }
@@ -171,11 +171,11 @@
     "name": "_pool_token"
    },
    {
-    "type": "int128",
+    "type": "uint256",
     "name": "_A"
    },
    {
-    "type": "int128",
+    "type": "uint256",
     "name": "_fee"
    }
   ],
@@ -195,7 +195,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 1326361
+  "gas": 1327161
  },
  {
   "name": "add_liquidity",
@@ -214,7 +214,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 2795775
+  "gas": 2797375
  },
  {
   "name": "get_dy",
@@ -241,7 +241,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 3012904
+  "gas": 3016104
  },
  {
   "name": "get_dy_underlying",
@@ -268,7 +268,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 3012978
+  "gas": 3016178
  },
  {
   "name": "exchange",
@@ -299,7 +299,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 6102096
+  "gas": 6108496
  },
  {
   "name": "exchange_underlying",
@@ -330,7 +330,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 6118837
+  "gas": 6125237
  },
  {
   "name": "remove_liquidity",
@@ -372,29 +372,29 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 2892666
+  "gas": 2895866
  },
  {
   "name": "commit_new_parameters",
   "outputs": [],
   "inputs": [
    {
-    "type": "int128",
+    "type": "uint256",
     "name": "amplification"
    },
    {
-    "type": "int128",
+    "type": "uint256",
     "name": "new_fee"
    },
    {
-    "type": "int128",
+    "type": "uint256",
     "name": "new_admin_fee"
    }
   ],
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 146017
+  "gas": 145747
  },
  {
   "name": "apply_new_parameters",
@@ -516,7 +516,7 @@
   "name": "A",
   "outputs": [
    {
-    "type": "int128",
+    "type": "uint256",
     "name": "out"
    }
   ],
@@ -530,7 +530,7 @@
   "name": "fee",
   "outputs": [
    {
-    "type": "int128",
+    "type": "uint256",
     "name": "out"
    }
   ],
@@ -544,7 +544,7 @@
   "name": "admin_fee",
   "outputs": [
    {
-    "type": "int128",
+    "type": "uint256",
     "name": "out"
    }
   ],
@@ -602,7 +602,7 @@
   "name": "future_A",
   "outputs": [
    {
-    "type": "int128",
+    "type": "uint256",
     "name": "out"
    }
   ],
@@ -616,7 +616,7 @@
   "name": "future_fee",
   "outputs": [
    {
-    "type": "int128",
+    "type": "uint256",
     "name": "out"
    }
   ],
@@ -630,7 +630,7 @@
   "name": "future_admin_fee",
   "outputs": [
    {
-    "type": "int128",
+    "type": "uint256",
     "name": "out"
    }
   ],

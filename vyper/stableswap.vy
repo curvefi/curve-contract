@@ -26,32 +26,32 @@ AddLiquidity: event({provider: indexed(address), token_amounts: uint256[N_COINS]
 RemoveLiquidity: event({provider: indexed(address), token_amounts: uint256[N_COINS], fees: uint256[N_COINS]})
 CommitNewAdmin: event({deadline: indexed(timestamp), admin: indexed(address)})
 NewAdmin: event({admin: indexed(address)})
-CommitNewParameters: event({deadline: indexed(timestamp), A: int128, fee: int128, admin_fee: int128})
-NewParameters: event({A: int128, fee: int128, admin_fee: int128})
+CommitNewParameters: event({deadline: indexed(timestamp), A: uint256, fee: uint256, admin_fee: uint256})
+NewParameters: event({A: uint256, fee: uint256, admin_fee: uint256})
 
 coins: public(address[N_COINS])
 underlying_coins: public(address[N_COINS])
 balances: public(uint256[N_COINS])
-A: public(int128)  # 2 x amplification coefficient
-fee: public(int128)  # fee * 1e10
-admin_fee: public(int128)  # admin_fee * 1e10
-max_admin_fee: constant(int128) = 5 * 10 ** 9
+A: public(uint256)  # 2 x amplification coefficient
+fee: public(uint256)  # fee * 1e10
+admin_fee: public(uint256)  # admin_fee * 1e10
+max_admin_fee: constant(uint256) = 5 * 10 ** 9
 
 owner: public(address)
 token: ERC20m
 
 admin_actions_deadline: public(timestamp)
 transfer_ownership_deadline: public(timestamp)
-future_A: public(int128)
-future_fee: public(int128)
-future_admin_fee: public(int128)
+future_A: public(uint256)
+future_fee: public(uint256)
+future_admin_fee: public(uint256)
 future_owner: public(address)
 
 
 @public
 def __init__(_coins: address[N_COINS], _underlying_coins: address[N_COINS],
              _pool_token: address,
-             _A: int128, _fee: int128):
+             _A: uint256, _fee: uint256):
     for i in range(N_COINS):
         assert _coins[i] != ZERO_ADDRESS
         assert _underlying_coins[i] != ZERO_ADDRESS
@@ -108,7 +108,7 @@ def get_D(xp: uint256[N_COINS]) -> uint256:
 
     Dprev: uint256 = 0
     D: uint256 = S
-    Ann: uint256 = convert(self.A, uint256) * N_COINS
+    Ann: uint256 = self.A * N_COINS
     for _i in range(255):
         D_P: uint256 = D
         for _x in xp:
@@ -192,7 +192,7 @@ def get_y(i: int128, j: int128, x: uint256, _xp: uint256[N_COINS]) -> uint256:
     D: uint256 = self.get_D(_xp)
     c: uint256 = D
     S_: uint256 = 0
-    Ann: uint256 = convert(self.A, uint256) * N_COINS
+    Ann: uint256 = self.A * N_COINS
 
     _x: uint256 = 0
     for _i in range(N_COINS):
@@ -231,7 +231,7 @@ def get_dy(i: int128, j: int128, dx: uint256) -> uint256:
     x: uint256 = xp[i] + dx * rates[i] / 10 ** 18
     y: uint256 = self.get_y(i, j, x, xp)
     dy: uint256 = (xp[j] - y) * 10 ** 18 / rates[j]
-    _fee: uint256 = convert(self.fee, uint256) * dy / 10 ** 10
+    _fee: uint256 = self.fee * dy / 10 ** 10
     return dy - _fee
 
 
@@ -246,7 +246,7 @@ def get_dy_underlying(i: int128, j: int128, dx: uint256) -> uint256:
     x: uint256 = xp[i] + dx * precisions[i]
     y: uint256 = self.get_y(i, j, x, xp)
     dy: uint256 = (xp[j] - y) / precisions[j]
-    _fee: uint256 = convert(self.fee, uint256) * dy / 10 ** 10
+    _fee: uint256 = self.fee * dy / 10 ** 10
     return dy - _fee
 
 
@@ -263,8 +263,8 @@ def _exchange(i: int128, j: int128, dx: uint256,
     x: uint256 = xp[i] + dx * rates[i] / 10 ** 18
     y: uint256 = self.get_y(i, j, x, xp)
     dy: uint256 = xp[j] - y
-    dy_fee: uint256 = dy * convert(self.fee, uint256) / 10 ** 10
-    dy_admin_fee: uint256 = dy_fee * convert(self.admin_fee, uint256) / 10 ** 10
+    dy_fee: uint256 = dy * self.fee / 10 ** 10
+    dy_admin_fee: uint256 = dy_fee * self.admin_fee / 10 ** 10
     self.balances[i] = x * 10 ** 18 / rates[i]
     self.balances[j] = (y + (dy_fee - dy_admin_fee)) * 10 ** 18 / rates[j]
 
@@ -346,8 +346,8 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS], deadline: timestamp):
     token_supply: uint256 = self.token.totalSupply()
     assert token_supply > 0
     fees: uint256[N_COINS] = ZEROS
-    _fee: uint256 = convert(self.fee, uint256)
-    _admin_fee: uint256 = convert(self.admin_fee, uint256)
+    _fee: uint256 = self.fee
+    _admin_fee: uint256 = self.admin_fee
     rates: uint256[N_COINS] = self._current_rates()
 
     D0: uint256 = self.get_D(self._xp(rates))
@@ -374,9 +374,9 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS], deadline: timestamp):
 
 ### Admin functions ###
 @public
-def commit_new_parameters(amplification: int128,
-                          new_fee: int128,
-                          new_admin_fee: int128):
+def commit_new_parameters(amplification: uint256,
+                          new_fee: uint256,
+                          new_admin_fee: uint256):
     assert msg.sender == self.owner
     assert self.admin_actions_deadline == 0
     assert new_admin_fee <= max_admin_fee
@@ -397,9 +397,9 @@ def apply_new_parameters():
         and self.admin_actions_deadline > 0
 
     self.admin_actions_deadline = 0
-    _A: int128 = self.future_A
-    _fee: int128 = self.future_fee
-    _admin_fee: int128 = self.future_admin_fee
+    _A: uint256 = self.future_A
+    _fee: uint256 = self.future_fee
+    _admin_fee: uint256 = self.future_admin_fee
     self.A = _A
     self.fee = _fee
     self.admin_fee = _admin_fee
