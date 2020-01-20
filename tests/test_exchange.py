@@ -101,6 +101,7 @@ def test_simulated_exchange(w3, coins, cerc20s, swap):
         value = random.randrange(5 * UU[i])
         x_0 = coins[i].caller.balanceOf(bob)
         y_0 = coins[j].caller.balanceOf(bob)
+        coins[i].functions.approve(swap.address, 0).transact(from_bob)
         coins[i].functions.approve(swap.address, value).transact(from_bob)
         swap.functions.exchange_underlying(
             i, j, value,
