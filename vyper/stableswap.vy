@@ -21,7 +21,8 @@ PRECISION_MUL: constant(uint256[N_COINS]) = ___PRECISION_MUL___
 admin_actions_delay: constant(uint256) = 7 * 86400
 
 # Events
-TokenExchange: event({buyer: indexed(address), sold_id: int128, tokens_sold: uint256, bought_id: int128, tokens_bought: uint256, fee: uint256})
+TokenExchange: event({buyer: indexed(address), sold_id: int128, tokens_sold: uint256, bought_id: int128, tokens_bought: uint256})
+TokenExchangeUnderlying: event({buyer: indexed(address), sold_id: int128, tokens_sold: uint256, bought_id: int128, tokens_bought: uint256})
 AddLiquidity: event({provider: indexed(address), token_amounts: uint256[N_COINS]})
 RemoveLiquidity: event({provider: indexed(address), token_amounts: uint256[N_COINS], fees: uint256[N_COINS]})
 CommitNewAdmin: event({deadline: indexed(timestamp), admin: indexed(address)})
@@ -253,7 +254,7 @@ def get_dy_underlying(i: int128, j: int128, dx: uint256) -> uint256:
 @private
 def _exchange(i: int128, j: int128, dx: uint256,
              min_dy: uint256, deadline: timestamp,
-             sender: address, rates: uint256[N_COINS]) -> uint256:
+             rates: uint256[N_COINS]) -> uint256:
     assert block.timestamp <= deadline, "Transaction expired"
     assert i < N_COINS and j < N_COINS, "Coin number out of range"
     # dx and dy are in c-tokens
@@ -271,8 +272,6 @@ def _exchange(i: int128, j: int128, dx: uint256,
     _dy: uint256 = (dy - dy_fee) * 10 ** 18 / rates[j]
     assert _dy >= min_dy
 
-    log.TokenExchange(sender, i, dx, j, _dy, dy_fee * 10 ** 18 / rates[j])
-
     return _dy
 
 
@@ -281,9 +280,10 @@ def _exchange(i: int128, j: int128, dx: uint256,
 def exchange(i: int128, j: int128, dx: uint256,
              min_dy: uint256, deadline: timestamp):
     rates: uint256[N_COINS] = self._current_rates()
-    dy: uint256 = self._exchange(i, j, dx, min_dy, deadline, msg.sender, rates)
+    dy: uint256 = self._exchange(i, j, dx, min_dy, deadline, rates)
     assert_modifiable(cERC20(self.coins[i]).transferFrom(msg.sender, self, dx))
     assert_modifiable(cERC20(self.coins[j]).transfer(msg.sender, dy))
+    log.TokenExchange(msg.sender, i, dx, j, dy)
 
 
 @public
@@ -297,7 +297,7 @@ def exchange_underlying(i: int128, j: int128, dx: uint256,
     dx_: uint256 = dx * 10 ** 18 / rate_i
     min_dy_: uint256 = min_dy * 10 ** 18 / rate_j
 
-    dy_: uint256 = self._exchange(i, j, dx_, min_dy_, deadline, msg.sender, rates)
+    dy_: uint256 = self._exchange(i, j, dx_, min_dy_, deadline, rates)
     dy: uint256 = dy_ * rate_j / 10 ** 18
 
     ok: uint256 = 0
@@ -312,6 +312,8 @@ def exchange_underlying(i: int128, j: int128, dx: uint256,
         raise "Could not redeem coin"
     assert_modifiable(ERC20(self.underlying_coins[j])\
         .transfer(msg.sender, dy))
+
+    log.TokenExchangeUnderlying(msg.sender, i, dx, j, dy)
 
 
 @public

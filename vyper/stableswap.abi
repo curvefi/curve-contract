@@ -26,10 +26,37 @@
     "type": "uint256",
     "name": "tokens_bought",
     "indexed": false
+   }
+  ],
+  "anonymous": false,
+  "type": "event"
+ },
+ {
+  "name": "TokenExchangeUnderlying",
+  "inputs": [
+   {
+    "type": "address",
+    "name": "buyer",
+    "indexed": true
+   },
+   {
+    "type": "int128",
+    "name": "sold_id",
+    "indexed": false
    },
    {
     "type": "uint256",
-    "name": "fee",
+    "name": "tokens_sold",
+    "indexed": false
+   },
+   {
+    "type": "int128",
+    "name": "bought_id",
+    "indexed": false
+   },
+   {
+    "type": "uint256",
+    "name": "tokens_bought",
     "indexed": false
    }
   ],
@@ -299,7 +326,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 6108496
+  "gas": 6107456
  },
  {
   "name": "exchange_underlying",
@@ -330,7 +357,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 6125237
+  "gas": 6124197
  },
  {
   "name": "remove_liquidity",
