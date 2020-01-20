@@ -5,7 +5,7 @@ eth-abi>=2.0.0b9
 eth-tester[py-evm]
 eth-typing
 eth-utils
-py-ecc
+py-ecc<2.0.0
 pytest
 ipython
 pdbpp
