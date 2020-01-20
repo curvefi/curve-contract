@@ -18,7 +18,7 @@ PRECISION_MUL: constant(uint256[N_COINS]) = ___PRECISION_MUL___
 #     PRECISION / convert(10 ** 6, uint256)]   # USDT
 
 
-admin_actions_delay: constant(uint256) = 7 * 86400
+admin_actions_delay: constant(uint256) = 3 * 86400
 
 # Events
 TokenExchange: event({buyer: indexed(address), sold_id: int128, tokens_sold: uint256, bought_id: int128, tokens_bought: uint256})
