@@ -509,7 +509,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 36835
+  "gas": 37728
  },
  {
   "name": "unkill_me",
