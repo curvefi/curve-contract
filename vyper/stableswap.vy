@@ -185,6 +185,9 @@ def add_liquidity(amounts: uint256[N_COINS], deadline: timestamp):
 @constant
 def get_y(i: int128, j: int128, x: uint256, _xp: uint256[N_COINS]) -> uint256:
     # x in the input is converted to the same price/precision
+
+    assert i != j
+
     D: uint256 = self.get_D(_xp)
     c: uint256 = D
     S_: uint256 = 0
