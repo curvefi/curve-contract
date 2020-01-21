@@ -470,6 +470,7 @@ def withdraw_admin_fees():
 @public
 def kill_me():
     assert msg.sender == self.owner
+    assert self.kill_deadline > block.timestamp
     self.is_killed = True
 
 
