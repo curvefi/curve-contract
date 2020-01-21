@@ -231,17 +231,12 @@
    {
     "type": "uint256[3]",
     "name": "amounts"
-   },
-   {
-    "type": "uint256",
-    "unit": "sec",
-    "name": "deadline"
    }
   ],
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 2797375
+  "gas": 2797133
  },
  {
   "name": "get_dy",
@@ -316,17 +311,12 @@
    {
     "type": "uint256",
     "name": "min_dy"
-   },
-   {
-    "type": "uint256",
-    "unit": "sec",
-    "name": "deadline"
    }
   ],
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 6107456
+  "gas": 6107193
  },
  {
   "name": "exchange_underlying",
@@ -347,17 +337,12 @@
    {
     "type": "uint256",
     "name": "min_dy"
-   },
-   {
-    "type": "uint256",
-    "unit": "sec",
-    "name": "deadline"
    }
   ],
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 6124197
+  "gas": 6123934
  },
  {
   "name": "remove_liquidity",
@@ -368,11 +353,6 @@
     "name": "_amount"
    },
    {
-    "type": "uint256",
-    "unit": "sec",
-    "name": "deadline"
-   },
-   {
     "type": "uint256[3]",
     "name": "min_amounts"
    }
@@ -380,7 +360,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 203277
+  "gas": 203111
  },
  {
   "name": "remove_liquidity_imbalance",
@@ -389,17 +369,12 @@
    {
     "type": "uint256[3]",
     "name": "amounts"
-   },
-   {
-    "type": "uint256",
-    "unit": "sec",
-    "name": "deadline"
    }
   ],
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 2895866
+  "gas": 2895698
  },
  {
   "name": "commit_new_parameters",

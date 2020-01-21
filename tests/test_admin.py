@@ -73,8 +73,7 @@ def test_trade_and_withdraw_fees(tester, w3, coins, cerc20s, swap):
         cc.functions.transfer(bob, balance).transact({'from': alice})
         cc.functions.approve(swap.address, balance).transact({'from': bob})
 
-    swap.functions.add_liquidity(deposits, int(time()) + 3600).\
-        transact({'from': alice})
+    swap.functions.add_liquidity(deposits).transact({'from': alice})
 
     current_time = int(time()) + 86400 * 7 + 2000
     tester.time_travel(current_time)
@@ -89,9 +88,7 @@ def test_trade_and_withdraw_fees(tester, w3, coins, cerc20s, swap):
         value = int(random.random() * deposits[i] / 10)
         y_0 = cerc20s[j].caller.balanceOf(bob)
         cerc20s[i].functions.approve(swap.address, value).transact({'from': bob})
-        swap.functions.exchange(
-            i, j, value, 0, current_time + 3600
-        ).transact({'from': bob})
+        swap.functions.exchange(i, j, value, 0).transact({'from': bob})
         y_1 = cerc20s[j].caller.balanceOf(bob)
 
         volumes[j] += y_1 - y_0

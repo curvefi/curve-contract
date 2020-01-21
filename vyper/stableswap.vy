@@ -142,9 +142,8 @@ def get_virtual_price() -> uint256:
 
 @public
 @nonreentrant('lock')
-def add_liquidity(amounts: uint256[N_COINS], deadline: timestamp):
+def add_liquidity(amounts: uint256[N_COINS]):
     # Amounts is amounts of c-tokens
-    assert block.timestamp <= deadline, "Transaction expired"
 
     token_supply: uint256 = self.token.totalSupply()
     rates: uint256[N_COINS] = self._current_rates()
@@ -253,9 +252,7 @@ def get_dy_underlying(i: int128, j: int128, dx: uint256) -> uint256:
 
 @private
 def _exchange(i: int128, j: int128, dx: uint256,
-             min_dy: uint256, deadline: timestamp,
-             rates: uint256[N_COINS]) -> uint256:
-    assert block.timestamp <= deadline, "Transaction expired"
+             min_dy: uint256, rates: uint256[N_COINS]) -> uint256:
     assert i < N_COINS and j < N_COINS, "Coin number out of range"
     # dx and dy are in c-tokens
 
@@ -277,10 +274,9 @@ def _exchange(i: int128, j: int128, dx: uint256,
 
 @public
 @nonreentrant('lock')
-def exchange(i: int128, j: int128, dx: uint256,
-             min_dy: uint256, deadline: timestamp):
+def exchange(i: int128, j: int128, dx: uint256, min_dy: uint256):
     rates: uint256[N_COINS] = self._current_rates()
-    dy: uint256 = self._exchange(i, j, dx, min_dy, deadline, rates)
+    dy: uint256 = self._exchange(i, j, dx, min_dy, rates)
     assert_modifiable(cERC20(self.coins[i]).transferFrom(msg.sender, self, dx))
     assert_modifiable(cERC20(self.coins[j]).transfer(msg.sender, dy))
     log.TokenExchange(msg.sender, i, dx, j, dy)
@@ -288,8 +284,7 @@ def exchange(i: int128, j: int128, dx: uint256,
 
 @public
 @nonreentrant('lock')
-def exchange_underlying(i: int128, j: int128, dx: uint256,
-                        min_dy: uint256, deadline: timestamp):
+def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256):
     rates: uint256[N_COINS] = self._current_rates()
     precisions: uint256[N_COINS] = PRECISION_MUL
     rate_i: uint256 = rates[i] / precisions[i]
@@ -297,7 +292,7 @@ def exchange_underlying(i: int128, j: int128, dx: uint256,
     dx_: uint256 = dx * 10 ** 18 / rate_i
     min_dy_: uint256 = min_dy * 10 ** 18 / rate_j
 
-    dy_: uint256 = self._exchange(i, j, dx_, min_dy_, deadline, rates)
+    dy_: uint256 = self._exchange(i, j, dx_, min_dy_, rates)
     dy: uint256 = dy_ * rate_j / 10 ** 18
 
     ok: uint256 = 0
@@ -318,9 +313,7 @@ def exchange_underlying(i: int128, j: int128, dx: uint256,
 
 @public
 @nonreentrant('lock')
-def remove_liquidity(_amount: uint256, deadline: timestamp,
-                     min_amounts: uint256[N_COINS]):
-    assert block.timestamp <= deadline, "Transaction expired"
+def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS]):
     assert self.token.balanceOf(msg.sender) >= _amount
     assert self.token.allowance(msg.sender, self) >= _amount
     total_supply: uint256 = self.token.totalSupply()
@@ -342,9 +335,7 @@ def remove_liquidity(_amount: uint256, deadline: timestamp,
 
 @public
 @nonreentrant('lock')
-def remove_liquidity_imbalance(amounts: uint256[N_COINS], deadline: timestamp):
-    assert block.timestamp <= deadline, "Transaction expired"
-
+def remove_liquidity_imbalance(amounts: uint256[N_COINS]):
     token_supply: uint256 = self.token.totalSupply()
     assert token_supply > 0
     fees: uint256[N_COINS] = ZEROS

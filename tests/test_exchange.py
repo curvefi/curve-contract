@@ -1,4 +1,3 @@
-import time
 import random
 from itertools import permutations
 from .simulation import Curve
@@ -25,9 +24,7 @@ def test_few_trades(w3, coins, cerc20s, swap):
         cc.functions.approve(swap.address, balance).transact(from_sam)
 
     # Adding $100 liquidity of each coin
-    swap.functions.add_liquidity(
-        [b // 10 for b in deposits], int(time.time()) + 3600
-    ).transact(from_sam)
+    swap.functions.add_liquidity([b // 10 for b in deposits]).transact(from_sam)
 
     # Fund the customer with $100 of each coin
     for c, u in zip(coins, UU):
@@ -38,7 +35,7 @@ def test_few_trades(w3, coins, cerc20s, swap):
 
     # And trades
     swap.functions.exchange_underlying(
-        0, 1, 1 * UU[0], int(0.9 * UU[1]), int(time.time()) + 3600
+        0, 1, 1 * UU[0], int(0.9 * UU[1])
     ).transact(from_bob)
 
     assert coins[0].caller.balanceOf(bob) == 99 * UU[0]
@@ -47,7 +44,7 @@ def test_few_trades(w3, coins, cerc20s, swap):
 
     # Why not more
     swap.functions.exchange_underlying(
-        0, 1, 1 * UU[0], int(0.9 * UU[1]), int(time.time()) + 3600
+        0, 1, 1 * UU[0], int(0.9 * UU[1])
     ).transact(from_bob)
 
     assert coins[0].caller.balanceOf(bob) == 98 * UU[0]
@@ -72,9 +69,7 @@ def test_simulated_exchange(w3, coins, cerc20s, swap):
 
     # Adding $100 liquidity of each coin
     liquidity = [b // 10 for b in deposits]
-    swap.functions.add_liquidity(
-        liquidity, int(time.time()) + 3600
-    ).transact(from_sam)
+    swap.functions.add_liquidity(liquidity).transact(from_sam)
 
     # Model
     balances = [int(swap.caller.balances(i)) for i in range(3)]
@@ -105,8 +100,7 @@ def test_simulated_exchange(w3, coins, cerc20s, swap):
         coins[i].functions.approve(swap.address, value).transact(from_bob)
         swap.functions.exchange_underlying(
             i, j, value,
-            int(0.5 * value * UU[j] / UU[i]),
-            int(time.time()) + 3600
+            int(0.5 * value * UU[j] / UU[i])
         ).transact(from_bob)
         x_1 = coins[i].caller.balanceOf(bob)
         y_1 = coins[j].caller.balanceOf(bob)

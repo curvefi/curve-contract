@@ -1,4 +1,3 @@
-import time
 import pytest
 import random
 from itertools import permutations
@@ -26,7 +25,7 @@ def test_curve_in_contract(w3, coins, cerc20s, swap, n_coins):
 
     # Add some coins
     swap.functions.\
-        add_liquidity([n // 10 for n in n_ccoins], int(time.time()) + 3600).\
+        add_liquidity([n // 10 for n in n_ccoins]).\
         transact(from_alice)
 
     # Python-based (tested) model with same parameters as contract
