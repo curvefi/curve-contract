@@ -48,6 +48,10 @@ future_fee: public(int128)
 future_admin_fee: public(int128)
 future_owner: public(address)
 
+kill_deadline: timestamp
+kill_deadline_dt: constant(uint256) = 2 * 30 * 86400
+is_killed: bool
+
 
 @public
 def __init__(_coins: address[N_COINS], _underlying_coins: address[N_COINS],
@@ -63,6 +67,8 @@ def __init__(_coins: address[N_COINS], _underlying_coins: address[N_COINS],
     self.fee = _fee
     self.admin_fee = 0
     self.owner = msg.sender
+    self.kill_deadline = block.timestamp + kill_deadline_dt
+    self.is_killed = False
     self.token = ERC20m(_pool_token)
 
 
@@ -145,6 +151,7 @@ def get_virtual_price() -> uint256:
 def add_liquidity(amounts: uint256[N_COINS], deadline: timestamp):
     # Amounts is amounts of c-tokens
     assert block.timestamp <= deadline, "Transaction expired"
+    assert not self.is_killed
 
     token_supply: uint256 = self.token.totalSupply()
     rates: uint256[N_COINS] = self._current_rates()
@@ -255,6 +262,7 @@ def _exchange(i: int128, j: int128, dx: uint256,
              rates: uint256[N_COINS]) -> uint256:
     assert block.timestamp <= deadline, "Transaction expired"
     assert i < N_COINS and j < N_COINS, "Coin number out of range"
+    assert not self.is_killed
     # dx and dy are in c-tokens
 
     xp: uint256[N_COINS] = self._xp(rates)
@@ -342,6 +350,7 @@ def remove_liquidity(_amount: uint256, deadline: timestamp,
 @nonreentrant('lock')
 def remove_liquidity_imbalance(amounts: uint256[N_COINS], deadline: timestamp):
     assert block.timestamp <= deadline, "Transaction expired"
+    assert not self.is_killed
 
     token_supply: uint256 = self.token.totalSupply()
     assert token_supply > 0
@@ -456,3 +465,15 @@ def withdraw_admin_fees():
         value: uint256 = cERC20(c).balanceOf(self) - self.balances[i]
         if value > 0:
             assert_modifiable(cERC20(c).transfer(msg.sender, value))
+
+
+@public
+def kill_me():
+    assert msg.sender == self.owner
+    self.is_killed = True
+
+
+@public
+def unkill_me():
+    assert msg.sender == self.owner
+    self.is_killed = False
