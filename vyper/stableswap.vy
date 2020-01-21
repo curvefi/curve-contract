@@ -154,11 +154,6 @@ def add_liquidity(amounts: uint256[N_COINS], deadline: timestamp):
         D0 = self.get_D(self._xp(rates))
 
     for i in range(N_COINS):
-        # Check for allowances before any transfers or calculations
-        assert_modifiable(
-            cERC20(self.coins[i]).balanceOf(msg.sender) >= amounts[i])
-        assert_modifiable(
-            cERC20(self.coins[i]).allowance(msg.sender, self) >= amounts[i])
         if token_supply == 0:
             assert amounts[i] > 0
         # balances store amounts of c-tokens
