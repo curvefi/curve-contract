@@ -23,8 +23,8 @@ admin_actions_delay: constant(uint256) = 3 * 86400
 # Events
 TokenExchange: event({buyer: indexed(address), sold_id: int128, tokens_sold: uint256, bought_id: int128, tokens_bought: uint256})
 TokenExchangeUnderlying: event({buyer: indexed(address), sold_id: int128, tokens_sold: uint256, bought_id: int128, tokens_bought: uint256})
-AddLiquidity: event({provider: indexed(address), token_amounts: uint256[N_COINS]})
-RemoveLiquidity: event({provider: indexed(address), token_amounts: uint256[N_COINS], fees: uint256[N_COINS]})
+AddLiquidity: event({provider: indexed(address), token_amounts: uint256[N_COINS], invariant: uint256, token_supply: uint256})
+RemoveLiquidity: event({provider: indexed(address), token_amounts: uint256[N_COINS], fees: uint256[N_COINS], invariant: uint256, token_supply: uint256})
 CommitNewAdmin: event({deadline: indexed(timestamp), admin: indexed(address)})
 NewAdmin: event({admin: indexed(address)})
 CommitNewParameters: event({deadline: indexed(timestamp), A: uint256, fee: uint256, admin_fee: uint256})
@@ -182,7 +182,7 @@ def add_liquidity(amounts: uint256[N_COINS]):
     # Mint pool tokens
     self.token.mint(msg.sender, mint_amount)
 
-    log.AddLiquidity(msg.sender, amounts)
+    log.AddLiquidity(msg.sender, amounts, D1, token_supply + mint_amount)
 
 
 @private
@@ -330,7 +330,8 @@ def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS]):
 
     self.token.burnFrom(msg.sender, _amount)
 
-    log.RemoveLiquidity(msg.sender, amounts, fees)
+    D: uint256 = self.get_D(self._xp(self._current_rates()))
+    log.RemoveLiquidity(msg.sender, amounts, fees, D, total_supply - _amount)
 
 
 @public
@@ -362,7 +363,8 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS]):
     for i in range(N_COINS):
         self.balances[i] += fees[i] - _admin_fee * fees[i] / 10 ** 10
 
-    log.RemoveLiquidity(msg.sender, amounts, fees)
+    # D1 doesn't include the fee we've charged here, so not super precise
+    log.RemoveLiquidity(msg.sender, amounts, fees, D1, token_supply - token_amount)
 
 
 ### Admin functions ###

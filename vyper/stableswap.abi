@@ -75,6 +75,16 @@
     "type": "uint256[3]",
     "name": "token_amounts",
     "indexed": false
+   },
+   {
+    "type": "uint256",
+    "name": "invariant",
+    "indexed": false
+   },
+   {
+    "type": "uint256",
+    "name": "token_supply",
+    "indexed": false
    }
   ],
   "anonymous": false,
@@ -96,6 +106,16 @@
    {
     "type": "uint256[3]",
     "name": "fees",
+    "indexed": false
+   },
+   {
+    "type": "uint256",
+    "name": "invariant",
+    "indexed": false
+   },
+   {
+    "type": "uint256",
+    "name": "token_supply",
     "indexed": false
    }
   ],
@@ -236,7 +256,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 2797133
+  "gas": 2798492
  },
  {
   "name": "get_dy",
@@ -360,7 +380,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 203111
+  "gas": 1503362
  },
  {
   "name": "remove_liquidity_imbalance",
@@ -374,7 +394,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 2895698
+  "gas": 2897051
  },
  {
   "name": "commit_new_parameters",
