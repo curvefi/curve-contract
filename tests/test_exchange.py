@@ -1,6 +1,8 @@
 import time
 import random
+import pytest
 from itertools import permutations
+from eth_tester.exceptions import TransactionFailed
 from .simulation import Curve
 from .conftest import UU, PRECISIONS
 
@@ -37,6 +39,12 @@ def test_few_trades(w3, coins, cerc20s, swap):
     coins[0].functions.approve(swap.address, 50 * UU[0]).transact(from_bob)
 
     # And trades
+    with pytest.raises(TransactionFailed):
+        # Cannot exchange to the same currency
+        swap.functions.exchange_underlying(
+            0, 0, 1 * UU[0], 0, int(time.time()) + 3600
+        ).transact(from_bob)
+
     swap.functions.exchange_underlying(
         0, 1, 1 * UU[0], int(0.9 * UU[1]), int(time.time()) + 3600
     ).transact(from_bob)
