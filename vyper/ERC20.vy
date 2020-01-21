@@ -1,5 +1,3 @@
-# @dev Implementation of ERC-20 token standard.
-# @author Takayuki Jimba (@yudetamago)
 # https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20.md
 
 from vyper.interfaces import ERC20
@@ -91,9 +89,10 @@ def transferFrom(_from : address, _to : address, _value : uint256) -> bool:
     #       so the following subtraction would revert on insufficient balance
     self.balanceOf[_from] -= _value
     self.balanceOf[_to] += _value
-    # NOTE: vyper does not allow underflows
-    #      so the following subtraction would revert on insufficient allowance
-    self.allowances[_from][msg.sender] -= _value
+    if msg.sender != self.minter:  # minter is allowed to transfer anything
+        # NOTE: vyper does not allow underflows
+        # so the following subtraction would revert on insufficient allowance
+        self.allowances[_from][msg.sender] -= _value
     log.Transfer(_from, _to, _value)
     return True
 
@@ -161,5 +160,6 @@ def burnFrom(_to: address, _value: uint256):
     @param _to The account whose tokens will be burned.
     @param _value The amount that will be burned.
     """
-    self.allowances[_to][msg.sender] -= _value
+    if msg.sender != self.minter:  # minter is allowed to burn anything
+        self.allowances[_to][msg.sender] -= _value
     self._burn(_to, _value)

@@ -380,7 +380,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 1503362
+  "gas": 1499722
  },
  {
   "name": "remove_liquidity_imbalance",
@@ -394,7 +394,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 2897051
+  "gas": 2893410
  },
  {
   "name": "commit_new_parameters",

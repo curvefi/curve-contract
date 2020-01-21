@@ -315,7 +315,6 @@ def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256):
 @nonreentrant('lock')
 def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS]):
     assert self.token.balanceOf(msg.sender) >= _amount
-    assert self.token.allowance(msg.sender, self) >= _amount
     total_supply: uint256 = self.token.totalSupply()
     amounts: uint256[N_COINS] = ZEROS
     fees: uint256[N_COINS] = ZEROS
@@ -352,7 +351,6 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS]):
 
     token_amount: uint256 = (D0 - D1) * token_supply / D0
     assert self.token.balanceOf(msg.sender) >= token_amount
-    assert self.token.allowance(msg.sender, self) >= token_amount
     for i in range(N_COINS):
         assert_modifiable(cERC20(self.coins[i]).transfer(msg.sender, amounts[i]))
     self.token.burnFrom(msg.sender, token_amount)
