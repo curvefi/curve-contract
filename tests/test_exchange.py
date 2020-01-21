@@ -45,6 +45,15 @@ def test_few_trades(w3, coins, cerc20s, swap):
             0, 0, 1 * UU[0], 0, int(time.time()) + 3600
         ).transact(from_bob)
 
+    test_amount = deposits[0] // 10
+    assert cerc20s[0].caller.balanceOf(sam) > test_amount
+    assert cerc20s[0].caller.allowance(sam, swap.address) > test_amount
+    with pytest.raises(TransactionFailed):
+        # Cannot exchange to the same here, too
+        swap.functions.exchange(
+            0, 0, test_amount, 0, int(time.time()) + 3600
+        ).transact(from_sam)
+
     swap.functions.exchange_underlying(
         0, 1, 1 * UU[0], int(0.9 * UU[1]), int(time.time()) + 3600
     ).transact(from_bob)
