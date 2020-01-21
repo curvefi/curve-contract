@@ -77,9 +77,6 @@ def test_ratio_preservation(w3, coins, cerc20s, swap, pool_token):
         alice_balances.append(cc.caller.balanceOf(alice))
         bob_balances.append(cc.caller.balanceOf(bob))
 
-    pool_token.functions.approve(swap.address, 10000 * max(UU)).transact({'from': alice})
-    pool_token.functions.approve(swap.address, 10000 * max(UU)).transact({'from': bob})
-
     rates = [cc.caller.exchangeRateStored() for cc in cerc20s]
 
     def assert_all_equal(address):
@@ -166,8 +163,6 @@ def test_remove_liquidity_imbalance(w3, coins, cerc20s, swap, pool_token):
         cc.functions.approve(swap.address, balance).transact({'from': bob})
         alice_balances.append(cc.caller.balanceOf(alice))
         bob_balances.append(cc.caller.balanceOf(bob))
-    pool_token.functions.approve(swap.address, 20000 * max(UU)).transact({'from': alice})
-    pool_token.functions.approve(swap.address, 20000 * max(UU)).transact({'from': bob})
 
     rates = [cc.caller.exchangeRateStored() for cc in cerc20s]
 
