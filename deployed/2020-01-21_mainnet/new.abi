@@ -72,7 +72,7 @@
     "indexed": true
    },
    {
-    "type": "uint256[3]",
+    "type": "uint256[2]",
     "name": "token_amounts",
     "indexed": false
    },
@@ -99,12 +99,12 @@
     "indexed": true
    },
    {
-    "type": "uint256[3]",
+    "type": "uint256[2]",
     "name": "token_amounts",
     "indexed": false
    },
    {
-    "type": "uint256[3]",
+    "type": "uint256[2]",
     "name": "fees",
     "indexed": false
    },
@@ -206,11 +206,11 @@
   "outputs": [],
   "inputs": [
    {
-    "type": "address[3]",
+    "type": "address[2]",
     "name": "_coins"
    },
    {
-    "type": "address[3]",
+    "type": "address[2]",
     "name": "_underlying_coins"
    },
    {
@@ -242,14 +242,14 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 1326361
+  "gas": 1083195
  },
  {
   "name": "add_liquidity",
   "outputs": [],
   "inputs": [
    {
-    "type": "uint256[3]",
+    "type": "uint256[2]",
     "name": "amounts"
    },
    {
@@ -261,7 +261,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 2774059
+  "gas": 2266965
  },
  {
   "name": "get_dy",
@@ -288,7 +288,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 3013007
+  "gas": 2540055
  },
  {
   "name": "get_dy_underlying",
@@ -315,7 +315,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 3013081
+  "gas": 2540024
  },
  {
   "name": "exchange",
@@ -346,7 +346,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 6102153
+  "gas": 5177344
  },
  {
   "name": "exchange_underlying",
@@ -377,7 +377,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 6118894
+  "gas": 5194004
  },
  {
   "name": "remove_liquidity",
@@ -393,21 +393,21 @@
     "name": "deadline"
    },
    {
-    "type": "uint256[3]",
+    "type": "uint256[2]",
     "name": "min_amounts"
    }
   ],
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 1499089
+  "gas": 1220465
  },
  {
   "name": "remove_liquidity_imbalance",
   "outputs": [],
   "inputs": [
    {
-    "type": "uint256[3]",
+    "type": "uint256[2]",
     "name": "amounts"
    },
    {
@@ -419,7 +419,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 2891269
+  "gas": 2346381
  },
  {
   "name": "commit_new_parameters",
@@ -500,7 +500,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 17649
+  "gas": 12403
  },
  {
   "name": "kill_me",
