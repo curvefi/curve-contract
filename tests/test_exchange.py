@@ -1,12 +1,14 @@
 import random
+import pytest
 from itertools import permutations
+from eth_tester.exceptions import TransactionFailed
 from .simulation import Curve
 from .conftest import UU, PRECISIONS
 
 N_COINS = 3
 
 
-def test_few_trades(w3, coins, cerc20s, swap):
+def test_few_trades(w3, coins, cerc20s, swap, pool_token):
     sam = w3.eth.accounts[0]  # Sam owns the bank
     from_sam = {'from': sam}
     bob = w3.eth.accounts[1]  # Bob the customer
@@ -34,6 +36,21 @@ def test_few_trades(w3, coins, cerc20s, swap):
     coins[0].functions.approve(swap.address, 50 * UU[0]).transact(from_bob)
 
     # And trades
+    with pytest.raises(TransactionFailed):
+        # Cannot exchange to the same currency
+        swap.functions.exchange_underlying(
+            0, 0, 1 * UU[0], 0, int(time.time()) + 3600
+        ).transact(from_bob)
+
+    test_amount = deposits[0] // 10
+    assert cerc20s[0].caller.balanceOf(sam) > test_amount
+    assert cerc20s[0].caller.allowance(sam, swap.address) > test_amount
+    with pytest.raises(TransactionFailed):
+        # Cannot exchange to the same here, too
+        swap.functions.exchange(
+            0, 0, test_amount, 0, int(time.time()) + 3600
+        ).transact(from_sam)
+
     swap.functions.exchange_underlying(
         0, 1, 1 * UU[0], int(0.9 * UU[1])
     ).transact(from_bob)
@@ -50,6 +67,25 @@ def test_few_trades(w3, coins, cerc20s, swap):
     assert coins[0].caller.balanceOf(bob) == 98 * UU[0]
     assert coins[1].caller.balanceOf(bob) > int(101.9 * UU[1])
     assert coins[1].caller.balanceOf(bob) < 102 * UU[1]
+
+    # Oh no, a vulnerability detected! What do we do
+    with pytest.raises(TransactionFailed):
+        # No Sam, you're not an admin
+        swap.functions.kill_me().transact(from_sam)
+    # That account owns the contract
+    swap.functions.kill_me().transact({'from': w3.eth.accounts[1]})
+
+    # Cannot exchange now
+    with pytest.raises(TransactionFailed):
+        swap.functions.exchange_underlying(
+            0, 1, 1 * UU[0], 0, int(time.time()) + 3600
+        ).transact(from_bob)
+
+    # But can withdraw
+    value = pool_token.caller.balanceOf(sam)
+    swap.functions.remove_liquidity(
+        value, int(time.time()) + 3600, [0] * N_COINS
+    ).transact(from_sam)
 
 
 def test_simulated_exchange(w3, coins, cerc20s, swap):

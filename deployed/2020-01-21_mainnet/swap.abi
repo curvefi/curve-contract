@@ -72,7 +72,7 @@
     "indexed": true
    },
    {
-    "type": "uint256[3]",
+    "type": "uint256[2]",
     "name": "token_amounts",
     "indexed": false
    },
@@ -99,12 +99,12 @@
     "indexed": true
    },
    {
-    "type": "uint256[3]",
+    "type": "uint256[2]",
     "name": "token_amounts",
     "indexed": false
    },
    {
-    "type": "uint256[3]",
+    "type": "uint256[2]",
     "name": "fees",
     "indexed": false
    },
@@ -162,17 +162,17 @@
     "unit": "sec"
    },
    {
-    "type": "uint256",
+    "type": "int128",
     "name": "A",
     "indexed": false
    },
    {
-    "type": "uint256",
+    "type": "int128",
     "name": "fee",
     "indexed": false
    },
    {
-    "type": "uint256",
+    "type": "int128",
     "name": "admin_fee",
     "indexed": false
    }
@@ -184,17 +184,17 @@
   "name": "NewParameters",
   "inputs": [
    {
-    "type": "uint256",
+    "type": "int128",
     "name": "A",
     "indexed": false
    },
    {
-    "type": "uint256",
+    "type": "int128",
     "name": "fee",
     "indexed": false
    },
    {
-    "type": "uint256",
+    "type": "int128",
     "name": "admin_fee",
     "indexed": false
    }
@@ -206,11 +206,11 @@
   "outputs": [],
   "inputs": [
    {
-    "type": "address[3]",
+    "type": "address[2]",
     "name": "_coins"
    },
    {
-    "type": "address[3]",
+    "type": "address[2]",
     "name": "_underlying_coins"
    },
    {
@@ -218,11 +218,11 @@
     "name": "_pool_token"
    },
    {
-    "type": "uint256",
+    "type": "int128",
     "name": "_A"
    },
    {
-    "type": "uint256",
+    "type": "int128",
     "name": "_fee"
    }
   ],
@@ -242,21 +242,26 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 1327161
+  "gas": 1083195
  },
  {
   "name": "add_liquidity",
   "outputs": [],
   "inputs": [
    {
-    "type": "uint256[3]",
+    "type": "uint256[2]",
     "name": "amounts"
+   },
+   {
+    "type": "uint256",
+    "unit": "sec",
+    "name": "deadline"
    }
   ],
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 2775417
+  "gas": 2266965
  },
  {
   "name": "get_dy",
@@ -283,7 +288,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 3016207
+  "gas": 2540055
  },
  {
   "name": "get_dy_underlying",
@@ -310,7 +315,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 3016281
+  "gas": 2540024
  },
  {
   "name": "exchange",
@@ -331,12 +336,17 @@
    {
     "type": "uint256",
     "name": "min_dy"
+   },
+   {
+    "type": "uint256",
+    "unit": "sec",
+    "name": "deadline"
    }
   ],
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 6108290
+  "gas": 5177344
  },
  {
   "name": "exchange_underlying",
@@ -357,12 +367,17 @@
    {
     "type": "uint256",
     "name": "min_dy"
+   },
+   {
+    "type": "uint256",
+    "unit": "sec",
+    "name": "deadline"
    }
   ],
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 6125031
+  "gas": 5194004
  },
  {
   "name": "remove_liquidity",
@@ -373,50 +388,60 @@
     "name": "_amount"
    },
    {
-    "type": "uint256[3]",
+    "type": "uint256",
+    "unit": "sec",
+    "name": "deadline"
+   },
+   {
+    "type": "uint256[2]",
     "name": "min_amounts"
    }
   ],
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 1499722
+  "gas": 1220465
  },
  {
   "name": "remove_liquidity_imbalance",
   "outputs": [],
   "inputs": [
    {
-    "type": "uint256[3]",
+    "type": "uint256[2]",
     "name": "amounts"
+   },
+   {
+    "type": "uint256",
+    "unit": "sec",
+    "name": "deadline"
    }
   ],
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 2894301
+  "gas": 2346381
  },
  {
   "name": "commit_new_parameters",
   "outputs": [],
   "inputs": [
    {
-    "type": "uint256",
+    "type": "int128",
     "name": "amplification"
    },
    {
-    "type": "uint256",
+    "type": "int128",
     "name": "new_fee"
    },
    {
-    "type": "uint256",
+    "type": "int128",
     "name": "new_admin_fee"
    }
   ],
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 145747
+  "gas": 146017
  },
  {
   "name": "apply_new_parameters",
@@ -475,25 +500,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 17649
- },
- {
-  "name": "kill_me",
-  "outputs": [],
-  "inputs": [],
-  "constant": false,
-  "payable": false,
-  "type": "function",
-  "gas": 37728
- },
- {
-  "name": "unkill_me",
-  "outputs": [],
-  "inputs": [],
-  "constant": false,
-  "payable": false,
-  "type": "function",
-  "gas": 21865
+  "gas": 12403
  },
  {
   "name": "coins",
@@ -556,7 +563,7 @@
   "name": "A",
   "outputs": [
    {
-    "type": "uint256",
+    "type": "int128",
     "name": "out"
    }
   ],
@@ -570,7 +577,7 @@
   "name": "fee",
   "outputs": [
    {
-    "type": "uint256",
+    "type": "int128",
     "name": "out"
    }
   ],
@@ -584,7 +591,7 @@
   "name": "admin_fee",
   "outputs": [
    {
-    "type": "uint256",
+    "type": "int128",
     "name": "out"
    }
   ],
@@ -642,7 +649,7 @@
   "name": "future_A",
   "outputs": [
    {
-    "type": "uint256",
+    "type": "int128",
     "name": "out"
    }
   ],
@@ -656,7 +663,7 @@
   "name": "future_fee",
   "outputs": [
    {
-    "type": "uint256",
+    "type": "int128",
     "name": "out"
    }
   ],
@@ -670,7 +677,7 @@
   "name": "future_admin_fee",
   "outputs": [
    {
-    "type": "uint256",
+    "type": "int128",
     "name": "out"
    }
   ],
