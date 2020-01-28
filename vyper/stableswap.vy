@@ -161,7 +161,7 @@ def add_liquidity(amounts: uint256[N_COINS]):
     # Amounts is amounts of c-tokens
     assert not self.is_killed, "The contract was shut down"
 
-    _fee: uint256 = self.fee
+    _fee: uint256 = self.fee * N_COINS / (4 * (N_COINS - 1))
     token_supply: uint256 = self.token.totalSupply()
     rates: uint256[N_COINS] = self._current_rates()
     # Initial invariant

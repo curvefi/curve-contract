@@ -213,6 +213,6 @@ def test_remove_liquidity_imbalance(w3, coins, cerc20s, swap, pool_token):
     swap.functions.remove_liquidity(value, [0] * N_COINS).\
         transact({'from': alice})
     v_after = sum(c.caller.balanceOf(alice) * r // u for c, r, u in zip(cerc20s, rates, UU))
-    assert abs((v_after - v_before) / (0.995 * max(UU) * 0.001) - 1) < 0.05
+    assert abs((v_after - v_before) / ((max(UU) / 2 + 0.995 * max(UU)) * 0.001) - 1) < 0.05
     for i in range(N_COINS):
         assert cerc20s[i].caller.balanceOf(swap.address) >= swap.caller.balances(i)
