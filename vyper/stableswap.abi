@@ -242,7 +242,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 1327161
+  "gas": 1327221
  },
  {
   "name": "add_liquidity",
@@ -256,7 +256,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 2775417
+  "gas": 4062365
  },
  {
   "name": "get_dy",
@@ -283,7 +283,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 3016207
+  "gas": 3016327
  },
  {
   "name": "get_dy_underlying",
@@ -310,7 +310,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 3016281
+  "gas": 3016401
  },
  {
   "name": "exchange",
@@ -336,7 +336,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 6108290
+  "gas": 6108530
  },
  {
   "name": "exchange_underlying",
@@ -362,7 +362,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 6125031
+  "gas": 6125271
  },
  {
   "name": "remove_liquidity",
@@ -380,7 +380,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 1499722
+  "gas": 1499782
  },
  {
   "name": "remove_liquidity_imbalance",
@@ -394,7 +394,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 2894301
+  "gas": 2894391
  },
  {
   "name": "commit_new_parameters",
@@ -416,7 +416,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 145747
+  "gas": 145777
  },
  {
   "name": "apply_new_parameters",
@@ -425,7 +425,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 133362
+  "gas": 133392
  },
  {
   "name": "revert_new_parameters",
@@ -434,7 +434,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 21685
+  "gas": 21715
  },
  {
   "name": "commit_transfer_ownership",
@@ -448,7 +448,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 74362
+  "gas": 74392
  },
  {
   "name": "apply_transfer_ownership",
@@ -457,7 +457,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 60418
+  "gas": 60448
  },
  {
   "name": "revert_transfer_ownership",
@@ -466,7 +466,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 21775
+  "gas": 21805
  },
  {
   "name": "withdraw_admin_fees",
@@ -475,7 +475,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 17649
+  "gas": 17679
  },
  {
   "name": "kill_me",
@@ -484,7 +484,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 37728
+  "gas": 37758
  },
  {
   "name": "unkill_me",
@@ -493,7 +493,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 21865
+  "gas": 21895
  },
  {
   "name": "coins",
@@ -512,7 +512,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 2040
+  "gas": 2070
  },
  {
   "name": "underlying_coins",
@@ -531,7 +531,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 2070
+  "gas": 2100
  },
  {
   "name": "balances",
@@ -550,7 +550,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 2100
+  "gas": 2130
  },
  {
   "name": "A",
@@ -564,7 +564,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 1931
+  "gas": 1961
  },
  {
   "name": "fee",
@@ -578,7 +578,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 1961
+  "gas": 1991
  },
  {
   "name": "admin_fee",
@@ -592,7 +592,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 1991
+  "gas": 2021
  },
  {
   "name": "owner",
@@ -606,7 +606,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 2021
+  "gas": 2051
  },
  {
   "name": "admin_actions_deadline",
@@ -621,7 +621,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 2051
+  "gas": 2081
  },
  {
   "name": "transfer_ownership_deadline",
@@ -636,7 +636,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 2081
+  "gas": 2111
  },
  {
   "name": "future_A",
@@ -650,7 +650,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 2111
+  "gas": 2141
  },
  {
   "name": "future_fee",
@@ -664,7 +664,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 2141
+  "gas": 2171
  },
  {
   "name": "future_admin_fee",
@@ -678,7 +678,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 2171
+  "gas": 2201
  },
  {
   "name": "future_owner",
@@ -692,6 +692,6 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 2201
+  "gas": 2231
  }
 ]

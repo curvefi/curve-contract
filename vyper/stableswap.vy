@@ -106,6 +106,15 @@ def _xp(rates: uint256[N_COINS]) -> uint256[N_COINS]:
 
 @private
 @constant
+def _xp_mem(rates: uint256[N_COINS], _balances: uint256[N_COINS]) -> uint256[N_COINS]:
+    result: uint256[N_COINS] = rates
+    for i in range(N_COINS):
+        result[i] = result[i] * _balances[i] / 10 ** 18
+    return result
+
+
+@private
+@constant
 def get_D(xp: uint256[N_COINS]) -> uint256:
     S: uint256 = 0
     for _x in xp:
@@ -150,31 +159,50 @@ def get_virtual_price() -> uint256:
 @nonreentrant('lock')
 def add_liquidity(amounts: uint256[N_COINS]):
     # Amounts is amounts of c-tokens
-    assert not self.is_killed
+    assert not self.is_killed, "The contract was shut down"
 
+    _fee: uint256 = self.fee
     token_supply: uint256 = self.token.totalSupply()
     rates: uint256[N_COINS] = self._current_rates()
     # Initial invariant
     D0: uint256 = 0
     if token_supply > 0:
         D0 = self.get_D(self._xp(rates))
+    old_balances: uint256[N_COINS] = self.balances
+    new_balances: uint256[N_COINS] = old_balances
 
     for i in range(N_COINS):
         if token_supply == 0:
-            assert amounts[i] > 0
+            assert amounts[i] > 0, "First deposit should be non-zero"
         # balances store amounts of c-tokens
-        self.balances[i] += amounts[i]
+        new_balances[i] = old_balances[i] + amounts[i]
+        self.balances[i] = new_balances[i]
 
     # Invariant after change
     D1: uint256 = self.get_D(self._xp(rates))
-    assert D1 > D0
+    assert D1 > D0, "LP share didn't grow"
+
+    # We need to recalculate the invariant accounting for fees
+    # to calculate fair user's share
+    D2: uint256 = D1
+    if token_supply > 0:
+        # Only account for fees if we are not the first to deposit
+        for i in range(N_COINS):
+            ideal_balance: uint256 = D1 * old_balances[i] / D0
+            difference: uint256 = 0
+            if ideal_balance > new_balances[i]:
+                difference = ideal_balance - new_balances[i]
+            else:
+                difference = new_balances[i] - ideal_balance
+            new_balances[i] -= _fee * difference / 10 ** 10
+        D2 = self.get_D(self._xp_mem(rates, new_balances))
 
     # Calculate, how much pool tokens to mint
     mint_amount: uint256 = 0
     if token_supply == 0:
         mint_amount = D1  # Take the dust if there was any
     else:
-        mint_amount = token_supply * (D1 - D0) / D0
+        mint_amount = token_supply * (D2 - D0) / D0
 
     # Take coins from the sender
     for i in range(N_COINS):
