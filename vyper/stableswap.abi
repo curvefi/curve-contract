@@ -77,6 +77,11 @@
     "indexed": false
    },
    {
+    "type": "uint256[3]",
+    "name": "fees",
+    "indexed": false
+   },
+   {
     "type": "uint256",
     "name": "invariant",
     "indexed": false
@@ -256,7 +261,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 4057943
+  "gas": 4062505
  },
  {
   "name": "get_dy",
@@ -394,7 +399,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 2894391
+  "gas": 4065355
  },
  {
   "name": "commit_new_parameters",

@@ -23,7 +23,7 @@ admin_actions_delay: constant(uint256) = 3 * 86400
 # Events
 TokenExchange: event({buyer: indexed(address), sold_id: int128, tokens_sold: uint256, bought_id: int128, tokens_bought: uint256})
 TokenExchangeUnderlying: event({buyer: indexed(address), sold_id: int128, tokens_sold: uint256, bought_id: int128, tokens_bought: uint256})
-AddLiquidity: event({provider: indexed(address), token_amounts: uint256[N_COINS], invariant: uint256, token_supply: uint256})
+AddLiquidity: event({provider: indexed(address), token_amounts: uint256[N_COINS], fees: uint256[N_COINS], invariant: uint256, token_supply: uint256})
 RemoveLiquidity: event({provider: indexed(address), token_amounts: uint256[N_COINS], fees: uint256[N_COINS], invariant: uint256, token_supply: uint256})
 CommitNewAdmin: event({deadline: indexed(timestamp), admin: indexed(address)})
 NewAdmin: event({admin: indexed(address)})
@@ -161,7 +161,10 @@ def add_liquidity(amounts: uint256[N_COINS]):
     # Amounts is amounts of c-tokens
     assert not self.is_killed, "The contract was shut down"
 
+    fees: uint256[N_COINS] = ZEROS
     _fee: uint256 = self.fee * N_COINS / (4 * (N_COINS - 1))
+    _admin_fee: uint256 = self.admin_fee
+
     token_supply: uint256 = self.token.totalSupply()
     rates: uint256[N_COINS] = self._current_rates()
     # Initial invariant
@@ -176,7 +179,6 @@ def add_liquidity(amounts: uint256[N_COINS]):
             assert amounts[i] > 0, "First deposit should be non-zero"
         # balances store amounts of c-tokens
         new_balances[i] = old_balances[i] + amounts[i]
-        self.balances[i] = new_balances[i]
 
     # Invariant after change
     D1: uint256 = self.get_D(self._xp_mem(rates, new_balances))
@@ -194,8 +196,12 @@ def add_liquidity(amounts: uint256[N_COINS]):
                 difference = ideal_balance - new_balances[i]
             else:
                 difference = new_balances[i] - ideal_balance
-            new_balances[i] -= _fee * difference / 10 ** 10
+            fees[i] = _fee * difference / 10 ** 10
+            self.balances[i] = new_balances[i] - fees[i] * _admin_fee / 10 ** 10
+            new_balances[i] -= fees[i]
         D2 = self.get_D(self._xp_mem(rates, new_balances))
+    else:
+        self.balances = new_balances
 
     # Calculate, how much pool tokens to mint
     mint_amount: uint256 = 0
@@ -212,7 +218,7 @@ def add_liquidity(amounts: uint256[N_COINS]):
     # Mint pool tokens
     self.token.mint(msg.sender, mint_amount)
 
-    log.AddLiquidity(msg.sender, amounts, D1, token_supply + mint_amount)
+    log.AddLiquidity(msg.sender, amounts, fees, D1, token_supply + mint_amount)
 
 
 @private
@@ -370,34 +376,40 @@ def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS]):
 @public
 @nonreentrant('lock')
 def remove_liquidity_imbalance(amounts: uint256[N_COINS]):
-    assert not self.is_killed
+    assert not self.is_killed, "The contract was shut down"
 
     token_supply: uint256 = self.token.totalSupply()
-    assert token_supply > 0
-    fees: uint256[N_COINS] = ZEROS
-    _fee: uint256 = self.fee
+    assert token_supply > 0, "There are no LP tokens"
+    _fee: uint256 = self.fee * N_COINS / (4 * (N_COINS - 1))
     _admin_fee: uint256 = self.admin_fee
     rates: uint256[N_COINS] = self._current_rates()
 
-    D0: uint256 = self.get_D(self._xp(rates))
+    old_balances: uint256[N_COINS] = self.balances
+    new_balances: uint256[N_COINS] = old_balances
+    D0: uint256 = self.get_D(self._xp_mem(rates, old_balances))
     for i in range(N_COINS):
-        fees[i] = amounts[i] * _fee / 10 ** 10
-        self.balances[i] -= amounts[i] + fees[i]  # Charge all fees
-    D1: uint256 = self.get_D(self._xp(rates))
+        new_balances[i] -= amounts[i]
+    D1: uint256 = self.get_D(self._xp_mem(rates, new_balances))
+    fees: uint256[N_COINS] = ZEROS
+    for i in range(N_COINS):
+        ideal_balance: uint256 = D1 * old_balances[i] / D0
+        difference: uint256 = 0
+        if ideal_balance > new_balances[i]:
+            difference = ideal_balance - new_balances[i]
+        else:
+            difference = new_balances[i] - ideal_balance
+        fees[i] = _fee * difference / 10 ** 10
+        self.balances[i] = new_balances[i] - fees[i] * _admin_fee / 10 ** 10
+        new_balances[i] -= fees[i]
+    D2: uint256 = self.get_D(self._xp_mem(rates, new_balances))
 
-    token_amount: uint256 = (D0 - D1) * token_supply / D0
-    assert self.token.balanceOf(msg.sender) >= token_amount
+    token_amount: uint256 = (D0 - D2) * token_supply / D0
+
+    assert self.token.balanceOf(msg.sender) >= token_amount, "Not enough LP tokens"
     for i in range(N_COINS):
         assert_modifiable(cERC20(self.coins[i]).transfer(msg.sender, amounts[i]))
     self.token.burnFrom(msg.sender, token_amount)
 
-    # Now "charge" fees
-    # In fact, we "refund" fees to the liquidity providers but w/o admin fees
-    # They got paid by burning a higher amount of liquidity token from sender
-    for i in range(N_COINS):
-        self.balances[i] += fees[i] - _admin_fee * fees[i] / 10 ** 10
-
-    # D1 doesn't include the fee we've charged here, so not super precise
     log.RemoveLiquidity(msg.sender, amounts, fees, D1, token_supply - token_amount)
 
 
