@@ -166,9 +166,9 @@ def add_liquidity(amounts: uint256[N_COINS]):
     rates: uint256[N_COINS] = self._current_rates()
     # Initial invariant
     D0: uint256 = 0
-    if token_supply > 0:
-        D0 = self.get_D(self._xp(rates))
     old_balances: uint256[N_COINS] = self.balances
+    if token_supply > 0:
+        D0 = self.get_D(self._xp_mem(rates, old_balances))
     new_balances: uint256[N_COINS] = old_balances
 
     for i in range(N_COINS):
@@ -179,7 +179,7 @@ def add_liquidity(amounts: uint256[N_COINS]):
         self.balances[i] = new_balances[i]
 
     # Invariant after change
-    D1: uint256 = self.get_D(self._xp(rates))
+    D1: uint256 = self.get_D(self._xp_mem(rates, new_balances))
     assert D1 > D0, "LP share didn't grow"
 
     # We need to recalculate the invariant accounting for fees
