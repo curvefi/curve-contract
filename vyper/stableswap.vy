@@ -226,7 +226,7 @@ def add_liquidity(amounts: uint256[N_COINS]):
 def get_y(i: int128, j: int128, x: uint256, _xp: uint256[N_COINS]) -> uint256:
     # x in the input is converted to the same price/precision
 
-    assert i != j
+    assert (i != j) and (i >= 0) and (j >= 0), "Wrong output asset"
 
     D: uint256 = self.get_D(_xp)
     c: uint256 = D
