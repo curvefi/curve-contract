@@ -290,8 +290,7 @@ def get_dy_underlying(i: int128, j: int128, dx: uint256) -> uint256:
 
 
 @private
-def _exchange(i: int128, j: int128, dx: uint256,
-             min_dy: uint256, rates: uint256[N_COINS]) -> uint256:
+def _exchange(i: int128, j: int128, dx: uint256, rates: uint256[N_COINS]) -> uint256:
     assert i < N_COINS and j < N_COINS, "Coin number out of range"
     assert not self.is_killed, "The contract was shut down"
     # dx and dy are in c-tokens
@@ -307,7 +306,6 @@ def _exchange(i: int128, j: int128, dx: uint256,
     self.balances[j] = (y + (dy_fee - dy_admin_fee)) * 10 ** 18 / rates[j]
 
     _dy: uint256 = (dy - dy_fee) * 10 ** 18 / rates[j]
-    assert _dy >= min_dy, "Exchange resulted in fewer coins than expected"
 
     return _dy
 
@@ -316,7 +314,9 @@ def _exchange(i: int128, j: int128, dx: uint256,
 @nonreentrant('lock')
 def exchange(i: int128, j: int128, dx: uint256, min_dy: uint256):
     rates: uint256[N_COINS] = self._current_rates()
-    dy: uint256 = self._exchange(i, j, dx, min_dy, rates)
+    dy: uint256 = self._exchange(i, j, dx, rates)
+    assert dy >= min_dy, "Exchange resulted in fewer coins than expected"
+
     assert_modifiable(cERC20(self.coins[i]).transferFrom(msg.sender, self, dx))
     assert_modifiable(cERC20(self.coins[j]).transfer(msg.sender, dy))
     log.TokenExchange(msg.sender, i, dx, j, dy)
@@ -330,10 +330,10 @@ def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256):
     rate_i: uint256 = rates[i] / precisions[i]
     rate_j: uint256 = rates[j] / precisions[j]
     dx_: uint256 = dx * 10 ** 18 / rate_i
-    min_dy_: uint256 = min_dy * 10 ** 18 / rate_j
 
-    dy_: uint256 = self._exchange(i, j, dx_, min_dy_, rates)
+    dy_: uint256 = self._exchange(i, j, dx_, rates)
     dy: uint256 = dy_ * rate_j / 10 ** 18
+    assert dy >= min_dy, "Exchange resulted in fewer coins than expected"
 
     ok: uint256 = 0
     assert_modifiable(ERC20(self.underlying_coins[i])\
