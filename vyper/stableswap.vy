@@ -24,7 +24,8 @@ admin_actions_delay: constant(uint256) = 3 * 86400
 TokenExchange: event({buyer: indexed(address), sold_id: int128, tokens_sold: uint256, bought_id: int128, tokens_bought: uint256})
 TokenExchangeUnderlying: event({buyer: indexed(address), sold_id: int128, tokens_sold: uint256, bought_id: int128, tokens_bought: uint256})
 AddLiquidity: event({provider: indexed(address), token_amounts: uint256[N_COINS], fees: uint256[N_COINS], invariant: uint256, token_supply: uint256})
-RemoveLiquidity: event({provider: indexed(address), token_amounts: uint256[N_COINS], fees: uint256[N_COINS], invariant: uint256, token_supply: uint256})
+RemoveLiquidity: event({provider: indexed(address), token_amounts: uint256[N_COINS], fees: uint256[N_COINS], token_supply: uint256})
+RemoveLiquidityImbalance: event({provider: indexed(address), token_amounts: uint256[N_COINS], fees: uint256[N_COINS], invariant: uint256, token_supply: uint256})
 CommitNewAdmin: event({deadline: indexed(timestamp), admin: indexed(address)})
 NewAdmin: event({admin: indexed(address)})
 CommitNewParameters: event({deadline: indexed(timestamp), A: uint256, fee: uint256, admin_fee: uint256})
@@ -369,8 +370,7 @@ def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS]):
 
     self.token.burnFrom(msg.sender, _amount)
 
-    D: uint256 = self.get_D(self._xp(self._current_rates()))
-    log.RemoveLiquidity(msg.sender, amounts, fees, D, total_supply - _amount)
+    log.RemoveLiquidity(msg.sender, amounts, fees, total_supply - _amount)
 
 
 @public
@@ -410,7 +410,7 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS]):
         assert_modifiable(cERC20(self.coins[i]).transfer(msg.sender, amounts[i]))
     self.token.burnFrom(msg.sender, token_amount)
 
-    log.RemoveLiquidity(msg.sender, amounts, fees, D1, token_supply - token_amount)
+    log.RemoveLiquidityImbalance(msg.sender, amounts, fees, D1, token_supply - token_amount)
 
 
 ### Admin functions ###
