@@ -404,6 +404,7 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS]):
     D2: uint256 = self.get_D(self._xp_mem(rates, new_balances))
 
     token_amount: uint256 = (D0 - D2) * token_supply / D0
+    assert token_amount > 0, "Dust-like trade: zero LP token would be issued"
 
     assert self.token.balanceOf(msg.sender) >= token_amount, "Not enough LP tokens"
     for i in range(N_COINS):
