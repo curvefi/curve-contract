@@ -150,6 +150,7 @@ def burn(_value: uint256):
     @dev Burn an amount of the token of msg.sender.
     @param _value The amount that will be burned.
     """
+    assert msg.sender == self.minter, "Only minter is allowed to burn"
     self._burn(msg.sender, _value)
 
 
@@ -160,6 +161,5 @@ def burnFrom(_to: address, _value: uint256):
     @param _to The account whose tokens will be burned.
     @param _value The amount that will be burned.
     """
-    if msg.sender != self.minter:  # minter is allowed to burn anything
-        self.allowances[_to][msg.sender] -= _value
+    assert msg.sender == self.minter, "Only minter is allowed to burn"
     self._burn(_to, _value)
