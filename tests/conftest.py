@@ -10,6 +10,7 @@ N_COINS = 3
 UP = [18, 6, 6]
 UU = [10 ** p for p in UP]
 c_rates = [5 * UU[0], UU[1], 20 * UU[2]]
+use_lending = [True, True, False]
 PRECISIONS = [10 ** 18 // u for u in UU]
 
 
@@ -53,6 +54,9 @@ def cerc20s(w3, coins):
     for t, c, u in zip(coins, ccoins, UU):
         t.functions.transfer(c.address, 10 ** 11 * u)\
                 .transact({'from': w3.eth.accounts[0]})
+    for i, l in enumerate(use_lending):
+        if not l:
+            ccoins[i] = coins[i]
     return ccoins
 
 

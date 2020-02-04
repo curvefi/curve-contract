@@ -3,7 +3,7 @@ import random
 from itertools import permutations
 from time import time
 from eth_tester.exceptions import TransactionFailed
-from .conftest import UU
+from .conftest import UU, use_lending
 
 N_COINS = 3
 
@@ -64,10 +64,13 @@ def test_trade_and_withdraw_fees(tester, w3, coins, cerc20s, swap):
         ).transact({'from': owner})
 
     deposits = []
-    for c, cc, u in zip(coins, cerc20s, UU):
-        c.functions.approve(cc.address, 2000 * u).transact({'from': alice})
-        cc.functions.mint(2000 * u).transact({'from': alice})
-        balance = cc.caller.balanceOf(alice) // 2
+    for c, cc, u, l in zip(coins, cerc20s, UU, use_lending):
+        if l:
+            c.functions.approve(cc.address, 2000 * u).transact({'from': alice})
+            cc.functions.mint(2000 * u).transact({'from': alice})
+            balance = cc.caller.balanceOf(alice) // 2
+        else:
+            balance = 1000 * u
         deposits.append(balance)
         cc.functions.approve(swap.address, balance).transact({'from': alice})
         cc.functions.transfer(bob, balance).transact({'from': alice})
@@ -87,6 +90,7 @@ def test_trade_and_withdraw_fees(tester, w3, coins, cerc20s, swap):
         i, j = random.choice(list(permutations(range(N_COINS), 2)))
         value = int(random.random() * deposits[i] / 10)
         y_0 = cerc20s[j].caller.balanceOf(bob)
+        cerc20s[i].functions.approve(swap.address, 0).transact({'from': bob})
         cerc20s[i].functions.approve(swap.address, value).transact({'from': bob})
         swap.functions.exchange(i, j, value, 0).transact({'from': bob})
         y_1 = cerc20s[j].caller.balanceOf(bob)
