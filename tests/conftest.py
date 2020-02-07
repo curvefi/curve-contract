@@ -11,6 +11,7 @@ UP = [18, 6, 6]
 UU = [10 ** p for p in UP]
 c_rates = [5 * UU[0], UU[1], 20 * UU[2]]
 use_lending = [True, True, False]
+tethered = [False, False, True]
 PRECISIONS = [10 ** 18 // u for u in UU]
 
 
@@ -73,7 +74,9 @@ def swap(w3, coins, cerc20s, pool_token):
                     'PRECISION / convert(%s, uint256)' % i
                     for i in (10 ** 18, 10 ** 6, 10 ** 6)]) + ']',
                 '___USE_LENDING___': '[' + ', '.join(
-                        str(i) for i in use_lending) + ']'
+                        str(i) for i in use_lending) + ']',
+                '___TETHERED___': '[' + ', '.join(
+                        str(i) for i in tethered) + ']',
             })
     pool_token.functions.set_minter(swap_contract.address).transact()
     with open(join(CONTRACT_PATH, 'stableswap.abi'), 'w') as f:

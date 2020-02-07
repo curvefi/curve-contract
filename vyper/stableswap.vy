@@ -4,6 +4,13 @@ import ERC20m as ERC20m
 import cERC20 as cERC20
 from vyper.interfaces import ERC20
 
+
+# Tether transfer-only ABI
+contract USDT:
+    def transfer(_to: address, _value: uint256): modifying
+    def transferFrom(_from: address, _to: address, _value: uint256): modifying
+
+
 # This can (and needs to) be changed at compile time
 N_COINS: constant(int128) = ___N_COINS___  # <- change
 
@@ -11,6 +18,7 @@ ZERO256: constant(uint256) = 0  # This hack is really bad XXX
 ZEROS: constant(uint256[N_COINS]) = ___N_ZEROS___  # <- change
 
 USE_LENDING: constant(bool[N_COINS]) = ___USE_LENDING___
+TETHERED: constant(bool[N_COINS]) = ___TETHERED___
 
 PRECISION: constant(uint256) = 10 ** 18  # The precision to convert to
 PRECISION_MUL: constant(uint256[N_COINS]) = ___PRECISION_MUL___
@@ -80,10 +88,10 @@ def __init__(_coins: address[N_COINS], _underlying_coins: address[N_COINS],
 def _stored_rates() -> uint256[N_COINS]:
     # exchangeRateStored * (1 + supplyRatePerBlock * (getBlockNumber - accrualBlockNumber) / 1e18)
     result: uint256[N_COINS] = PRECISION_MUL
-    _use_lending: bool[N_COINS] = USE_LENDING
+    use_lenging: bool[N_COINS] = USE_LENDING
     for i in range(N_COINS):
         rate: uint256 = 10 ** 18  # Used with no lending
-        if _use_lending[i]:
+        if use_lenging[i]:
             rate = cERC20(self.coins[i]).exchangeRateStored()
             supply_rate: uint256 = cERC20(self.coins[i]).supplyRatePerBlock()
             old_block: uint256 = cERC20(self.coins[i]).accrualBlockNumber()
@@ -95,10 +103,10 @@ def _stored_rates() -> uint256[N_COINS]:
 @private
 def _current_rates() -> uint256[N_COINS]:
     result: uint256[N_COINS] = PRECISION_MUL
-    _use_lending: bool[N_COINS] = USE_LENDING
+    use_lenging: bool[N_COINS] = USE_LENDING
     for i in range(N_COINS):
         rate: uint256 = 10 ** 18  # Used with no lending
-        if _use_lending[i]:
+        if use_lenging[i]:
             rate = cERC20(self.coins[i]).exchangeRateCurrent()
         result[i] = rate * result[i]
     return result
@@ -370,22 +378,29 @@ def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256):
     dy_: uint256 = self._exchange(i, j, dx_, rates)
     dy: uint256 = dy_ * rate_j / 10 ** 18
     assert dy >= min_dy, "Exchange resulted in fewer coins than expected"
-    _use_lending: bool[N_COINS] = USE_LENDING
+    use_lenging: bool[N_COINS] = USE_LENDING
+    tethered: bool[N_COINS] = TETHERED
 
     ok: uint256 = 0
-    assert_modifiable(ERC20(self.underlying_coins[i])\
-        .transferFrom(msg.sender, self, dx))
-    if _use_lending[i]:
+    if tethered[i]:
+        USDT(self.underlying_coins[i]).transferFrom(msg.sender, self, dx)
+    else:
+        assert_modifiable(ERC20(self.underlying_coins[i])\
+            .transferFrom(msg.sender, self, dx))
+    if use_lenging[i]:
         ERC20(self.underlying_coins[i]).approve(self.coins[i], dx)
         ok = cERC20(self.coins[i]).mint(dx)
         if ok > 0:
             raise "Could not mint coin"
-    if _use_lending[j]:
+    if use_lenging[j]:
         ok = cERC20(self.coins[j]).redeem(dy_)
         if ok > 0:
             raise "Could not redeem coin"
-    assert_modifiable(ERC20(self.underlying_coins[j])\
-        .transfer(msg.sender, dy))
+    if tethered[j]:
+        USDT(self.underlying_coins[j]).transfer(msg.sender, dy)
+    else:
+        assert_modifiable(ERC20(self.underlying_coins[j])\
+            .transfer(msg.sender, dy))
 
     log.TokenExchangeUnderlying(msg.sender, i, dx, j, dy)
 
