@@ -1,7 +1,7 @@
 import pytest
 import random
 from itertools import permutations
-from .conftest import UU, PRECISIONS, use_lending
+from .conftest import UU, PRECISIONS, use_lending, approx
 from .simulation import Curve
 
 
@@ -53,3 +53,5 @@ def test_curve_in_contract(w3, coins, cerc20s, swap, n_coins):
             dy_1 = dy_1_c * rate_y // 10 ** 18
             assert abs(dy_1 - dy_2) / (dy_1 + dy_2) < 1e-8 or abs(dy_1 - dy_2) <= 2
             assert abs(dy_1_u - dy_2) / (dy_1_u + dy_2) < 1e-8 or abs(dy_1 - dy_2) <= 2
+            assert approx(dx_c, swap.caller.get_dx(i, j, dy_1_c), 3e-6)
+            assert approx(dx, swap.caller.get_dx_underlying(i, j, dy_1_u), 3e-6)

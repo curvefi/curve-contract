@@ -77,3 +77,7 @@ def swap(w3, coins, cerc20s, pool_token):
     with open(join(CONTRACT_PATH, 'stableswap.abi'), 'w') as f:
         json.dump(swap_contract.abi, f, indent=True)
     return swap_contract
+
+
+def approx(a, b, precision=1e-10):
+    return 2 * abs(a - b) / (a + b) <= precision
