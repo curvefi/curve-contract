@@ -88,10 +88,10 @@ def __init__(_coins: address[N_COINS], _underlying_coins: address[N_COINS],
 def _stored_rates() -> uint256[N_COINS]:
     # exchangeRateStored * (1 + supplyRatePerBlock * (getBlockNumber - accrualBlockNumber) / 1e18)
     result: uint256[N_COINS] = PRECISION_MUL
-    use_lenging: bool[N_COINS] = USE_LENDING
+    use_lending: bool[N_COINS] = USE_LENDING
     for i in range(N_COINS):
         rate: uint256 = 10 ** 18  # Used with no lending
-        if use_lenging[i]:
+        if use_lending[i]:
             rate = cERC20(self.coins[i]).exchangeRateStored()
             supply_rate: uint256 = cERC20(self.coins[i]).supplyRatePerBlock()
             old_block: uint256 = cERC20(self.coins[i]).accrualBlockNumber()
@@ -103,10 +103,10 @@ def _stored_rates() -> uint256[N_COINS]:
 @private
 def _current_rates() -> uint256[N_COINS]:
     result: uint256[N_COINS] = PRECISION_MUL
-    use_lenging: bool[N_COINS] = USE_LENDING
+    use_lending: bool[N_COINS] = USE_LENDING
     for i in range(N_COINS):
         rate: uint256 = 10 ** 18  # Used with no lending
-        if use_lenging[i]:
+        if use_lending[i]:
             rate = cERC20(self.coins[i]).exchangeRateCurrent()
         result[i] = rate * result[i]
     return result
@@ -378,7 +378,7 @@ def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256):
     dy_: uint256 = self._exchange(i, j, dx_, rates)
     dy: uint256 = dy_ * rate_j / 10 ** 18
     assert dy >= min_dy, "Exchange resulted in fewer coins than expected"
-    use_lenging: bool[N_COINS] = USE_LENDING
+    use_lending: bool[N_COINS] = USE_LENDING
     tethered: bool[N_COINS] = TETHERED
 
     ok: uint256 = 0
@@ -387,12 +387,12 @@ def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256):
     else:
         assert_modifiable(ERC20(self.underlying_coins[i])\
             .transferFrom(msg.sender, self, dx))
-    if use_lenging[i]:
+    if use_lending[i]:
         ERC20(self.underlying_coins[i]).approve(self.coins[i], dx)
         ok = cERC20(self.coins[i]).mint(dx)
         if ok > 0:
             raise "Could not mint coin"
-    if use_lenging[j]:
+    if use_lending[j]:
         ok = cERC20(self.coins[j]).redeem(dy_)
         if ok > 0:
             raise "Could not redeem coin"
