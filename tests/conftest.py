@@ -71,7 +71,9 @@ def swap(w3, coins, cerc20s, pool_token):
                 '___N_ZEROS___': '[' + ', '.join(['ZERO256'] * N_COINS) + ']',
                 '___PRECISION_MUL___': '[' + ', '.join([
                     'PRECISION / convert(%s, uint256)' % i
-                    for i in (10 ** 18, 10 ** 6, 10 ** 6)]) + ']'
+                    for i in (10 ** 18, 10 ** 6, 10 ** 6)]) + ']',
+                '___USE_LENDING___': '[' + ', '.join(
+                        str(i) for i in use_lending) + ']'
             })
     pool_token.functions.set_minter(swap_contract.address).transact()
     with open(join(CONTRACT_PATH, 'stableswap.abi'), 'w') as f:

@@ -10,6 +10,8 @@ N_COINS: constant(int128) = ___N_COINS___  # <- change
 ZERO256: constant(uint256) = 0  # This hack is really bad XXX
 ZEROS: constant(uint256[N_COINS]) = ___N_ZEROS___  # <- change
 
+USE_LENDING: constant(bool[N_COINS]) = ___USE_LENDING___
+
 PRECISION: constant(uint256) = 10 ** 18  # The precision to convert to
 PRECISION_MUL: constant(uint256[N_COINS]) = ___PRECISION_MUL___
 # PRECISION_MUL: constant(uint256[N_COINS]) = [
@@ -38,7 +40,6 @@ A: public(uint256)  # 2 x amplification coefficient
 fee: public(uint256)  # fee * 1e10
 admin_fee: public(uint256)  # admin_fee * 1e10
 max_admin_fee: constant(uint256) = 5 * 10 ** 9
-use_lending: public(uint256)
 
 owner: public(address)
 token: ERC20m
@@ -55,29 +56,16 @@ kill_deadline_dt: constant(uint256) = 2 * 30 * 86400
 is_killed: bool
 
 
-@private
-@constant
-def get_bit(x: uint256, b: int128) -> bool:
-    if bitwise_and(x, shift(1, b)) > 0:
-        return True
-    else:
-        return False
-
-
 @public
 def __init__(_coins: address[N_COINS], _underlying_coins: address[N_COINS],
              _pool_token: address,
              _A: uint256, _fee: uint256):
-    _use_lending: uint256 = 0
     for i in range(N_COINS):
         assert _coins[i] != ZERO_ADDRESS
         assert _underlying_coins[i] != ZERO_ADDRESS
         self.balances[i] = 0
-        if _underlying_coins[i] != _coins[i]:
-            _use_lending = bitwise_or(_use_lending, shift(1, i))
     self.coins = _coins
     self.underlying_coins = _underlying_coins
-    self.use_lending = _use_lending
     self.A = _A
     self.fee = _fee
     self.admin_fee = 0
@@ -92,10 +80,10 @@ def __init__(_coins: address[N_COINS], _underlying_coins: address[N_COINS],
 def _stored_rates() -> uint256[N_COINS]:
     # exchangeRateStored * (1 + supplyRatePerBlock * (getBlockNumber - accrualBlockNumber) / 1e18)
     result: uint256[N_COINS] = PRECISION_MUL
-    _use_lending: uint256 = self.use_lending
+    _use_lending: bool[N_COINS] = USE_LENDING
     for i in range(N_COINS):
         rate: uint256 = 10 ** 18  # Used with no lending
-        if self.get_bit(_use_lending, i):
+        if _use_lending[i]:
             rate = cERC20(self.coins[i]).exchangeRateStored()
             supply_rate: uint256 = cERC20(self.coins[i]).supplyRatePerBlock()
             old_block: uint256 = cERC20(self.coins[i]).accrualBlockNumber()
@@ -107,10 +95,10 @@ def _stored_rates() -> uint256[N_COINS]:
 @private
 def _current_rates() -> uint256[N_COINS]:
     result: uint256[N_COINS] = PRECISION_MUL
-    _use_lending: uint256 = self.use_lending
+    _use_lending: bool[N_COINS] = USE_LENDING
     for i in range(N_COINS):
         rate: uint256 = 10 ** 18  # Used with no lending
-        if self.get_bit(_use_lending, i):
+        if _use_lending[i]:
             rate = cERC20(self.coins[i]).exchangeRateCurrent()
         result[i] = rate * result[i]
     return result
@@ -382,17 +370,17 @@ def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256):
     dy_: uint256 = self._exchange(i, j, dx_, rates)
     dy: uint256 = dy_ * rate_j / 10 ** 18
     assert dy >= min_dy, "Exchange resulted in fewer coins than expected"
-    _use_lending: uint256 = self.use_lending
+    _use_lending: bool[N_COINS] = USE_LENDING
 
     ok: uint256 = 0
     assert_modifiable(ERC20(self.underlying_coins[i])\
         .transferFrom(msg.sender, self, dx))
-    if self.get_bit(_use_lending, i):
+    if _use_lending[i]:
         ERC20(self.underlying_coins[i]).approve(self.coins[i], dx)
         ok = cERC20(self.coins[i]).mint(dx)
         if ok > 0:
             raise "Could not mint coin"
-    if self.get_bit(_use_lending, j):
+    if _use_lending[j]:
         ok = cERC20(self.coins[j]).redeem(dy_)
         if ok > 0:
             raise "Could not redeem coin"
