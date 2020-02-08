@@ -274,7 +274,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 1327672
+  "gas": 1327411
  },
  {
   "name": "add_liquidity",
@@ -288,7 +288,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 4062956
+  "gas": 4062695
  },
  {
   "name": "get_dy",
@@ -315,7 +315,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 3017056
+  "gas": 3016795
  },
  {
   "name": "get_dx",
@@ -342,7 +342,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 3017062
+  "gas": 3016801
  },
  {
   "name": "get_dy_underlying",
@@ -369,7 +369,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 3017160
+  "gas": 3016638
  },
  {
   "name": "get_dx_underlying",
@@ -396,7 +396,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 3017166
+  "gas": 3016644
  },
  {
   "name": "exchange",
@@ -422,7 +422,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 6109831
+  "gas": 6109570
  },
  {
   "name": "exchange_underlying",
@@ -448,7 +448,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 6126840
+  "gas": 6126318
  },
  {
   "name": "remove_liquidity",
@@ -480,7 +480,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 4066041
+  "gas": 4065780
  },
  {
   "name": "commit_new_parameters",
@@ -561,7 +561,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 17802
+  "gas": 17541
  },
  {
   "name": "kill_me",

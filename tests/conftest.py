@@ -70,9 +70,8 @@ def swap(w3, coins, cerc20s, pool_token):
             replacements={
                 '___N_COINS___': str(N_COINS),
                 '___N_ZEROS___': '[' + ', '.join(['ZERO256'] * N_COINS) + ']',
-                '___PRECISION_MUL___': '[' + ', '.join([
-                    'PRECISION / convert(%s, uint256)' % i
-                    for i in (10 ** 18, 10 ** 6, 10 ** 6)]) + ']',
+                '___PRECISION_MUL___': '[' + ', '.join(
+                    'convert(%s, uint256)' % i for i in PRECISIONS) + ']',
                 '___USE_LENDING___': '[' + ', '.join(
                         str(i) for i in use_lending) + ']',
                 '___TETHERED___': '[' + ', '.join(

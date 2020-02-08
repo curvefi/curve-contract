@@ -20,10 +20,11 @@ ZEROS: constant(uint256[N_COINS]) = ___N_ZEROS___  # <- change
 USE_LENDING: constant(bool[N_COINS]) = ___USE_LENDING___
 TETHERED: constant(bool[N_COINS]) = ___TETHERED___
 
+FEE_DENOMINATOR: constant(uint256) = 10 ** 10
 PRECISION: constant(uint256) = 10 ** 18  # The precision to convert to
 PRECISION_MUL: constant(uint256[N_COINS]) = ___PRECISION_MUL___
 # PRECISION_MUL: constant(uint256[N_COINS]) = [
-#     PRECISION / convert(10 ** 18, uint256),  # DAI
+#     PRECISION / convert(PRECISION, uint256),  # DAI
 #     PRECISION / convert(10 ** 6, uint256),   # USDC
 #     PRECISION / convert(10 ** 6, uint256)]   # USDT
 
@@ -90,12 +91,12 @@ def _stored_rates() -> uint256[N_COINS]:
     result: uint256[N_COINS] = PRECISION_MUL
     use_lending: bool[N_COINS] = USE_LENDING
     for i in range(N_COINS):
-        rate: uint256 = 10 ** 18  # Used with no lending
+        rate: uint256 = PRECISION  # Used with no lending
         if use_lending[i]:
             rate = cERC20(self.coins[i]).exchangeRateStored()
             supply_rate: uint256 = cERC20(self.coins[i]).supplyRatePerBlock()
             old_block: uint256 = cERC20(self.coins[i]).accrualBlockNumber()
-            rate += rate * supply_rate * (block.number - old_block) / 10 ** 18
+            rate += rate * supply_rate * (block.number - old_block) / PRECISION
         result[i] = rate * result[i]
     return result
 
@@ -105,7 +106,7 @@ def _current_rates() -> uint256[N_COINS]:
     result: uint256[N_COINS] = PRECISION_MUL
     use_lending: bool[N_COINS] = USE_LENDING
     for i in range(N_COINS):
-        rate: uint256 = 10 ** 18  # Used with no lending
+        rate: uint256 = PRECISION  # Used with no lending
         if use_lending[i]:
             rate = cERC20(self.coins[i]).exchangeRateCurrent()
         result[i] = rate * result[i]
@@ -117,7 +118,7 @@ def _current_rates() -> uint256[N_COINS]:
 def _xp(rates: uint256[N_COINS]) -> uint256[N_COINS]:
     result: uint256[N_COINS] = rates
     for i in range(N_COINS):
-        result[i] = result[i] * self.balances[i] / 10 ** 18
+        result[i] = result[i] * self.balances[i] / PRECISION
     return result
 
 
@@ -126,7 +127,7 @@ def _xp(rates: uint256[N_COINS]) -> uint256[N_COINS]:
 def _xp_mem(rates: uint256[N_COINS], _balances: uint256[N_COINS]) -> uint256[N_COINS]:
     result: uint256[N_COINS] = rates
     for i in range(N_COINS):
-        result[i] = result[i] * _balances[i] / 10 ** 18
+        result[i] = result[i] * _balances[i] / PRECISION
     return result
 
 
@@ -169,7 +170,7 @@ def get_virtual_price() -> uint256:
     # D is in the units similar to DAI (e.g. converted to precision 1e18)
     # When balanced, D = n * x_u - total virtual value of the portfolio
     token_supply: uint256 = self.token.totalSupply()
-    return D * 10 ** 18 / token_supply
+    return D * PRECISION / token_supply
 
 
 @public
@@ -213,8 +214,8 @@ def add_liquidity(amounts: uint256[N_COINS]):
                 difference = ideal_balance - new_balances[i]
             else:
                 difference = new_balances[i] - ideal_balance
-            fees[i] = _fee * difference / 10 ** 10
-            self.balances[i] = new_balances[i] - fees[i] * _admin_fee / 10 ** 10
+            fees[i] = _fee * difference / FEE_DENOMINATOR
+            self.balances[i] = new_balances[i] - fees[i] * _admin_fee / FEE_DENOMINATOR
             new_balances[i] -= fees[i]
         D2 = self.get_D(self._xp_mem(rates, new_balances))
     else:
@@ -284,10 +285,10 @@ def get_dy(i: int128, j: int128, dx: uint256) -> uint256:
     rates: uint256[N_COINS] = self._stored_rates()
     xp: uint256[N_COINS] = self._xp(rates)
 
-    x: uint256 = xp[i] + dx * rates[i] / 10 ** 18
+    x: uint256 = xp[i] + dx * rates[i] / PRECISION
     y: uint256 = self.get_y(i, j, x, xp)
-    dy: uint256 = (xp[j] - y) * 10 ** 18 / rates[j]
-    _fee: uint256 = self.fee * dy / 10 ** 10
+    dy: uint256 = (xp[j] - y) * PRECISION / rates[j]
+    _fee: uint256 = self.fee * dy / FEE_DENOMINATOR
     return dy - _fee
 
 
@@ -298,9 +299,9 @@ def get_dx(i: int128, j: int128, dy: uint256) -> uint256:
     rates: uint256[N_COINS] = self._stored_rates()
     xp: uint256[N_COINS] = self._xp(rates)
 
-    y: uint256 = xp[i] - (dy * 10 ** 10 / (10 ** 10 - self.fee)) * rates[j] / 10 ** 18
+    y: uint256 = xp[i] - (dy * FEE_DENOMINATOR / (FEE_DENOMINATOR - self.fee)) * rates[j] / PRECISION
     x: uint256 = self.get_y(j, i, y, xp)
-    dx: uint256 = (x - xp[i]) * 10 ** 18 / rates[i]
+    dx: uint256 = (x - xp[i]) * PRECISION / rates[i]
     return dx
 
 
@@ -315,7 +316,7 @@ def get_dy_underlying(i: int128, j: int128, dx: uint256) -> uint256:
     x: uint256 = xp[i] + dx * precisions[i]
     y: uint256 = self.get_y(i, j, x, xp)
     dy: uint256 = (xp[j] - y) / precisions[j]
-    _fee: uint256 = self.fee * dy / 10 ** 10
+    _fee: uint256 = self.fee * dy / FEE_DENOMINATOR
     return dy - _fee
 
 
@@ -327,7 +328,7 @@ def get_dx_underlying(i: int128, j: int128, dy: uint256) -> uint256:
     xp: uint256[N_COINS] = self._xp(rates)
     precisions: uint256[N_COINS] = PRECISION_MUL
 
-    y: uint256 = xp[i] - (dy * 10 ** 10 / (10 ** 10 - self.fee)) * precisions[j]
+    y: uint256 = xp[i] - (dy * FEE_DENOMINATOR / (FEE_DENOMINATOR - self.fee)) * precisions[j]
     x: uint256 = self.get_y(j, i, y, xp)
     dx: uint256 = (x - xp[i]) / precisions[i]
     return dx
@@ -341,15 +342,15 @@ def _exchange(i: int128, j: int128, dx: uint256, rates: uint256[N_COINS]) -> uin
 
     xp: uint256[N_COINS] = self._xp(rates)
 
-    x: uint256 = xp[i] + dx * rates[i] / 10 ** 18
+    x: uint256 = xp[i] + dx * rates[i] / PRECISION
     y: uint256 = self.get_y(i, j, x, xp)
     dy: uint256 = xp[j] - y
-    dy_fee: uint256 = dy * self.fee / 10 ** 10
-    dy_admin_fee: uint256 = dy_fee * self.admin_fee / 10 ** 10
-    self.balances[i] = x * 10 ** 18 / rates[i]
-    self.balances[j] = (y + (dy_fee - dy_admin_fee)) * 10 ** 18 / rates[j]
+    dy_fee: uint256 = dy * self.fee / FEE_DENOMINATOR
+    dy_admin_fee: uint256 = dy_fee * self.admin_fee / FEE_DENOMINATOR
+    self.balances[i] = x * PRECISION / rates[i]
+    self.balances[j] = (y + (dy_fee - dy_admin_fee)) * PRECISION / rates[j]
 
-    _dy: uint256 = (dy - dy_fee) * 10 ** 18 / rates[j]
+    _dy: uint256 = (dy - dy_fee) * PRECISION / rates[j]
 
     return _dy
 
@@ -373,10 +374,10 @@ def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256):
     precisions: uint256[N_COINS] = PRECISION_MUL
     rate_i: uint256 = rates[i] / precisions[i]
     rate_j: uint256 = rates[j] / precisions[j]
-    dx_: uint256 = dx * 10 ** 18 / rate_i
+    dx_: uint256 = dx * PRECISION / rate_i
 
     dy_: uint256 = self._exchange(i, j, dx_, rates)
-    dy: uint256 = dy_ * rate_j / 10 ** 18
+    dy: uint256 = dy_ * rate_j / PRECISION
     assert dy >= min_dy, "Exchange resulted in fewer coins than expected"
     use_lending: bool[N_COINS] = USE_LENDING
     tethered: bool[N_COINS] = TETHERED
@@ -451,8 +452,8 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS]):
             difference = ideal_balance - new_balances[i]
         else:
             difference = new_balances[i] - ideal_balance
-        fees[i] = _fee * difference / 10 ** 10
-        self.balances[i] = new_balances[i] - fees[i] * _admin_fee / 10 ** 10
+        fees[i] = _fee * difference / FEE_DENOMINATOR
+        self.balances[i] = new_balances[i] - fees[i] * _admin_fee / FEE_DENOMINATOR
         new_balances[i] -= fees[i]
     D2: uint256 = self.get_D(self._xp_mem(rates, new_balances))
 
