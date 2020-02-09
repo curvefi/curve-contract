@@ -13,6 +13,7 @@ c_rates = [5 * UU[0], UU[1], 20 * UU[2]]
 use_lending = [True, True, False]
 tethered = [False, False, True]
 PRECISIONS = [10 ** 18 // u for u in UU]
+MAX_UINT = 2 ** 256 - 1
 
 
 @pytest.fixture

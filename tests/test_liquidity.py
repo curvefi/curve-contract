@@ -1,7 +1,7 @@
 import pytest
 import random
 from eth_tester.exceptions import TransactionFailed
-from .conftest import UU, use_lending
+from .conftest import UU, use_lending, MAX_UINT
 
 N_COINS = 3
 
@@ -202,7 +202,12 @@ def test_remove_liquidity_imbalance(w3, coins, cerc20s, swap, pool_token):
         values = [max(int(b * random.random() * 0.3), 1000) for b in deposits]
         for i in range(N_COINS):
             bob_volumes[i] += values[i]
-        swap.functions.remove_liquidity_imbalance(values).\
+        max_burn = swap.caller.calc_token_amount(values, False)
+        with pytest.raises(TransactionFailed):
+            swap.functions.remove_liquidity_imbalance(values, max_burn).\
+                transact({'from': bob})
+        max_burn = int(1.001 * max_burn)
+        swap.functions.remove_liquidity_imbalance(values, max_burn).\
             transact({'from': bob})
         for cc, v in zip(cerc20s, values):
             cc.functions.approve(swap.address, v).transact({'from': bob})
@@ -244,10 +249,12 @@ def test_remove_liquidity_imbalance(w3, coins, cerc20s, swap, pool_token):
     with pytest.raises(TransactionFailed):
         # Cannot remove all because of fees
         swap.functions.remove_liquidity_imbalance(
-            [0, deposits[1] // 1000, 0]
+            [0, deposits[1] // 1000, 0], MAX_UINT
         ).transact({'from': bob})
+    max_burn = int(swap.caller.calc_token_amount(
+        [0, int(0.995 * deposits[1] / 1000), 0], False) * 1.001)
     swap.functions.remove_liquidity_imbalance(
-        [0, int(0.995 * deposits[1] / 1000), 0]
+        [0, int(0.995 * deposits[1] / 1000), 0], max_burn
     ).transact({'from': bob})
     # Let's see how much Alice got now
     value = pool_token.caller.balanceOf(alice)

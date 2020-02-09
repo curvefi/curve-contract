@@ -30,7 +30,9 @@ def deploy_contract(w3, filename, account, *args, replacements=None):
     else:
         code = compile_code(source, ['bytecode', 'abi'],
                             interface_codes=interface_codes or None)
-        assert len(code['bytecode']) // 2 <= 2 ** 14 + 2 ** 13  # EIP170
+        code_size = len(code['bytecode']) // 2
+        assert code_size <= 2 ** 14 + 2 ** 13  # EIP170
+        print("Code size:", code_size)
         compiled_contracts[filename] = code
 
     deploy = w3.eth.contract(abi=code['abi'],

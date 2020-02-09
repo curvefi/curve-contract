@@ -463,7 +463,7 @@ def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS]):
 
 @public
 @nonreentrant('lock')
-def remove_liquidity_imbalance(amounts: uint256[N_COINS]):
+def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint256):
     assert not self.is_killed
 
     token_supply: uint256 = self.token.totalSupply()
@@ -493,6 +493,7 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS]):
 
     token_amount: uint256 = (D0 - D2) * token_supply / D0
     assert token_amount > 0
+    assert token_amount <= max_burn_amount, "Slippage screwed you"
 
     for i in range(N_COINS):
         assert_modifiable(cERC20(self.coins[i]).transfer(msg.sender, amounts[i]))

@@ -502,12 +502,16 @@
    {
     "type": "uint256[3]",
     "name": "amounts"
+   },
+   {
+    "type": "uint256",
+    "name": "max_burn_amount"
    }
   ],
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 7904547
+  "gas": 7904718
  },
  {
   "name": "commit_new_parameters",
