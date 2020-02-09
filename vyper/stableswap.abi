@@ -288,7 +288,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 4062695
+  "gas": 4062405
  },
  {
   "name": "get_dy",
@@ -315,7 +315,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 3016795
+  "gas": 3016591
  },
  {
   "name": "get_dx",
@@ -342,7 +342,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 3016801
+  "gas": 3016597
  },
  {
   "name": "get_dy_underlying",
@@ -369,7 +369,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 3016638
+  "gas": 3016434
  },
  {
   "name": "get_dx_underlying",
@@ -396,7 +396,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 3016644
+  "gas": 3016440
  },
  {
   "name": "exchange",
@@ -422,7 +422,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 6109570
+  "gas": 6108853
  },
  {
   "name": "exchange_underlying",
@@ -448,7 +448,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 6126318
+  "gas": 6125601
  },
  {
   "name": "remove_liquidity",
@@ -466,7 +466,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 200573
+  "gas": 196882
  },
  {
   "name": "remove_liquidity_imbalance",
@@ -480,7 +480,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 4065780
+  "gas": 4061824
  },
  {
   "name": "commit_new_parameters",
@@ -502,7 +502,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 146024
+  "gas": 145837
  },
  {
   "name": "apply_new_parameters",
@@ -511,7 +511,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 133589
+  "gas": 133452
  },
  {
   "name": "revert_new_parameters",
@@ -520,7 +520,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 21837
+  "gas": 21775
  },
  {
   "name": "commit_transfer_ownership",
@@ -534,7 +534,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 74576
+  "gas": 74452
  },
  {
   "name": "apply_transfer_ownership",
@@ -543,7 +543,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 60644
+  "gas": 60508
  },
  {
   "name": "revert_transfer_ownership",
@@ -552,7 +552,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 21927
+  "gas": 21865
  },
  {
   "name": "withdraw_admin_fees",
@@ -561,7 +561,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 17541
+  "gas": 17478
  },
  {
   "name": "kill_me",
@@ -570,7 +570,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 37942
+  "gas": 37818
  },
  {
   "name": "unkill_me",
@@ -579,7 +579,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 22017
+  "gas": 21955
  },
  {
   "name": "coins",

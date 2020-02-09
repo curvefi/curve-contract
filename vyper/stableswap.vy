@@ -177,7 +177,7 @@ def get_virtual_price() -> uint256:
 @nonreentrant('lock')
 def add_liquidity(amounts: uint256[N_COINS]):
     # Amounts is amounts of c-tokens
-    assert not self.is_killed, "The contract was shut down"
+    assert not self.is_killed
 
     fees: uint256[N_COINS] = ZEROS
     _fee: uint256 = self.fee * N_COINS / (4 * (N_COINS - 1))
@@ -194,13 +194,13 @@ def add_liquidity(amounts: uint256[N_COINS]):
 
     for i in range(N_COINS):
         if token_supply == 0:
-            assert amounts[i] > 0, "First deposit should be non-zero"
+            assert amounts[i] > 0
         # balances store amounts of c-tokens
         new_balances[i] = old_balances[i] + amounts[i]
 
     # Invariant after change
     D1: uint256 = self.get_D(self._xp_mem(rates, new_balances))
-    assert D1 > D0, "LP share didn't grow"
+    assert D1 > D0
 
     # We need to recalculate the invariant accounting for fees
     # to calculate fair user's share
@@ -244,7 +244,7 @@ def add_liquidity(amounts: uint256[N_COINS]):
 def get_y(i: int128, j: int128, x: uint256, _xp: uint256[N_COINS]) -> uint256:
     # x in the input is converted to the same price/precision
 
-    assert (i != j) and (i >= 0) and (j >= 0), "Wrong output asset"
+    assert (i != j) and (i >= 0) and (j >= 0)
 
     D: uint256 = self.get_D(_xp)
     c: uint256 = D
@@ -336,8 +336,8 @@ def get_dx_underlying(i: int128, j: int128, dy: uint256) -> uint256:
 
 @private
 def _exchange(i: int128, j: int128, dx: uint256, rates: uint256[N_COINS]) -> uint256:
-    assert i < N_COINS and j < N_COINS, "Coin number out of range"
-    assert not self.is_killed, "The contract was shut down"
+    assert i < N_COINS and j < N_COINS
+    assert not self.is_killed
     # dx and dy are in c-tokens
 
     xp: uint256[N_COINS] = self._xp(rates)
@@ -409,7 +409,6 @@ def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256):
 @public
 @nonreentrant('lock')
 def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS]):
-    assert self.token.balanceOf(msg.sender) >= _amount, "Not enough LP tokens"
     total_supply: uint256 = self.token.totalSupply()
     amounts: uint256[N_COINS] = ZEROS
     fees: uint256[N_COINS] = ZEROS
@@ -422,7 +421,7 @@ def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS]):
         assert_modifiable(cERC20(self.coins[i]).transfer(
             msg.sender, value))
 
-    self.token.burnFrom(msg.sender, _amount)
+    self.token.burnFrom(msg.sender, _amount)  # Will raise if not enough
 
     log.RemoveLiquidity(msg.sender, amounts, fees, total_supply - _amount)
 
@@ -430,10 +429,10 @@ def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS]):
 @public
 @nonreentrant('lock')
 def remove_liquidity_imbalance(amounts: uint256[N_COINS]):
-    assert not self.is_killed, "The contract was shut down"
+    assert not self.is_killed
 
     token_supply: uint256 = self.token.totalSupply()
-    assert token_supply > 0, "There are no LP tokens"
+    assert token_supply > 0
     _fee: uint256 = self.fee * N_COINS / (4 * (N_COINS - 1))
     _admin_fee: uint256 = self.admin_fee
     rates: uint256[N_COINS] = self._current_rates()
@@ -458,12 +457,11 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS]):
     D2: uint256 = self.get_D(self._xp_mem(rates, new_balances))
 
     token_amount: uint256 = (D0 - D2) * token_supply / D0
-    assert token_amount > 0, "Dust-like trade: zero LP token would be issued"
+    assert token_amount > 0
 
-    assert self.token.balanceOf(msg.sender) >= token_amount, "Not enough LP tokens"
     for i in range(N_COINS):
         assert_modifiable(cERC20(self.coins[i]).transfer(msg.sender, amounts[i]))
-    self.token.burnFrom(msg.sender, token_amount)
+    self.token.burnFrom(msg.sender, token_amount)  # Will raise if not enough
 
     log.RemoveLiquidityImbalance(msg.sender, amounts, fees, D1, token_supply - token_amount)
 
@@ -473,9 +471,9 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS]):
 def commit_new_parameters(amplification: uint256,
                           new_fee: uint256,
                           new_admin_fee: uint256):
-    assert msg.sender == self.owner, "Unauthorized access attempted"
-    assert self.admin_actions_deadline == 0, "Previous commit pending"
-    assert new_admin_fee <= max_admin_fee, "The fee is too high"
+    assert msg.sender == self.owner
+    assert self.admin_actions_deadline == 0
+    assert new_admin_fee <= max_admin_fee
 
     _deadline: timestamp = block.timestamp + admin_actions_delay
     self.admin_actions_deadline = _deadline
@@ -488,9 +486,9 @@ def commit_new_parameters(amplification: uint256,
 
 @public
 def apply_new_parameters():
-    assert msg.sender == self.owner, "Unauthorized access attempted"
+    assert msg.sender == self.owner
     assert self.admin_actions_deadline <= block.timestamp\
-        and self.admin_actions_deadline > 0, "Not enough time passed since commit"
+        and self.admin_actions_deadline > 0
 
     self.admin_actions_deadline = 0
     _A: uint256 = self.future_A
@@ -505,15 +503,15 @@ def apply_new_parameters():
 
 @public
 def revert_new_parameters():
-    assert msg.sender == self.owner, "Unauthorized access attempted"
+    assert msg.sender == self.owner
 
     self.admin_actions_deadline = 0
 
 
 @public
 def commit_transfer_ownership(_owner: address):
-    assert msg.sender == self.owner, "Unauthorized access attempted"
-    assert self.transfer_ownership_deadline == 0, "Previous commit pending"
+    assert msg.sender == self.owner
+    assert self.transfer_ownership_deadline == 0
 
     _deadline: timestamp = block.timestamp + admin_actions_delay
     self.transfer_ownership_deadline = _deadline
@@ -524,9 +522,9 @@ def commit_transfer_ownership(_owner: address):
 
 @public
 def apply_transfer_ownership():
-    assert msg.sender == self.owner, "Unauthorized access attempted"
+    assert msg.sender == self.owner
     assert block.timestamp >= self.transfer_ownership_deadline\
-        and self.transfer_ownership_deadline > 0, "Not enough time passed since commit"
+        and self.transfer_ownership_deadline > 0
 
     self.transfer_ownership_deadline = 0
     _owner: address = self.future_owner
@@ -537,14 +535,14 @@ def apply_transfer_ownership():
 
 @public
 def revert_transfer_ownership():
-    assert msg.sender == self.owner, "Unauthorized access attempted"
+    assert msg.sender == self.owner
 
     self.transfer_ownership_deadline = 0
 
 
 @public
 def withdraw_admin_fees():
-    assert msg.sender == self.owner, "Unauthorized access attempted"
+    assert msg.sender == self.owner
     _precisions: uint256[N_COINS] = PRECISION_MUL
 
     for i in range(N_COINS):
@@ -556,12 +554,12 @@ def withdraw_admin_fees():
 
 @public
 def kill_me():
-    assert msg.sender == self.owner, "Unauthorized access attempted"
-    assert self.kill_deadline > block.timestamp, "Too late to kill"
+    assert msg.sender == self.owner
+    assert self.kill_deadline > block.timestamp
     self.is_killed = True
 
 
 @public
 def unkill_me():
-    assert msg.sender == self.owner, "Unauthorized access attempted"
+    assert msg.sender == self.owner
     self.is_killed = False
