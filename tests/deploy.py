@@ -2,6 +2,7 @@ from os.path import realpath, dirname, join, splitext
 from vyper import compile_code
 
 CONTRACT_PATH = join(dirname(dirname(realpath(__file__))), 'vyper')
+compiled_contracts = {}
 
 
 def deploy_contract(w3, filename, account, *args, replacements=None):
@@ -24,8 +25,14 @@ def deploy_contract(w3, filename, account, *args, replacements=None):
                     'type': 'vyper',
                     'code': f.read()}
 
-    code = compile_code(source, ['bytecode', 'abi'],
-                        interface_codes=interface_codes or None)
+    if filename in compiled_contracts:
+        code = compiled_contracts[filename]
+    else:
+        code = compile_code(source, ['bytecode', 'abi'],
+                            interface_codes=interface_codes or None)
+        assert len(code['bytecode']) // 2 <= 2 ** 14 + 2 ** 13  # EIP170
+        compiled_contracts[filename] = code
+
     deploy = w3.eth.contract(abi=code['abi'],
                              bytecode=code['bytecode'])
     tx_hash = deploy.constructor(*args).transact({'from': account, 'gas': 6 * 10**6})
