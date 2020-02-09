@@ -31,7 +31,7 @@ def test_curve_in_contract(w3, coins, cerc20s, swap, n_coins):
 
     # Add some coins
     swap.functions.\
-        add_liquidity([n // 10 for n in n_ccoins]).\
+        add_liquidity([n // 10 for n in n_ccoins], 0).\
         transact(from_alice)
 
     # Python-based (tested) model with same parameters as contract

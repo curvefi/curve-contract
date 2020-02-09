@@ -29,7 +29,7 @@ def test_few_trades(w3, coins, cerc20s, swap, pool_token):
         cc.functions.approve(swap.address, balance).transact(from_sam)
 
     # Adding $100 liquidity of each coin
-    swap.functions.add_liquidity([b // 10 for b in deposits]).transact(from_sam)
+    swap.functions.add_liquidity([b // 10 for b in deposits], 0).transact(from_sam)
 
     # Fund the customer with $100 of each coin
     for c, u in zip(coins, UU):
@@ -103,7 +103,7 @@ def test_simulated_exchange(w3, coins, cerc20s, swap):
 
     # Adding $100 liquidity of each coin
     liquidity = [b // 10 for b in deposits]
-    swap.functions.add_liquidity(liquidity).transact(from_sam)
+    swap.functions.add_liquidity(liquidity, 0).transact(from_sam)
 
     # Model
     balances = [int(swap.caller.balances(i)) for i in range(3)]

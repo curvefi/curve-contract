@@ -159,6 +159,12 @@ def get_D(xp: uint256[N_COINS]) -> uint256:
     return D
 
 
+@private
+@constant
+def get_D_mem(rates: uint256[N_COINS], _balances: uint256[N_COINS]) -> uint256:
+    return self.get_D(self._xp_mem(rates, _balances))
+
+
 @public
 @constant
 def get_virtual_price() -> uint256:
@@ -174,8 +180,35 @@ def get_virtual_price() -> uint256:
 
 
 @public
+@constant
+def calc_token_amount(amounts: uint256[N_COINS], deposit: bool) -> uint256:
+    """
+    Simplified method to calculate addition or reduction in token supply at
+    deposit or withdrawal without taking fees into account (but looking at
+    slippage).
+    Needed to prevent front-running, not for precise calculations!
+    """
+    _balances: uint256[N_COINS] = self.balances
+    rates: uint256[N_COINS] = self._stored_rates()
+    D0: uint256 = self.get_D_mem(rates, _balances)
+    for i in range(N_COINS):
+        if deposit:
+            _balances[i] += amounts[i]
+        else:
+            _balances[i] -= amounts[i]
+    D1: uint256 = self.get_D_mem(rates, _balances)
+    token_amount: uint256 = self.token.totalSupply()
+    diff: uint256 = 0
+    if deposit:
+        diff = D1 - D0
+    else:
+        diff = D0 - D1
+    return diff * token_amount / D0
+
+
+@public
 @nonreentrant('lock')
-def add_liquidity(amounts: uint256[N_COINS]):
+def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256):
     # Amounts is amounts of c-tokens
     assert not self.is_killed
 
@@ -189,7 +222,7 @@ def add_liquidity(amounts: uint256[N_COINS]):
     D0: uint256 = 0
     old_balances: uint256[N_COINS] = self.balances
     if token_supply > 0:
-        D0 = self.get_D(self._xp_mem(rates, old_balances))
+        D0 = self.get_D_mem(rates, old_balances)
     new_balances: uint256[N_COINS] = old_balances
 
     for i in range(N_COINS):
@@ -199,7 +232,7 @@ def add_liquidity(amounts: uint256[N_COINS]):
         new_balances[i] = old_balances[i] + amounts[i]
 
     # Invariant after change
-    D1: uint256 = self.get_D(self._xp_mem(rates, new_balances))
+    D1: uint256 = self.get_D_mem(rates, new_balances)
     assert D1 > D0
 
     # We need to recalculate the invariant accounting for fees
@@ -217,7 +250,7 @@ def add_liquidity(amounts: uint256[N_COINS]):
             fees[i] = _fee * difference / FEE_DENOMINATOR
             self.balances[i] = new_balances[i] - fees[i] * _admin_fee / FEE_DENOMINATOR
             new_balances[i] -= fees[i]
-        D2 = self.get_D(self._xp_mem(rates, new_balances))
+        D2 = self.get_D_mem(rates, new_balances)
     else:
         self.balances = new_balances
 
@@ -227,6 +260,8 @@ def add_liquidity(amounts: uint256[N_COINS]):
         mint_amount = D1  # Take the dust if there was any
     else:
         mint_amount = token_supply * (D2 - D0) / D0
+
+    assert mint_amount >= min_mint_amount, "Slippage screwed you"
 
     # Take coins from the sender
     for i in range(N_COINS):
@@ -439,10 +474,10 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS]):
 
     old_balances: uint256[N_COINS] = self.balances
     new_balances: uint256[N_COINS] = old_balances
-    D0: uint256 = self.get_D(self._xp_mem(rates, old_balances))
+    D0: uint256 = self.get_D_mem(rates, old_balances)
     for i in range(N_COINS):
         new_balances[i] -= amounts[i]
-    D1: uint256 = self.get_D(self._xp_mem(rates, new_balances))
+    D1: uint256 = self.get_D_mem(rates, new_balances)
     fees: uint256[N_COINS] = ZEROS
     for i in range(N_COINS):
         ideal_balance: uint256 = D1 * old_balances[i] / D0
@@ -454,7 +489,7 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS]):
         fees[i] = _fee * difference / FEE_DENOMINATOR
         self.balances[i] = new_balances[i] - fees[i] * _admin_fee / FEE_DENOMINATOR
         new_balances[i] -= fees[i]
-    D2: uint256 = self.get_D(self._xp_mem(rates, new_balances))
+    D2: uint256 = self.get_D_mem(rates, new_balances)
 
     token_amount: uint256 = (D0 - D2) * token_supply / D0
     assert token_amount > 0

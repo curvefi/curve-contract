@@ -23,16 +23,27 @@ def test_add_liquidity(w3, coins, cerc20s, swap):
         cc.functions.approve(swap.address, balance).transact(from_sam)
 
     # Adding the first time - $100 liquidity of each coin
-    swap.functions.add_liquidity([b // 10 for b in deposits]).transact(from_sam)
+    swap.functions.add_liquidity([b // 10 for b in deposits], 0).transact(from_sam)
 
     # Adding the second time does a different calculation
-    swap.functions.add_liquidity([b // 10 for b in deposits]).transact(from_sam)
+    min_mint = int(0.999 * swap.caller.calc_token_amount([b // 10 for b in deposits], True))
+    swap.functions.add_liquidity([b // 10 for b in deposits], min_mint).transact(from_sam)
 
     with pytest.raises(TransactionFailed):
         # Fail because this account has no coins
         swap.functions.add_liquidity(
-            [b // 10 for b in deposits]
+            [b // 10 for b in deposits], 0
         ).transact({'from': w3.eth.accounts[1]})
+
+    with pytest.raises(TransactionFailed):
+        # Fail because this less than the min_mint amount gets minted
+        min_mint = int(1.001 * swap.caller.calc_token_amount([b // 10 for b in deposits], True))
+        swap.functions.add_liquidity([b // 10 for b in deposits], min_mint).transact(from_sam)
+
+    with pytest.raises(TransactionFailed):
+        # Fail because slippage is too high
+        min_mint = int(0.999 * swap.caller.calc_token_amount([b // 4 for b in deposits], True))
+        swap.functions.add_liquidity([3 * deposits[0] // 4, 0, 0], min_mint).transact(from_sam)
 
     # Reduce the allowance
     for cc, b in zip(cerc20s, deposits):
@@ -42,7 +53,7 @@ def test_add_liquidity(w3, coins, cerc20s, swap):
     with pytest.raises(TransactionFailed):
         # Fail because the allowance is now not enough
         swap.functions.add_liquidity(
-            [b // 10 for b in deposits]
+            [b // 10 for b in deposits], 0
         ).transact(from_sam)
 
     for i, b in enumerate(deposits):
@@ -90,24 +101,28 @@ def test_ratio_preservation(w3, coins, cerc20s, swap, pool_token):
             assert cerc20s[i].caller.balanceOf(swap.address) >= swap.caller.balances(i)
 
     # Test that everything is equal when adding and removing liquidity
-    swap.functions.add_liquidity([d // 20 for d in deposits]).transact({'from': alice})
-    swap.functions.add_liquidity([d // 20 for d in deposits]).transact({'from': bob})
+    # First mint
+    swap.functions.add_liquidity([d // 20 for d in deposits], 0).transact({'from': alice})
+    min_mint = int(0.999 * swap.caller.calc_token_amount([d // 20 for d in deposits], True))
+    swap.functions.add_liquidity([d // 20 for d in deposits], min_mint).transact({'from': bob})
     k_pool = [(deposits[i] // 20) / pool_token.caller.balanceOf(alice)
               for i in range(N_COINS)]
     old_virtual_price = swap.caller.get_virtual_price()
     for i in range(5):
         # Add liquidity from Alice
         value = random.randrange(1, 100)  # for 1e6 coins, error is ~1e-8
+        min_mint = int(0.999 * swap.caller.calc_token_amount([value * d // 1000 for d in deposits], True))
         swap.functions.add_liquidity(
-            [value * d // 1000 for d in deposits]
+            [value * d // 1000 for d in deposits], min_mint
         ).transact({'from': alice})
         assert_all_equal(alice)
         diff = (swap.caller.get_virtual_price() / old_virtual_price) - 1
         assert diff >= 0 and diff < dust
         # Add liquidity from Bob
         value = random.randrange(1, 100)
+        min_mint = int(0.999 * swap.caller.calc_token_amount([value * d // 1000 for d in deposits], True))
         swap.functions.add_liquidity(
-            [value * d // 1000 for d in deposits]
+            [value * d // 1000 for d in deposits], min_mint
         ).transact({'from': bob})
         assert_all_equal(bob)
         diff = (swap.caller.get_virtual_price() / old_virtual_price) - 1
@@ -176,8 +191,9 @@ def test_remove_liquidity_imbalance(w3, coins, cerc20s, swap, pool_token):
              for cc, l in zip(cerc20s, use_lending)]
 
     # First, both fund the thing in equal amount
-    swap.functions.add_liquidity(deposits).transact({'from': alice})
-    swap.functions.add_liquidity(deposits).transact({'from': bob})
+    swap.functions.add_liquidity(deposits, 0).transact({'from': alice})
+    min_mint = int(0.999 * swap.caller.calc_token_amount(deposits, True))
+    swap.functions.add_liquidity(deposits, min_mint).transact({'from': bob})
 
     bob_volumes = [0] * N_COINS
     for i in range(10):
@@ -190,7 +206,8 @@ def test_remove_liquidity_imbalance(w3, coins, cerc20s, swap, pool_token):
             transact({'from': bob})
         for cc, v in zip(cerc20s, values):
             cc.functions.approve(swap.address, v).transact({'from': bob})
-        swap.functions.add_liquidity(values).transact({'from': bob})
+        min_mint = int(0.999 * swap.caller.calc_token_amount(values, True))
+        swap.functions.add_liquidity(values, min_mint).transact({'from': bob})
 
     # After this, coins should be in equal proportion, but Alice should have
     # more
@@ -218,9 +235,11 @@ def test_remove_liquidity_imbalance(w3, coins, cerc20s, swap, pool_token):
     for cc, b in zip(cerc20s, deposits):
         cc.functions.approve(swap.address, b).transact({'from': alice})
         cc.functions.approve(swap.address, b).transact({'from': bob})
-    swap.functions.add_liquidity([b // 10 for b in deposits]).\
+    # Again, we didn't have anything here
+    swap.functions.add_liquidity([b // 10 for b in deposits], 0).\
         transact({'from': alice})
-    swap.functions.add_liquidity([deposits[0] // 1000, 0, 0]).\
+    min_mint = int(0.999 * swap.caller.calc_token_amount([deposits[0] // 1000, 0, 0], True))
+    swap.functions.add_liquidity([deposits[0] // 1000, 0, 0], min_mint).\
         transact({'from': bob})
     with pytest.raises(TransactionFailed):
         # Cannot remove all because of fees

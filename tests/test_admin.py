@@ -76,7 +76,7 @@ def test_trade_and_withdraw_fees(tester, w3, coins, cerc20s, swap):
         cc.functions.transfer(bob, balance).transact({'from': alice})
         cc.functions.approve(swap.address, balance).transact({'from': bob})
 
-    swap.functions.add_liquidity(deposits).transact({'from': alice})
+    swap.functions.add_liquidity(deposits, 0).transact({'from': alice})
 
     current_time = int(time()) + 86400 * 7 + 2000
     tester.time_travel(current_time)
