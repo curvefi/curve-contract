@@ -69,6 +69,13 @@ is_killed: bool
 def __init__(_coins: address[N_COINS], _underlying_coins: address[N_COINS],
              _pool_token: address,
              _A: uint256, _fee: uint256):
+    """
+    _coins: Addresses of ERC20 conracts of coins (c-tokens) involved
+    _underlying_coins: Addresses of plain coins (ERC20)
+    _pool_token: Address of the token representing LP share
+    _A: Amplification coefficient multiplied by n * (n - 1)
+    _fee: Fee to charge for exchanges
+    """
     for i in range(N_COINS):
         assert _coins[i] != ZERO_ADDRESS
         assert _underlying_coins[i] != ZERO_ADDRESS
@@ -97,7 +104,7 @@ def _stored_rates() -> uint256[N_COINS]:
             supply_rate: uint256 = cERC20(self.coins[i]).supplyRatePerBlock()
             old_block: uint256 = cERC20(self.coins[i]).accrualBlockNumber()
             rate += rate * supply_rate * (block.number - old_block) / PRECISION
-        result[i] = rate * result[i]
+        result[i] *= rate
     return result
 
 
@@ -109,7 +116,7 @@ def _current_rates() -> uint256[N_COINS]:
         rate: uint256 = PRECISION  # Used with no lending
         if use_lending[i]:
             rate = cERC20(self.coins[i]).exchangeRateCurrent()
-        result[i] = rate * result[i]
+        result[i] *= rate
     return result
 
 
@@ -284,7 +291,7 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256):
 def get_y(i: int128, j: int128, x: uint256, _xp: uint256[N_COINS]) -> uint256:
     # x in the input is converted to the same price/precision
 
-    assert (i != j) and (i >= 0) and (j >= 0)
+    assert (i != j) and (i >= 0) and (j >= 0) and (i < N_COINS) and (j < N_COINS)
 
     D: uint256 = self.get_D(_xp)
     c: uint256 = D
@@ -376,7 +383,6 @@ def get_dx_underlying(i: int128, j: int128, dy: uint256) -> uint256:
 
 @private
 def _exchange(i: int128, j: int128, dx: uint256, rates: uint256[N_COINS]) -> uint256:
-    assert i < N_COINS and j < N_COINS
     assert not self.is_killed
     # dx and dy are in c-tokens
 

@@ -274,7 +274,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 1327441
+  "gas": 1327351
  },
  {
   "name": "calc_token_amount",
@@ -297,7 +297,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 5171831
+  "gas": 5171741
  },
  {
   "name": "add_liquidity",
@@ -315,7 +315,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 7905936
+  "gas": 7905846
  },
  {
   "name": "get_dy",
@@ -342,7 +342,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 3016711
+  "gas": 3016651
  },
  {
   "name": "get_dx",
@@ -369,7 +369,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 3016717
+  "gas": 3016657
  },
  {
   "name": "get_dy_underlying",
@@ -396,7 +396,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 3016554
+  "gas": 3016494
  },
  {
   "name": "get_dx_underlying",
@@ -423,7 +423,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 3016560
+  "gas": 3016500
  },
  {
   "name": "exchange",
@@ -449,7 +449,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 6109602
+  "gas": 6109460
  },
  {
   "name": "exchange_underlying",
@@ -475,7 +475,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 6125841
+  "gas": 6125699
  },
  {
   "name": "remove_liquidity",
@@ -511,7 +511,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 7905403
+  "gas": 7905313
  },
  {
   "name": "commit_new_parameters",
