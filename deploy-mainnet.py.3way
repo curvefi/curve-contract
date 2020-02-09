@@ -1,0 +1,75 @@
+#!/usr/bin/env python3
+
+# from os.path import expanduser
+from web3 import Web3
+from web3.middleware import geth_poa_middleware
+from tests.deploy import deploy_contract
+import json
+
+# Deployment parameters
+provider = Web3.IPCProvider('~/.ethereum/geth.ipc', request_kwargs={'timeout': 1000})
+POA = False
+# DAI, USDC, USDT
+UNDERLYING_COINS = [
+        '0x6B175474E89094C44Da98b954EedeAC495271d0F',
+        '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+        '0xdAC17F958D2ee523a2206206994597C13D831ec7']
+C_COINS = [
+        '0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643',
+        '0x39AA39c021dfbaE8faC545936693aC917d5E7563',
+        '0xdAC17F958D2ee523a2206206994597C13D831ec7']
+PRECISIONS = [10 ** 18, 10 ** 6, 10 ** 6]
+N_COINS = len(C_COINS)
+USE_LENDING = [True, True, False]
+TETHERED = [False, False, True]
+SWAP_DEPLOY_ADDRESS = '0xDeployerAddress'
+GETH_PASSWORD = None
+
+HELP = """swap, token = deploy_swap(A, fee) to deploy swap contract from the list
+Try A=900, fee=0.0004
+====================================================="""
+
+
+w3 = Web3(provider)
+if POA:
+    w3.middleware_onion.inject(geth_poa_middleware, layer=0)
+
+
+def deploy_swap(A, fee):
+    if GETH_PASSWORD:
+        w3.geth.personal.unlockAccount(w3.eth.accounts[0], GETH_PASSWORD)
+    fee = int(fee * 10 ** 10)
+    pool_token = deploy_contract(
+        w3, 'ERC20.vy', SWAP_DEPLOY_ADDRESS, b'Curve.fi cDAI/cUSDC/USDT', b'cDAI+cUSDC+USDT', 18, 0)
+    swap_contract = deploy_contract(
+            w3, ['stableswap.vy', 'ERC20m.vy', 'cERC20.vy'], SWAP_DEPLOY_ADDRESS,
+            C_COINS, UNDERLYING_COINS, pool_token.address, A, fee,
+            replacements={
+                '___N_COINS___': str(N_COINS),
+                '___N_ZEROS___': '[' + ', '.join(['ZERO256'] * N_COINS) + ']',
+                '___PRECISION_MUL___': '[' + ', '.join(
+                    'convert(%s, uint256)' % (10 ** 18 // i) for i in PRECISIONS) + ']',
+                '___USE_LENDING___': '[' + ', '.join(
+                        str(i) for i in USE_LENDING) + ']',
+                '___TETHERED___': '[' + ', '.join(
+                        str(i) for i in TETHERED) + ']',
+            })
+    txhash = pool_token.functions.set_minter(swap_contract.address).transact(
+        {'from': SWAP_DEPLOY_ADDRESS})
+    w3.eth.waitForTransactionReceipt(txhash, timeout=1000)
+
+    abi = json.dumps(swap_contract.abi, indent=True)
+    with open('swap.abi', 'w') as f:
+        f.write(abi)
+    print('---=== ABI ===---')
+    print(abi)
+    print('=================')
+    print('Pool token:', pool_token.address)
+    print('Swap contract:', swap_contract.address)
+
+    return swap_contract, pool_token
+
+
+if __name__ == '__main__':
+    import IPython
+    IPython.embed(header=HELP)
