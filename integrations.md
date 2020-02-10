@@ -50,8 +50,7 @@ This method doesn't change the state.
 ## Exchanging c-tokens
 
 ```python
-def exchange(i: int128, j: int128, dx: uint256,
-             min_dy: uint256, deadline: timestamp):
+def exchange(i: int128, j: int128, dx: uint256, min_dy: uint256):
 ```
 
 This method exchanges `dx` of c-token `i` into c-token `j`.
@@ -64,8 +63,7 @@ Used to exchange `cDAI<>cUSDC` (and analogues in future deployments).
 ## Exchanging underlying tokens
 
 ```python
-def exchange_underlying(i: int128, j: int128, dx: uint256,
-                        min_dy: uint256, deadline: timestamp):
+def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256):
 ```
 
 This method exchanges `dx` of underlying token `i` into token `j`.
