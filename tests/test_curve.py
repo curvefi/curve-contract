@@ -53,5 +53,5 @@ def test_curve_in_contract(w3, coins, cerc20s, swap, n_coins):
             dy_1 = dy_1_c * rate_y // 10 ** 18
             assert approx(dy_1, dy_2, 1e-8) or abs(dy_1 - dy_2) <= 2
             assert approx(dy_1_u, dy_2, 1e-8) or abs(dy_1 - dy_2) <= 2
-            assert approx(dx_c, swap.caller.get_dx(i, j, dy_1_c), 7e-6)
-            assert approx(dx, swap.caller.get_dx_underlying(i, j, dy_1_u), 7e-6)
+            assert approx(dx_c, swap.caller.get_dx(i, j, dy_1_c), 5e-6)
+            assert approx(dx, swap.caller.get_dx_underlying(i, j, dy_1_u), 5e-6)

@@ -346,7 +346,7 @@ def get_dx(i: int128, j: int128, dy: uint256) -> uint256:
     rates: uint256[N_COINS] = self._stored_rates()
     xp: uint256[N_COINS] = self._xp(rates)
 
-    y: uint256 = xp[i] - (dy * FEE_DENOMINATOR / (FEE_DENOMINATOR - self.fee)) * rates[j] / PRECISION
+    y: uint256 = xp[j] - (dy * FEE_DENOMINATOR / (FEE_DENOMINATOR - self.fee)) * rates[j] / PRECISION
     x: uint256 = self.get_y(j, i, y, xp)
     dx: uint256 = (x - xp[i]) * PRECISION / rates[i]
     return dx
@@ -375,7 +375,7 @@ def get_dx_underlying(i: int128, j: int128, dy: uint256) -> uint256:
     xp: uint256[N_COINS] = self._xp(rates)
     precisions: uint256[N_COINS] = PRECISION_MUL
 
-    y: uint256 = xp[i] - (dy * FEE_DENOMINATOR / (FEE_DENOMINATOR - self.fee)) * precisions[j]
+    y: uint256 = xp[j] - (dy * FEE_DENOMINATOR / (FEE_DENOMINATOR - self.fee)) * precisions[j]
     x: uint256 = self.get_y(j, i, y, xp)
     dx: uint256 = (x - xp[i]) / precisions[i]
     return dx
