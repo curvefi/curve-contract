@@ -2,12 +2,13 @@
 
 # from os.path import expanduser
 from web3 import Web3
-from web3.middleware import geth_poa_middleware
+from web3 import middleware
+from web3.gas_strategies.time_based import fast_gas_price_strategy
 from tests.deploy import deploy_contract
 import json
 
 # Deployment parameters
-provider = Web3.IPCProvider('~/.ethereum/geth.ipc', request_kwargs={'timeout': 1000})
+provider = Web3.IPCProvider('~/.ethereum/geth.ipc', timeout=10000, request_kwargs={'timeout': 10000})
 POA = False
 # DAI, USDC, USDT
 UNDERLYING_COINS = [
@@ -31,8 +32,15 @@ Try A=900, fee=0.0004
 
 
 w3 = Web3(provider)
+w3.eth.setGasPriceStrategy(fast_gas_price_strategy)
+
+w3.middleware_onion.add(middleware.time_based_cache_middleware)
+w3.middleware_onion.add(middleware.latest_block_based_cache_middleware)
+w3.middleware_onion.add(middleware.simple_cache_middleware)
+
 if POA:
-    w3.middleware_onion.inject(geth_poa_middleware, layer=0)
+    w3.middleware_onion.inject(middleware.geth_poa_middleware, layer=0)
+_ = w3.eth.accounts
 
 
 def deploy_swap(A, fee):
