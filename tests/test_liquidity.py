@@ -14,7 +14,7 @@ def test_add_liquidity(w3, coins, yerc20s, swap):
     deposits = []
     for c, cc, u in zip(coins, yerc20s, UU):
         c.functions.approve(cc.address, 1000 * u).transact(from_sam)
-        cc.functions.mint(1000 * u).transact(from_sam)
+        cc.functions.deposit(1000 * u).transact(from_sam)
         balance = cc.caller.balanceOf(sam)
         deposits.append(balance)
         cc.functions.approve(swap.address, balance).transact(from_sam)
@@ -40,7 +40,7 @@ def test_add_liquidity(w3, coins, yerc20s, swap):
     with pytest.raises(TransactionFailed):
         # Fail because slippage is too high
         min_mint = int(0.999 * swap.caller.calc_token_amount([b // 4 for b in deposits], True))
-        swap.functions.add_liquidity([3 * deposits[0] // 4, 0, 0], min_mint).transact(from_sam)
+        swap.functions.add_liquidity([3 * deposits[0] // 4, 0, 0, 0], min_mint).transact(from_sam)
 
     # Reduce the allowance
     for cc, b in zip(yerc20s, deposits):
@@ -70,7 +70,7 @@ def test_ratio_preservation(w3, coins, yerc20s, swap, pool_token):
     deposits = []
     for c, cc, u in zip(coins, yerc20s, UU):
         c.functions.approve(cc.address, 2000 * u).transact({'from': alice})
-        cc.functions.mint(2000 * u).transact({'from': alice})
+        cc.functions.deposit(2000 * u).transact({'from': alice})
         balance = cc.caller.balanceOf(alice) // 2
         deposits.append(balance)
         cc.functions.approve(swap.address, balance).transact({'from': alice})
@@ -79,8 +79,8 @@ def test_ratio_preservation(w3, coins, yerc20s, swap, pool_token):
         alice_balances.append(cc.caller.balanceOf(alice))
         bob_balances.append(cc.caller.balanceOf(bob))
 
-    rates = [cc.caller.getPricePerFullShare()
-             for cc in zip(yerc20s)]
+    rates = [cc.caller.get_price_per_full_share()
+             for cc in yerc20s]
 
     def assert_all_equal(address):
         balance_0 = yerc20s[0].caller.balanceOf(address) * rates[0] // UU[0]
@@ -165,7 +165,7 @@ def test_remove_liquidity_imbalance(w3, coins, yerc20s, swap, pool_token):
     deposits = []
     for c, cc, u in zip(coins, yerc20s, UU):
         c.functions.approve(cc.address, 2000 * u).transact({'from': alice})
-        cc.functions.mint(2000 * u).transact({'from': alice})
+        cc.functions.deposit(2000 * u).transact({'from': alice})
         balance = cc.caller.balanceOf(alice) // 2
 
         deposits.append(balance)
@@ -175,8 +175,8 @@ def test_remove_liquidity_imbalance(w3, coins, yerc20s, swap, pool_token):
         alice_balances.append(cc.caller.balanceOf(alice))
         bob_balances.append(cc.caller.balanceOf(bob))
 
-    rates = [cc.caller.getPricePerFullShare()
-             for cc in zip(yerc20s)]
+    rates = [cc.caller.get_price_per_full_share()
+             for cc in yerc20s]
 
     # First, both fund the thing in equal amount
     swap.functions.add_liquidity(deposits, 0).transact({'from': alice})
@@ -231,18 +231,18 @@ def test_remove_liquidity_imbalance(w3, coins, yerc20s, swap, pool_token):
     # Again, we didn't have anything here
     swap.functions.add_liquidity([b // 10 for b in deposits], 0).\
         transact({'from': alice})
-    min_mint = int(0.999 * swap.caller.calc_token_amount([deposits[0] // 1000, 0, 0], True))
-    swap.functions.add_liquidity([deposits[0] // 1000, 0, 0], min_mint).\
+    min_mint = int(0.999 * swap.caller.calc_token_amount([deposits[0] // 1000, 0, 0, 0], True))
+    swap.functions.add_liquidity([deposits[0] // 1000, 0, 0, 0], min_mint).\
         transact({'from': bob})
     with pytest.raises(TransactionFailed):
         # Cannot remove all because of fees
         swap.functions.remove_liquidity_imbalance(
-            [0, deposits[1] // 1000, 0], MAX_UINT
+            [0, deposits[1] // 1000, 0, 0], MAX_UINT
         ).transact({'from': bob})
     max_burn = int(swap.caller.calc_token_amount(
-        [0, int(0.995 * deposits[1] / 1000), 0], False) * 1.001)
+        [0, int(0.995 * deposits[1] / 1000), 0, 0], False) * 1.001)
     swap.functions.remove_liquidity_imbalance(
-        [0, int(0.995 * deposits[1] / 1000), 0], max_burn
+        [0, int(0.995 * deposits[1] / 1000), 0, 0], max_burn
     ).transact({'from': bob})
     # Let's see how much Alice got now
     value = pool_token.caller.balanceOf(alice)

@@ -66,7 +66,7 @@ def test_trade_and_withdraw_fees(tester, w3, coins, yerc20s, swap):
     deposits = []
     for c, cc, u in zip(coins, yerc20s, UU):
         c.functions.approve(cc.address, 2000 * u).transact({'from': alice})
-        cc.functions.mint(2000 * u).transact({'from': alice})
+        cc.functions.deposit(2000 * u).transact({'from': alice})
         balance = cc.caller.balanceOf(alice) // 2
         deposits.append(balance)
         cc.functions.approve(swap.address, balance).transact({'from': alice})
@@ -81,7 +81,7 @@ def test_trade_and_withdraw_fees(tester, w3, coins, yerc20s, swap):
 
     swap.functions.apply_new_parameters().transact({'from': owner})
 
-    volumes = [0, 0, 0]
+    volumes = [0, 0, 0, 0]
 
     for k in range(10):
         i, j = random.choice(list(permutations(range(N_COINS), 2)))
