@@ -20,7 +20,7 @@ def test_few_trades(w3, coins, yerc20s, swap, pool_token):
         rate = cc.caller.get_price_per_full_share() * (1 + len(deposits))
         cc.functions.set_exchange_rate(rate).transact(from_sam)
         c.functions.approve(cc.address, 1000 * u).transact(from_sam)
-        cc.functions.mint(1000 * u).transact(from_sam)
+        cc.functions.deposit(1000 * u).transact(from_sam)
         balance = cc.caller.balanceOf(sam)
         deposits.append(balance)
         cc.functions.approve(swap.address, balance).transact(from_sam)
@@ -100,7 +100,7 @@ def test_simulated_exchange(w3, coins, yerc20s, swap):
     swap.functions.add_liquidity(liquidity, 0).transact(from_sam)
 
     # Model
-    balances = [int(swap.caller.balances(i)) for i in range(3)]
+    balances = [int(swap.caller.balances(i)) for i in range(4)]
     rates = [int(c.caller.get_price_per_full_share()) * p
              for c, p in zip(yerc20s, PRECISIONS)]
     curve = Curve(2 * 360, balances, N_COINS, rates)
