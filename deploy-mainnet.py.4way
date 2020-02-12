@@ -23,6 +23,7 @@ Y_COINS = [
         '0x73a052500105205d34Daf004eAb301916DA8190f']
 PRECISIONS = [10 ** 18, 10 ** 6, 10 ** 6, 10 ** 18]
 N_COINS = len(Y_COINS)
+TETHERED = [False, False, True, False]
 SWAP_DEPLOY_ADDRESS = '0xDeployerAddress'
 GETH_PASSWORD = None
 
@@ -57,6 +58,8 @@ def deploy_swap(A, fee):
                 '___N_ZEROS___': '[' + ', '.join(['ZERO256'] * N_COINS) + ']',
                 '___PRECISION_MUL___': '[' + ', '.join(
                     'convert(%s, uint256)' % (10 ** 18 // i) for i in PRECISIONS) + ']',
+                '___TETHERED___': '[' + ', '.join(
+                        str(i) for i in tethered) + ']',
             })
     txhash = pool_token.functions.set_minter(swap_contract.address).transact(
         {'from': SWAP_DEPLOY_ADDRESS})

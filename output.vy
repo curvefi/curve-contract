@@ -37,12 +37,18 @@ contract yERC20:
 
 from vyper.interfaces import ERC20
 
+# Tether transfer-only ABI
+contract USDT:
+    def transfer(_to: address, _value: uint256): modifying
+    def transferFrom(_from: address, _to: address, _value: uint256): modifying
 
 # This can (and needs to) be changed at compile time
 N_COINS: constant(int128) = 4  # <- change
 
 ZERO256: constant(uint256) = 0  # This hack is really bad XXX
 ZEROS: constant(uint256[N_COINS]) = [ZERO256, ZERO256, ZERO256, ZERO256]  # <- change
+
+TETHERED: constant(bool[N_COINS]) = [False, False, True, False]
 
 FEE_DENOMINATOR: constant(uint256) = 10 ** 10
 PRECISION: constant(uint256) = 10 ** 18  # The precision to convert to
@@ -435,15 +441,23 @@ def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256):
     dy_: uint256 = self._exchange(i, j, dx_, rates)
     dy: uint256 = dy_ * rate_j / PRECISION
     assert dy >= min_dy, "Exchange resulted in fewer coins than expected"
+    tethered: bool[N_COINS] = TETHERED
 
     ok: uint256 = 0
-    assert_modifiable(ERC20(self.underlying_coins[i])\
-        .transferFrom(msg.sender, self, dx))
+    if tethered[i]:
+        USDT(self.underlying_coins[i]).transferFrom(msg.sender, self, dx)
+    else:
+        assert_modifiable(ERC20(self.underlying_coins[i])\
+            .transferFrom(msg.sender, self, dx))
     ERC20(self.underlying_coins[i]).approve(self.coins[i], dx)
     yERC20(self.coins[i]).deposit(dx)
     yERC20(self.coins[j]).withdraw(dy_)
-    assert_modifiable(ERC20(self.underlying_coins[j])\
-        .transfer(msg.sender, dy))
+    if tethered[j]:
+        USDT(self.underlying_coins[j]).transfer(msg.sender, dy)
+    else:
+        assert_modifiable(ERC20(self.underlying_coins[j])\
+            .transfer(msg.sender, dy))
+
 
     log.TokenExchangeUnderlying(msg.sender, i, dx, j, dy)
 

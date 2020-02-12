@@ -10,6 +10,7 @@ N_COINS = 4
 UP = [18, 6, 6, 18]
 UU = [10 ** p for p in UP]
 y_rates = [5 * UU[0], UU[1], 20 * UU[2], 10 * UU[3]]
+tethered = [False, False, True, False]
 PRECISIONS = [10 ** 18 // u for u in UU]
 MAX_UINT = 2 ** 256 - 1
 
@@ -68,6 +69,8 @@ def swap(w3, coins, yerc20s, pool_token):
                 '___N_ZEROS___': '[' + ', '.join(['ZERO256'] * N_COINS) + ']',
                 '___PRECISION_MUL___': '[' + ', '.join(
                     'convert(%s, uint256)' % i for i in PRECISIONS) + ']',
+                '___TETHERED___': '[' + ', '.join(
+                        str(i) for i in tethered) + ']',
             })
     pool_token.functions.set_minter(swap_contract.address).transact()
     with open(join(CONTRACT_PATH, 'stableswap.abi'), 'w') as f:
