@@ -15,10 +15,10 @@ FEE_DENOMINATOR: constant(uint256) = 10 ** 10
 PRECISION: constant(uint256) = 10 ** 18  # The precision to convert to
 PRECISION_MUL: constant(uint256[N_COINS]) = ___PRECISION_MUL___
 # PRECISION_MUL: constant(uint256[N_COINS]) = [
-#     PRECISION / convert(PRECISION, uint256),  # DAI
+#     PRECISION / convert(10 ** 18, uint256),  # DAI
 #     PRECISION / convert(10 ** 6, uint256),   # USDC
-#     PRECISION / convert(10 ** 6, uint256)]   # USDT
-#     PRECISION / convert(PRECISION, uint256)]   # TUSD
+#     PRECISION / convert(10 ** 6, uint256),   # USDT
+#     PRECISION / convert(10 ** 18, uint256)]  # TUSD
 
 admin_actions_delay: constant(uint256) = 3 * 86400
 
@@ -407,8 +407,8 @@ def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256):
     assert_modifiable(ERC20(self.underlying_coins[i])\
         .transferFrom(msg.sender, self, dx))
     ERC20(self.underlying_coins[i]).approve(self.coins[i], dx)
-    assert_modifiable(yERC20(self.coins[i]).deposit(dx))
-    assert_modifiable(yERC20(self.coins[j]).withdraw(dy_))
+    yERC20(self.coins[i]).deposit(dx)
+    yERC20(self.coins[j]).withdraw(dy_)
     assert_modifiable(ERC20(self.underlying_coins[j])\
         .transfer(msg.sender, dy))
 
@@ -427,7 +427,7 @@ def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS]):
         assert value >= min_amounts[i], "Withdrawal resulted in fewer coins than expected"
         self.balances[i] -= value
         amounts[i] = value
-        assert_modifiable(cERC20(self.coins[i]).transfer(
+        assert_modifiable(yERC20(self.coins[i]).transfer(
             msg.sender, value))
 
     self.token.burnFrom(msg.sender, _amount)  # Will raise if not enough
@@ -557,9 +557,9 @@ def withdraw_admin_fees():
 
     for i in range(N_COINS):
         c: address = self.coins[i]
-        value: uint256 = cERC20(c).balanceOf(self) - self.balances[i]
+        value: uint256 = yERC20(c).balanceOf(self) - self.balances[i]
         if value > 0:
-            assert_modifiable(cERC20(c).transfer(msg.sender, value))
+            assert_modifiable(yERC20(c).transfer(msg.sender, value))
 
 
 @public

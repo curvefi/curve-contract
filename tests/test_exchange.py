@@ -3,12 +3,12 @@ import pytest
 from itertools import permutations
 from eth_tester.exceptions import TransactionFailed
 from .simulation import Curve
-from .conftest import UU, PRECISIONS, use_lending
+from .conftest import UU, PRECISIONS
 
-N_COINS = 3
+N_COINS = 4
 
 
-def test_few_trades(w3, coins, cerc20s, swap, pool_token):
+def test_few_trades(w3, coins, yerc20s, swap, pool_token):
     sam = w3.eth.accounts[0]  # Sam owns the bank
     from_sam = {'from': sam}
     bob = w3.eth.accounts[1]  # Bob the customer
@@ -16,15 +16,12 @@ def test_few_trades(w3, coins, cerc20s, swap, pool_token):
 
     # Allow $1000 of each coin
     deposits = []
-    for c, cc, u, l in zip(coins, cerc20s, UU, use_lending):
-        if l:
-            rate = cc.caller.exchangeRateStored() * (1 + len(deposits))
-            cc.functions.set_exchange_rate(rate).transact(from_sam)
-            c.functions.approve(cc.address, 1000 * u).transact(from_sam)
-            cc.functions.mint(1000 * u).transact(from_sam)
-            balance = cc.caller.balanceOf(sam)
-        else:
-            balance = 1000 * u
+    for c, cc, u in zip(coins, yerc20s, UU):
+        rate = cc.caller.exchangeRateStored() * (1 + len(deposits))
+        cc.functions.set_exchange_rate(rate).transact(from_sam)
+        c.functions.approve(cc.address, 1000 * u).transact(from_sam)
+        cc.functions.mint(1000 * u).transact(from_sam)
+        balance = cc.caller.balanceOf(sam)
         deposits.append(balance)
         cc.functions.approve(swap.address, balance).transact(from_sam)
 
@@ -44,8 +41,8 @@ def test_few_trades(w3, coins, cerc20s, swap, pool_token):
         swap.functions.exchange_underlying(0, 0, 1 * UU[0], 0).transact(from_bob)
 
     test_amount = deposits[0] // 10
-    assert cerc20s[0].caller.balanceOf(sam) > test_amount
-    assert cerc20s[0].caller.allowance(sam, swap.address) > test_amount
+    assert yerc20s[0].caller.balanceOf(sam) > test_amount
+    assert yerc20s[0].caller.allowance(sam, swap.address) > test_amount
     with pytest.raises(TransactionFailed):
         # Cannot exchange to the same here, too
         swap.functions.exchange(0, 0, test_amount, 0).transact(from_sam)
@@ -83,7 +80,7 @@ def test_few_trades(w3, coins, cerc20s, swap, pool_token):
     swap.functions.remove_liquidity(value, [0] * N_COINS).transact(from_sam)
 
 
-def test_simulated_exchange(w3, coins, cerc20s, swap):
+def test_simulated_exchange(w3, coins, yerc20s, swap):
     sam = w3.eth.accounts[0]  # Sam owns the bank
     bob = w3.eth.accounts[1]  # Bob the customer
     from_sam = {'from': sam}
@@ -91,13 +88,10 @@ def test_simulated_exchange(w3, coins, cerc20s, swap):
 
     # Allow $1000 of each coin
     deposits = []
-    for c, cc, u, l in zip(coins, cerc20s, UU, use_lending):
-        if l:
-            c.functions.approve(cc.address, 1000 * u).transact(from_sam)
-            cc.functions.mint(1000 * u).transact(from_sam)
-            balance = cc.caller.balanceOf(sam)
-        else:
-            balance = 1000 * u
+    for c, cc, u in zip(coins, yerc20s, UU):
+        c.functions.approve(cc.address, 1000 * u).transact(from_sam)
+        cc.functions.mint(1000 * u).transact(from_sam)
+        balance = cc.caller.balanceOf(sam)
         deposits.append(balance)
         cc.functions.approve(swap.address, balance).transact(from_sam)
 
@@ -108,7 +102,7 @@ def test_simulated_exchange(w3, coins, cerc20s, swap):
     # Model
     balances = [int(swap.caller.balances(i)) for i in range(3)]
     rates = [int(c.caller.exchangeRateStored()) * p if l else 10 ** 18 * p
-             for c, p, l in zip(cerc20s, PRECISIONS, use_lending)]
+             for c, p in zip(yerc20s, PRECISIONS)]
     curve = Curve(2 * 360, balances, N_COINS, rates)
 
     for c, u in zip(coins, UU):
@@ -120,11 +114,11 @@ def test_simulated_exchange(w3, coins, cerc20s, swap):
     # Start trading!
     for k in range(50):
         # Tune exchange rates
-        for i, (cc, l) in enumerate(zip(cerc20s, use_lending)):
-            if l:
-                rate = int(cc.caller.exchangeRateStored() * 1.0001)
-                cc.functions.set_exchange_rate(rate).transact(from_sam)
-                curve.p[i] = rate * PRECISIONS[i]
+        for i, (cc) in enumerate(zip(yerc20s)):
+            rate = int(cc.caller.exchangeRateStored() * 1.0001)
+            cc.functions.set_exchange_rate(rate).transact(from_sam)
+            curve.p[i] = rate * PRECISIONS[i]
+
 
         # Simulate the exchange
         old_virtual_price = swap.caller.get_virtual_price()
@@ -146,8 +140,8 @@ def test_simulated_exchange(w3, coins, cerc20s, swap):
         assert x_0 - x_1 == value
         assert (y_1 - y_0) - dy_m < dy_m * 1e-10
         assert swap.caller.get_virtual_price() > old_virtual_price
-        assert cerc20s[i].caller.balanceOf(swap.address) >= swap.caller.balances(i)
-        assert cerc20s[j].caller.balanceOf(swap.address) >= swap.caller.balances(j)
+        assert yerc20s[i].caller.balanceOf(swap.address) >= swap.caller.balances(i)
+        assert yerc20s[j].caller.balanceOf(swap.address) >= swap.caller.balances(j)
 
     # Let's see what we have left
     x = [swap.caller.balances(i) for i in range(N_COINS)]

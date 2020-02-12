@@ -1,4 +1,4 @@
-# Interface for the used methods in Compound cERC20
+# Interface for the used methods in iearn.finance yERC20
 #
 # Events
 

@@ -1,24 +1,21 @@
 import pytest
 import random
 from eth_tester.exceptions import TransactionFailed
-from .conftest import UU, use_lending, MAX_UINT
+from .conftest import UU, MAX_UINT
 
-N_COINS = 3
+N_COINS = 4
 
 
-def test_add_liquidity(w3, coins, cerc20s, swap):
+def test_add_liquidity(w3, coins, yerc20s, swap):
     sam = w3.eth.accounts[0]  # Sam owns the bank
     from_sam = {'from': sam}
 
     # Allow $1000 of each coin
     deposits = []
-    for c, cc, u, l in zip(coins, cerc20s, UU, use_lending):
-        if l:
-            c.functions.approve(cc.address, 1000 * u).transact(from_sam)
-            cc.functions.mint(1000 * u).transact(from_sam)
-            balance = cc.caller.balanceOf(sam)
-        else:
-            balance = 1000 * u
+    for c, cc, u in zip(coins, yerc20s, UU):
+        c.functions.approve(cc.address, 1000 * u).transact(from_sam)
+        cc.functions.mint(1000 * u).transact(from_sam)
+        balance = cc.caller.balanceOf(sam)
         deposits.append(balance)
         cc.functions.approve(swap.address, balance).transact(from_sam)
 
@@ -46,7 +43,7 @@ def test_add_liquidity(w3, coins, cerc20s, swap):
         swap.functions.add_liquidity([3 * deposits[0] // 4, 0, 0], min_mint).transact(from_sam)
 
     # Reduce the allowance
-    for cc, b in zip(cerc20s, deposits):
+    for cc, b in zip(yerc20s, deposits):
         cc.functions.approve(swap.address, 0).transact(from_sam)
         cc.functions.approve(swap.address, int(b * 0.099)).transact(from_sam)
 
@@ -61,7 +58,7 @@ def test_add_liquidity(w3, coins, cerc20s, swap):
 
 
 # @pytest.mark.parametrize('iteration', range(40))
-def test_ratio_preservation(w3, coins, cerc20s, swap, pool_token):
+def test_ratio_preservation(w3, coins, yerc20s, swap, pool_token):
     alice, bob = w3.eth.accounts[:2]
     mtgox = w3.eth.accounts[2]  # <- all unneeded coins are dumped here
     dust = 1e-8
@@ -71,15 +68,10 @@ def test_ratio_preservation(w3, coins, cerc20s, swap, pool_token):
     alice_balances = []
     bob_balances = []
     deposits = []
-    for c, cc, u, l in zip(coins, cerc20s, UU, use_lending):
-        if l:
-            c.functions.approve(cc.address, 2000 * u).transact({'from': alice})
-            cc.functions.mint(2000 * u).transact({'from': alice})
-            balance = cc.caller.balanceOf(alice) // 2
-        else:
-            balance = 1000 * u
-            big_balance = cc.caller.balanceOf(alice)
-            cc.functions.transfer(mtgox, big_balance - 2 * balance).transact({'from': alice})
+    for c, cc, u in zip(coins, yerc20s, UU):
+        c.functions.approve(cc.address, 2000 * u).transact({'from': alice})
+        cc.functions.mint(2000 * u).transact({'from': alice})
+        balance = cc.caller.balanceOf(alice) // 2
         deposits.append(balance)
         cc.functions.approve(swap.address, balance).transact({'from': alice})
         cc.functions.transfer(bob, balance).transact({'from': alice})
@@ -87,18 +79,18 @@ def test_ratio_preservation(w3, coins, cerc20s, swap, pool_token):
         alice_balances.append(cc.caller.balanceOf(alice))
         bob_balances.append(cc.caller.balanceOf(bob))
 
-    rates = [cc.caller.exchangeRateStored() if l else 10 ** 18
-             for cc, l in zip(cerc20s, use_lending)]
+    rates = [cc.caller.getPricePerFullShare()
+             for cc in zip(yerc20s)]
 
     def assert_all_equal(address):
-        balance_0 = cerc20s[0].caller.balanceOf(address) * rates[0] // UU[0]
+        balance_0 = yerc20s[0].caller.balanceOf(address) * rates[0] // UU[0]
         swap_balance_0 = swap.caller.balances(0) * rates[0] // UU[0]
         for i in range(1, N_COINS):
-            balance_i = cerc20s[i].caller.balanceOf(address) * rates[i] // UU[i]
+            balance_i = yerc20s[i].caller.balanceOf(address) * rates[i] // UU[i]
             swap_balance_i = swap.caller.balances(i) * rates[i] // UU[i]
             assert abs(balance_0 - balance_i) / (balance_0 + balance_i) < dust
             assert abs(swap_balance_0 - swap_balance_i) / (swap_balance_0 + swap_balance_i) < dust
-            assert cerc20s[i].caller.balanceOf(swap.address) >= swap.caller.balances(i)
+            assert yerc20s[i].caller.balanceOf(swap.address) >= swap.caller.balances(i)
 
     # Test that everything is equal when adding and removing liquidity
     # First mint
@@ -156,13 +148,13 @@ def test_ratio_preservation(w3, coins, cerc20s, swap, pool_token):
         transact({'from': bob})
 
     for i in range(N_COINS):
-        assert abs(cerc20s[i].caller.balanceOf(alice) / alice_balances[i] - 1) <= dust
-        assert abs(cerc20s[i].caller.balanceOf(bob) / bob_balances[i] - 1) <= dust
+        assert abs(yerc20s[i].caller.balanceOf(alice) / alice_balances[i] - 1) <= dust
+        assert abs(yerc20s[i].caller.balanceOf(bob) / bob_balances[i] - 1) <= dust
         assert swap.caller.balances(i) == 0
     assert pool_token.caller.totalSupply() == 0
 
 
-def test_remove_liquidity_imbalance(w3, coins, cerc20s, swap, pool_token):
+def test_remove_liquidity_imbalance(w3, coins, yerc20s, swap, pool_token):
     alice, bob, charlie = w3.eth.accounts[:3]
     mtgox = w3.eth.accounts[3]  # <- all unneeded coins are dumped here
 
@@ -171,15 +163,11 @@ def test_remove_liquidity_imbalance(w3, coins, cerc20s, swap, pool_token):
     alice_balances = []
     bob_balances = []
     deposits = []
-    for c, cc, u, l in zip(coins, cerc20s, UU, use_lending):
-        if l:
-            c.functions.approve(cc.address, 2000 * u).transact({'from': alice})
-            cc.functions.mint(2000 * u).transact({'from': alice})
-            balance = cc.caller.balanceOf(alice) // 2
-        else:
-            balance = 1000 * u
-            big_balance = cc.caller.balanceOf(alice)
-            cc.functions.transfer(mtgox, big_balance - 2 * balance).transact({'from': alice})
+    for c, cc, u in zip(coins, yerc20s, UU):
+        c.functions.approve(cc.address, 2000 * u).transact({'from': alice})
+        cc.functions.mint(2000 * u).transact({'from': alice})
+        balance = cc.caller.balanceOf(alice) // 2
+
         deposits.append(balance)
         cc.functions.approve(swap.address, balance).transact({'from': alice})
         cc.functions.transfer(bob, balance).transact({'from': alice})
@@ -187,8 +175,8 @@ def test_remove_liquidity_imbalance(w3, coins, cerc20s, swap, pool_token):
         alice_balances.append(cc.caller.balanceOf(alice))
         bob_balances.append(cc.caller.balanceOf(bob))
 
-    rates = [cc.caller.exchangeRateStored() if l else 10 ** 18
-             for cc, l in zip(cerc20s, use_lending)]
+    rates = [cc.caller.getPricePerFullShare()
+             for cc in zip(yerc20s)]
 
     # First, both fund the thing in equal amount
     swap.functions.add_liquidity(deposits, 0).transact({'from': alice})
@@ -209,7 +197,7 @@ def test_remove_liquidity_imbalance(w3, coins, cerc20s, swap, pool_token):
         max_burn = int(1.001 * max_burn)
         swap.functions.remove_liquidity_imbalance(values, max_burn).\
             transact({'from': bob})
-        for cc, v in zip(cerc20s, values):
+        for cc, v in zip(yerc20s, values):
             cc.functions.approve(swap.address, v).transact({'from': bob})
         min_mint = int(0.999 * swap.caller.calc_token_amount(values, True))
         swap.functions.add_liquidity(values, min_mint).transact({'from': bob})
@@ -224,8 +212,8 @@ def test_remove_liquidity_imbalance(w3, coins, cerc20s, swap, pool_token):
         transact({'from': bob})
 
     for i in range(N_COINS):
-        alice_grow = cerc20s[i].caller.balanceOf(alice) - alice_balances[i]
-        bob_grow = cerc20s[i].caller.balanceOf(bob) - bob_balances[i]
+        alice_grow = yerc20s[i].caller.balanceOf(alice) - alice_balances[i]
+        bob_grow = yerc20s[i].caller.balanceOf(bob) - bob_balances[i]
         assert swap.caller.balances(i) == 0
         assert alice_grow > 0
         assert bob_grow < 0
@@ -236,8 +224,8 @@ def test_remove_liquidity_imbalance(w3, coins, cerc20s, swap, pool_token):
 
     # Now Alice adds liquiduty and Bob tries to "trade" by adding and removing
     # liquidity. Should be equivalent of exchange
-    v_before = sum(c.caller.balanceOf(alice) * r // u for c, r, u in zip(cerc20s, rates, UU))
-    for cc, b in zip(cerc20s, deposits):
+    v_before = sum(c.caller.balanceOf(alice) * r // u for c, r, u in zip(yerc20s, rates, UU))
+    for cc, b in zip(yerc20s, deposits):
         cc.functions.approve(swap.address, b).transact({'from': alice})
         cc.functions.approve(swap.address, b).transact({'from': bob})
     # Again, we didn't have anything here
@@ -260,7 +248,7 @@ def test_remove_liquidity_imbalance(w3, coins, cerc20s, swap, pool_token):
     value = pool_token.caller.balanceOf(alice)
     swap.functions.remove_liquidity(value, [0] * N_COINS).\
         transact({'from': alice})
-    v_after = sum(c.caller.balanceOf(alice) * r // u for c, r, u in zip(cerc20s, rates, UU))
+    v_after = sum(c.caller.balanceOf(alice) * r // u for c, r, u in zip(yerc20s, rates, UU))
     assert abs((v_after - v_before) / (max(UU) * 0.001) - 1) < 0.05
     for i in range(N_COINS):
-        assert cerc20s[i].caller.balanceOf(swap.address) >= swap.caller.balances(i)
+        assert yerc20s[i].caller.balanceOf(swap.address) >= swap.caller.balances(i)
