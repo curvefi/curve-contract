@@ -98,14 +98,6 @@ def _stored_rates() -> uint256[N_COINS]:
 
 
 @private
-def _current_rates() -> uint256[N_COINS]:
-    result: uint256[N_COINS] = PRECISION_MUL
-    for i in range(N_COINS):
-        result[i] *= yERC20(self.coins[i]).getPricePerFullShare()
-    return result
-
-
-@private
 @constant
 def _xp(rates: uint256[N_COINS]) -> uint256[N_COINS]:
     result: uint256[N_COINS] = rates
@@ -209,7 +201,7 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256):
     _admin_fee: uint256 = self.admin_fee
 
     token_supply: uint256 = self.token.totalSupply()
-    rates: uint256[N_COINS] = self._current_rates()
+    rates: uint256[N_COINS] = self._stored_rates()
     # Initial invariant
     D0: uint256 = 0
     old_balances: uint256[N_COINS] = self.balances
@@ -385,7 +377,7 @@ def _exchange(i: int128, j: int128, dx: uint256, rates: uint256[N_COINS]) -> uin
 @public
 @nonreentrant('lock')
 def exchange(i: int128, j: int128, dx: uint256, min_dy: uint256):
-    rates: uint256[N_COINS] = self._current_rates()
+    rates: uint256[N_COINS] = self._stored_rates()
     dy: uint256 = self._exchange(i, j, dx, rates)
     assert dy >= min_dy, "Exchange resulted in fewer coins than expected"
 
@@ -399,7 +391,7 @@ def exchange(i: int128, j: int128, dx: uint256, min_dy: uint256):
 @public
 @nonreentrant('lock')
 def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256):
-    rates: uint256[N_COINS] = self._current_rates()
+    rates: uint256[N_COINS] = self._stored_rates()
     precisions: uint256[N_COINS] = PRECISION_MUL
     rate_i: uint256 = rates[i] / precisions[i]
     rate_j: uint256 = rates[j] / precisions[j]
@@ -458,7 +450,7 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint2
     assert token_supply > 0
     _fee: uint256 = self.fee * N_COINS / (4 * (N_COINS - 1))
     _admin_fee: uint256 = self.admin_fee
-    rates: uint256[N_COINS] = self._current_rates()
+    rates: uint256[N_COINS] = self._stored_rates()
 
     old_balances: uint256[N_COINS] = self.balances
     new_balances: uint256[N_COINS] = old_balances

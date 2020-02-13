@@ -267,21 +267,21 @@
   "outputs": [
    {
     "type": "uint256",
-    "name": ""
+    "name": "out"
    }
   ],
   "inputs": [],
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 1535275
+  "gas": 1535185
  },
  {
   "name": "calc_token_amount",
   "outputs": [
    {
     "type": "uint256",
-    "name": ""
+    "name": "out"
    }
   ],
   "inputs": [
@@ -297,7 +297,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 6068211
+  "gas": 6067881
  },
  {
   "name": "add_liquidity",
@@ -315,14 +315,14 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 9327593
+  "gas": 9327083
  },
  {
   "name": "get_dy",
   "outputs": [
    {
     "type": "uint256",
-    "name": ""
+    "name": "out"
    }
   ],
   "inputs": [
@@ -342,14 +342,14 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 3454377
+  "gas": 3454227
  },
  {
   "name": "get_dx",
   "outputs": [
    {
     "type": "uint256",
-    "name": ""
+    "name": "out"
    }
   ],
   "inputs": [
@@ -369,14 +369,14 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 3454382
+  "gas": 3454232
  },
  {
   "name": "get_dy_underlying",
   "outputs": [
    {
     "type": "uint256",
-    "name": ""
+    "name": "out"
    }
   ],
   "inputs": [
@@ -396,14 +396,14 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 3454237
+  "gas": 3454087
  },
  {
   "name": "get_dx_underlying",
   "outputs": [
    {
     "type": "uint256",
-    "name": ""
+    "name": "out"
    }
   ],
   "inputs": [
@@ -423,7 +423,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 3454243
+  "gas": 3454093
  },
  {
   "name": "exchange",
@@ -449,7 +449,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 7030538
+  "gas": 7030208
  },
  {
   "name": "exchange_underlying",
@@ -475,7 +475,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 7046479
+  "gas": 7046149
  },
  {
   "name": "remove_liquidity",
@@ -493,7 +493,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 240439
+  "gas": 240409
  },
  {
   "name": "remove_liquidity_imbalance",
@@ -511,7 +511,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 9326820
+  "gas": 9326310
  },
  {
   "name": "commit_new_parameters",
@@ -533,7 +533,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 145897
+  "gas": 145867
  },
  {
   "name": "apply_new_parameters",
@@ -542,7 +542,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 133512
+  "gas": 133482
  },
  {
   "name": "revert_new_parameters",
@@ -551,7 +551,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 21835
+  "gas": 21805
  },
  {
   "name": "commit_transfer_ownership",
@@ -565,7 +565,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 74512
+  "gas": 74482
  },
  {
   "name": "apply_transfer_ownership",
@@ -574,7 +574,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 60568
+  "gas": 60538
  },
  {
   "name": "revert_transfer_ownership",
@@ -583,7 +583,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 21925
+  "gas": 21895
  },
  {
   "name": "withdraw_admin_fees",
@@ -592,7 +592,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 22697
+  "gas": 22667
  },
  {
   "name": "kill_me",
@@ -601,7 +601,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 37878
+  "gas": 37848
  },
  {
   "name": "unkill_me",
@@ -610,14 +610,33 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 22015
+  "gas": 21985
  },
  {
   "name": "coins",
   "outputs": [
    {
     "type": "address",
-    "name": ""
+    "name": "out"
+   }
+  ],
+  "inputs": [
+   {
+    "type": "int128",
+    "name": "arg0"
+   }
+  ],
+  "constant": true,
+  "payable": false,
+  "type": "function",
+  "gas": 2160
+ },
+ {
+  "name": "underlying_coins",
+  "outputs": [
+   {
+    "type": "address",
+    "name": "out"
    }
   ],
   "inputs": [
@@ -632,11 +651,11 @@
   "gas": 2190
  },
  {
-  "name": "underlying_coins",
+  "name": "balances",
   "outputs": [
    {
-    "type": "address",
-    "name": ""
+    "type": "uint256",
+    "name": "out"
    }
   ],
   "inputs": [
@@ -651,30 +670,25 @@
   "gas": 2220
  },
  {
-  "name": "balances",
-  "outputs": [
-   {
-    "type": "uint256",
-    "name": ""
-   }
-  ],
-  "inputs": [
-   {
-    "type": "int128",
-    "name": "arg0"
-   }
-  ],
-  "constant": true,
-  "payable": false,
-  "type": "function",
-  "gas": 2250
- },
- {
   "name": "A",
   "outputs": [
    {
     "type": "uint256",
-    "name": ""
+    "name": "out"
+   }
+  ],
+  "inputs": [],
+  "constant": true,
+  "payable": false,
+  "type": "function",
+  "gas": 2051
+ },
+ {
+  "name": "fee",
+  "outputs": [
+   {
+    "type": "uint256",
+    "name": "out"
    }
   ],
   "inputs": [],
@@ -684,11 +698,11 @@
   "gas": 2081
  },
  {
-  "name": "fee",
+  "name": "admin_fee",
   "outputs": [
    {
     "type": "uint256",
-    "name": ""
+    "name": "out"
    }
   ],
   "inputs": [],
@@ -698,11 +712,11 @@
   "gas": 2111
  },
  {
-  "name": "admin_fee",
+  "name": "owner",
   "outputs": [
    {
-    "type": "uint256",
-    "name": ""
+    "type": "address",
+    "name": "out"
    }
   ],
   "inputs": [],
@@ -712,11 +726,12 @@
   "gas": 2141
  },
  {
-  "name": "owner",
+  "name": "admin_actions_deadline",
   "outputs": [
    {
-    "type": "address",
-    "name": ""
+    "type": "uint256",
+    "unit": "sec",
+    "name": "out"
    }
   ],
   "inputs": [],
@@ -726,12 +741,12 @@
   "gas": 2171
  },
  {
-  "name": "admin_actions_deadline",
+  "name": "transfer_ownership_deadline",
   "outputs": [
    {
     "type": "uint256",
     "unit": "sec",
-    "name": ""
+    "name": "out"
    }
   ],
   "inputs": [],
@@ -741,12 +756,11 @@
   "gas": 2201
  },
  {
-  "name": "transfer_ownership_deadline",
+  "name": "future_A",
   "outputs": [
    {
     "type": "uint256",
-    "unit": "sec",
-    "name": ""
+    "name": "out"
    }
   ],
   "inputs": [],
@@ -756,11 +770,11 @@
   "gas": 2231
  },
  {
-  "name": "future_A",
+  "name": "future_fee",
   "outputs": [
    {
     "type": "uint256",
-    "name": ""
+    "name": "out"
    }
   ],
   "inputs": [],
@@ -770,11 +784,11 @@
   "gas": 2261
  },
  {
-  "name": "future_fee",
+  "name": "future_admin_fee",
   "outputs": [
    {
     "type": "uint256",
-    "name": ""
+    "name": "out"
    }
   ],
   "inputs": [],
@@ -784,11 +798,11 @@
   "gas": 2291
  },
  {
-  "name": "future_admin_fee",
+  "name": "future_owner",
   "outputs": [
    {
-    "type": "uint256",
-    "name": ""
+    "type": "address",
+    "name": "out"
    }
   ],
   "inputs": [],
@@ -796,19 +810,5 @@
   "payable": false,
   "type": "function",
   "gas": 2321
- },
- {
-  "name": "future_owner",
-  "outputs": [
-   {
-    "type": "address",
-    "name": ""
-   }
-  ],
-  "inputs": [],
-  "constant": true,
-  "payable": false,
-  "type": "function",
-  "gas": 2351
  }
 ]
