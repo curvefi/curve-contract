@@ -139,8 +139,3 @@ def withdraw(withdrawTokens: uint256):
 @public
 def set_exchange_rate(rate: uint256):
     self.getPricePerFullShare = rate
-
-
-@public
-def get_price_per_full_share() -> uint256:
-    return self.getPricePerFullShare

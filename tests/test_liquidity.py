@@ -60,7 +60,6 @@ def test_add_liquidity(w3, coins, yerc20s, swap):
 # @pytest.mark.parametrize('iteration', range(40))
 def test_ratio_preservation(w3, coins, yerc20s, swap, pool_token):
     alice, bob = w3.eth.accounts[:2]
-    mtgox = w3.eth.accounts[2]  # <- all unneeded coins are dumped here
     dust = 1e-8
 
     # Allow $1000 of each coin
@@ -79,7 +78,7 @@ def test_ratio_preservation(w3, coins, yerc20s, swap, pool_token):
         alice_balances.append(cc.caller.balanceOf(alice))
         bob_balances.append(cc.caller.balanceOf(bob))
 
-    rates = [cc.caller.get_price_per_full_share()
+    rates = [cc.caller.getPricePerFullShare()
              for cc in yerc20s]
 
     def assert_all_equal(address):
@@ -156,7 +155,6 @@ def test_ratio_preservation(w3, coins, yerc20s, swap, pool_token):
 
 def test_remove_liquidity_imbalance(w3, coins, yerc20s, swap, pool_token):
     alice, bob, charlie = w3.eth.accounts[:3]
-    mtgox = w3.eth.accounts[3]  # <- all unneeded coins are dumped here
 
     # Allow $1000 of each coin
     # Also give Bob something to trade with
@@ -175,7 +173,7 @@ def test_remove_liquidity_imbalance(w3, coins, yerc20s, swap, pool_token):
         alice_balances.append(cc.caller.balanceOf(alice))
         bob_balances.append(cc.caller.balanceOf(bob))
 
-    rates = [cc.caller.get_price_per_full_share()
+    rates = [cc.caller.getPricePerFullShare()
              for cc in yerc20s]
 
     # First, both fund the thing in equal amount

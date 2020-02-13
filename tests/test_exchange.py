@@ -17,7 +17,7 @@ def test_few_trades(w3, coins, yerc20s, swap, pool_token):
     # Allow $1000 of each coin
     deposits = []
     for c, cc, u in zip(coins, yerc20s, UU):
-        rate = cc.caller.get_price_per_full_share() * (1 + len(deposits))
+        rate = cc.caller.getPricePerFullShare() * (1 + len(deposits))
         cc.functions.set_exchange_rate(rate).transact(from_sam)
         c.functions.approve(cc.address, 1000 * u).transact(from_sam)
         cc.functions.deposit(1000 * u).transact(from_sam)
@@ -101,7 +101,7 @@ def test_simulated_exchange(w3, coins, yerc20s, swap):
 
     # Model
     balances = [int(swap.caller.balances(i)) for i in range(4)]
-    rates = [int(c.caller.get_price_per_full_share()) * p
+    rates = [int(c.caller.getPricePerFullShare()) * p
              for c, p in zip(yerc20s, PRECISIONS)]
     curve = Curve(2 * 360, balances, N_COINS, rates)
 
@@ -115,10 +115,9 @@ def test_simulated_exchange(w3, coins, yerc20s, swap):
     for k in range(50):
         # Tune exchange rates
         for i, cc in enumerate(yerc20s):
-            rate = int(cc.caller.get_price_per_full_share() * 1.0001)
+            rate = int(cc.caller.getPricePerFullShare() * 1.0001)
             cc.functions.set_exchange_rate(rate).transact(from_sam)
             curve.p[i] = rate * PRECISIONS[i]
-
 
         # Simulate the exchange
         old_virtual_price = swap.caller.get_virtual_price()
