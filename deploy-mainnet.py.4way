@@ -59,7 +59,7 @@ def deploy_swap(A, fee):
                 '___PRECISION_MUL___': '[' + ', '.join(
                     'convert(%s, uint256)' % (10 ** 18 // i) for i in PRECISIONS) + ']',
                 '___TETHERED___': '[' + ', '.join(
-                        str(i) for i in tethered) + ']',
+                        str(i) for i in TETHERED) + ']',
             })
     txhash = pool_token.functions.set_minter(swap_contract.address).transact(
         {'from': SWAP_DEPLOY_ADDRESS})
