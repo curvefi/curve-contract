@@ -21,6 +21,7 @@ USE_LENDING: constant(bool[N_COINS]) = ___USE_LENDING___
 TETHERED: constant(bool[N_COINS]) = ___TETHERED___
 
 FEE_DENOMINATOR: constant(uint256) = 10 ** 10
+LENDING_PRECISION: constant(uint256) = 10 ** 18
 PRECISION: constant(uint256) = 10 ** 18  # The precision to convert to
 PRECISION_MUL: constant(uint256[N_COINS]) = ___PRECISION_MUL___
 # PRECISION_MUL: constant(uint256[N_COINS]) = [
@@ -101,12 +102,12 @@ def _stored_rates() -> uint256[N_COINS]:
     result: uint256[N_COINS] = PRECISION_MUL
     use_lending: bool[N_COINS] = USE_LENDING
     for i in range(N_COINS):
-        rate: uint256 = PRECISION  # Used with no lending
+        rate: uint256 = LENDING_PRECISION  # Used with no lending
         if use_lending[i]:
             rate = cERC20(self.coins[i]).exchangeRateStored()
             supply_rate: uint256 = cERC20(self.coins[i]).supplyRatePerBlock()
             old_block: uint256 = cERC20(self.coins[i]).accrualBlockNumber()
-            rate += rate * supply_rate * (block.number - old_block) / PRECISION
+            rate += rate * supply_rate * (block.number - old_block) / LENDING_PRECISION
         result[i] *= rate
     return result
 
@@ -116,7 +117,7 @@ def _current_rates() -> uint256[N_COINS]:
     result: uint256[N_COINS] = PRECISION_MUL
     use_lending: bool[N_COINS] = USE_LENDING
     for i in range(N_COINS):
-        rate: uint256 = PRECISION  # Used with no lending
+        rate: uint256 = LENDING_PRECISION  # Used with no lending
         if use_lending[i]:
             rate = cERC20(self.coins[i]).exchangeRateCurrent()
         result[i] *= rate
