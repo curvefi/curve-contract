@@ -533,7 +533,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 145897
+  "gas": 146105
  },
  {
   "name": "apply_new_parameters",

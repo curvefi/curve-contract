@@ -48,7 +48,10 @@ balances: public(uint256[N_COINS])
 A: public(uint256)  # 2 x amplification coefficient
 fee: public(uint256)  # fee * 1e10
 admin_fee: public(uint256)  # admin_fee * 1e10
+
 max_admin_fee: constant(uint256) = 5 * 10 ** 9
+max_fee: constant(uint256) = 5 * 10 ** 9
+max_A: constant(uint256) = 10 ** 6
 
 owner: public(address)
 token: ERC20m
@@ -541,6 +544,8 @@ def commit_new_parameters(amplification: uint256,
     assert msg.sender == self.owner
     assert self.admin_actions_deadline == 0
     assert new_admin_fee <= max_admin_fee
+    assert new_fee <= max_fee
+    assert amplification <= max_A
 
     _deadline: timestamp = block.timestamp + admin_actions_delay
     self.admin_actions_deadline = _deadline
