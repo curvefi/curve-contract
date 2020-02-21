@@ -18,6 +18,8 @@ ZERO256: constant(uint256) = 0  # This hack is really bad XXX
 ZEROS: constant(uint256[N_COINS]) = ___N_ZEROS___  # <- change
 
 USE_LENDING: constant(bool[N_COINS]) = ___USE_LENDING___
+
+# Flag "ERC20s" which don't return from transfer() and transferFrom()
 TETHERED: constant(bool[N_COINS]) = ___TETHERED___
 
 FEE_DENOMINATOR: constant(uint256) = 10 ** 10
