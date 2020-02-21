@@ -261,7 +261,7 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256):
             else:
                 difference = new_balances[i] - ideal_balance
             fees[i] = _fee * difference / FEE_DENOMINATOR
-            self.balances[i] = new_balances[i] - fees[i] * _admin_fee / FEE_DENOMINATOR
+            self.balances[i] = new_balances[i] - (fees[i] * _admin_fee / FEE_DENOMINATOR)
             new_balances[i] -= fees[i]
         D2 = self.get_D_mem(rates, new_balances)
     else:
@@ -336,7 +336,7 @@ def get_dy(i: int128, j: int128, dx: uint256) -> uint256:
     rates: uint256[N_COINS] = self._stored_rates()
     xp: uint256[N_COINS] = self._xp(rates)
 
-    x: uint256 = xp[i] + dx * rates[i] / PRECISION
+    x: uint256 = xp[i] + (dx * rates[i] / PRECISION)
     y: uint256 = self.get_y(i, j, x, xp)
     dy: uint256 = (xp[j] - y) * PRECISION / rates[j]
     _fee: uint256 = self.fee * dy / FEE_DENOMINATOR
@@ -519,7 +519,7 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint2
         else:
             difference = new_balances[i] - ideal_balance
         fees[i] = _fee * difference / FEE_DENOMINATOR
-        self.balances[i] = new_balances[i] - fees[i] * _admin_fee / FEE_DENOMINATOR
+        self.balances[i] = new_balances[i] - (fees[i] * _admin_fee / FEE_DENOMINATOR)
         new_balances[i] -= fees[i]
     D2: uint256 = self.get_D_mem(rates, new_balances)
 
