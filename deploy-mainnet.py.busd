@@ -18,7 +18,7 @@ UNDERLYING_COINS = [
         '0x4Fabb145d64652a948d72533023f6E7A623C7C53']
 Y_COINS = [
         '0xC2cB1040220768554cf699b0d863A3cd4324ce32',
-        '0xf7c9C5B31F12701dD2dD65AAdF6116ee6aB81BB4',
+        '0x26EA744E5B887E5205727f55dFBE8685e3b21951',
         '0xE6354ed5bC4b393a5Aad09f21c46E101e692d447',
         '0x04bC0Ab673d88aE9dbC9DA2380cB6B79C4BCa9aE']
 PRECISIONS = [10 ** 18, 10 ** 6, 10 ** 6, 10 ** 18]
@@ -28,7 +28,7 @@ SWAP_DEPLOY_ADDRESS = '0xDeployerAddress'
 GETH_PASSWORD = None
 
 HELP = """swap, token = deploy_swap(A, fee) to deploy swap contract from the list
-Try A=900, fee=0.0004
+Try A=2000, fee=0.0004
 ====================================================="""
 
 
