@@ -402,7 +402,6 @@ def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256):
     assert dy >= min_dy, "Exchange resulted in fewer coins than expected"
     tethered: bool[N_COINS] = TETHERED
 
-    ok: uint256 = 0
     if tethered[i]:
         USDT(self.underlying_coins[i]).transferFrom(msg.sender, self, dx)
     else:
