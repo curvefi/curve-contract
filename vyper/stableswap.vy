@@ -2,6 +2,7 @@
 
 import ERC20m as ERC20m
 import yERC20 as yERC20
+import crvERC20 as crvERC20
 from vyper.interfaces import ERC20
 
 
@@ -18,6 +19,7 @@ ZERO256: constant(uint256) = 0  # This hack is really bad XXX
 ZEROS: constant(uint256[N_COINS]) = ___N_ZEROS___  # <- change
 
 USE_LENDING: constant(bool[N_COINS]) = ___USE_LENDING___
+USE_CURVED: constant(bool[N_COINS]) = ___USE_CURVED___
 
 # Flag "ERC20s" which don't return from transfer() and transferFrom()
 TETHERED: constant(bool[N_COINS]) = ___TETHERED___
@@ -46,6 +48,7 @@ CommitNewParameters: event({deadline: indexed(timestamp), A: uint256, fee: uint2
 NewParameters: event({A: uint256, fee: uint256, admin_fee: uint256})
 
 coins: public(address[N_COINS])
+coins_rates: public(address[N_COINS])
 underlying_coins: public(address[N_COINS])
 balances: public(uint256[N_COINS])
 A: public(uint256)  # 2 x amplification coefficient
@@ -73,7 +76,7 @@ is_killed: bool
 
 @public
 def __init__(_coins: address[N_COINS], _underlying_coins: address[N_COINS],
-             _pool_token: address,
+             _coins_rates: address[N_COINS], _pool_token: address,
              _A: uint256, _fee: uint256):
     """
     _coins: Addresses of ERC20 conracts of coins (c-tokens) involved
@@ -87,6 +90,7 @@ def __init__(_coins: address[N_COINS], _underlying_coins: address[N_COINS],
         assert _underlying_coins[i] != ZERO_ADDRESS
         self.balances[i] = 0
     self.coins = _coins
+    self.coins_rates = _coins_rates
     self.underlying_coins = _underlying_coins
     self.A = _A
     self.fee = _fee
@@ -102,10 +106,13 @@ def __init__(_coins: address[N_COINS], _underlying_coins: address[N_COINS],
 def _current_rates() -> uint256[N_COINS]:
     result: uint256[N_COINS] = PRECISION_MUL
     use_lending: bool[N_COINS] = USE_LENDING
+    use_curved: bool[N_COINS] = USE_CURVED
     for i in range(N_COINS):
         rate: uint256 = LENDING_PRECISION  # Used with no lending
         if use_lending[i]:
             rate = yERC20(self.coins[i]).getPricePerFullShare()
+        if use_curved[i]:
+            rate = crvERC20(self.coins_rates[i]).get_virtual_price()
         result[i] *= rate
     return result
 

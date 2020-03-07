@@ -7,6 +7,7 @@ PRECISIONS = [10 ** 18, 10 ** 18]
 contract_file = 'vyper/stableswap.vy'
 interfaces = ['ERC20m', 'cERC20']
 USE_LENDING = [True, False]
+USE_CURVED = [False, True]
 TETHERED = [False, False]
 replacements = {
                 '___N_COINS___': str(N_COINS),
@@ -15,6 +16,8 @@ replacements = {
                     'convert(%s, uint256)' % (10 ** 18 // i) for i in PRECISIONS) + ']',
                 '___USE_LENDING___': '[' + ', '.join(
                         str(i) for i in USE_LENDING) + ']',
+                '___USE_CURVED___': '[' + ', '.join(
+                        str(i) for i in USE_CURVED) + ']',
                 '___TETHERED___': '[' + ', '.join(
                         str(i) for i in TETHERED) + ']'}
 

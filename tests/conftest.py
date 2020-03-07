@@ -11,6 +11,7 @@ UP = [18, 18]
 UU = [10 ** p for p in UP]
 c_rates = [5 * UU[0], UU[1]]
 use_lending = [True, False]
+use_curved = [False, True]
 tethered = [False, False]
 PRECISIONS = [10 ** 18 // u for u in UU]
 MAX_UINT = 2 ** 256 - 1
@@ -39,6 +40,13 @@ def coins(w3):
                 b'Coin ' + str(i).encode(), str(i).encode(), UP[i], 10 ** 12)
             for i in range(N_COINS)]
 
+@pytest.fixture
+def crvERC20s(w3, coins):
+    return [deploy_contract(
+                w3, 'fake_crverc20.vy', w3.eth.accounts[0],
+                c_rates[i])
+            for i in range(N_COINS)]
+
 
 @pytest.fixture
 def pool_token(w3):
@@ -63,11 +71,11 @@ def yerc20s(w3, coins):
 
 
 @pytest.fixture(scope='function')
-def swap(w3, coins, yerc20s, pool_token):
+def swap(w3, coins, yerc20s, crvERC20s, pool_token):
     swap_contract = deploy_contract(
-            w3, ['stableswap.vy', 'ERC20m.vy', 'yERC20.vy'], w3.eth.accounts[1],
+            w3, ['stableswap.vy', 'ERC20m.vy', 'yERC20.vy', 'crvERC20.vy'], w3.eth.accounts[1],
             [c.address for c in yerc20s], [c.address for c in coins],
-            pool_token.address, 360 * 2, 10 ** 7,
+            [c.address for c in crvERC20s], pool_token.address, 360 * 2, 10 ** 7,
             replacements={
                 '___N_COINS___': str(N_COINS),
                 '___N_ZEROS___': '[' + ', '.join(['ZERO256'] * N_COINS) + ']',
@@ -75,6 +83,8 @@ def swap(w3, coins, yerc20s, pool_token):
                     'convert(%s, uint256)' % i for i in PRECISIONS) + ']',
                 '___USE_LENDING___': '[' + ', '.join(
                         str(i) for i in use_lending) + ']',
+                '___USE_CURVED___': '[' + ', '.join(
+                        str(i) for i in use_curved) + ']',
                 '___TETHERED___': '[' + ', '.join(
                         str(i) for i in tethered) + ']',
             })

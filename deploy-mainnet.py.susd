@@ -17,9 +17,13 @@ UNDERLYING_COINS = [
 C_COINS = [
         '0xF61718057901F84C4eEC4339EF8f0D86D2B45600',
         '0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8']
+COIN_RATES = [
+        '0x0',
+        '0x45F783CCE6B7FF23B2ab2D70e416cdb7D6055f51']
 PRECISIONS = [10 ** 18, 10 ** 18]
 N_COINS = len(C_COINS)
 USE_LENDING = [True, False]
+USE_CURVED = [False, True]
 TETHERED = [False, False]
 SWAP_DEPLOY_ADDRESS = '0xDeployerAddress'
 GETH_PASSWORD = None
@@ -48,8 +52,8 @@ def deploy_swap(A, fee):
     pool_token = deploy_contract(
         w3, 'ERC20.vy', SWAP_DEPLOY_ADDRESS, b'Curve.fi sUSD/y.curve.fi', b'sUSD+yCurve.fi', 18, 0)
     swap_contract = deploy_contract(
-            w3, ['stableswap.vy', 'ERC20m.vy', 'yERC20.vy'], SWAP_DEPLOY_ADDRESS,
-            C_COINS, UNDERLYING_COINS, pool_token.address, A, fee,
+            w3, ['stableswap.vy', 'ERC20m.vy', 'yERC20.vy', 'crvERC20.vy'], SWAP_DEPLOY_ADDRESS,
+            C_COINS, UNDERLYING_COINS, COIN_RATES, pool_token.address, A, fee,
             replacements={
                 '___N_COINS___': str(N_COINS),
                 '___N_ZEROS___': '[' + ', '.join(['ZERO256'] * N_COINS) + ']',
@@ -59,6 +63,8 @@ def deploy_swap(A, fee):
                         str(i) for i in USE_LENDING) + ']',
                 '___TETHERED___': '[' + ', '.join(
                         str(i) for i in TETHERED) + ']',
+                '___USE_CURVED___': '[' + ', '.join(
+                        str(i) for i in USE_CURVED) + ']',
             })
     txhash = pool_token.functions.set_minter(swap_contract.address).transact(
         {'from': SWAP_DEPLOY_ADDRESS})
