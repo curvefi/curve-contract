@@ -1,7 +1,7 @@
 # (c) Curve.Fi, 2020
 
 import ERC20m as ERC20m
-import cERC20 as cERC20
+import yERC20 as yERC20
 from vyper.interfaces import ERC20
 
 
@@ -99,29 +99,13 @@ def __init__(_coins: address[N_COINS], _underlying_coins: address[N_COINS],
 
 @private
 @constant
-def _stored_rates() -> uint256[N_COINS]:
-    # exchangeRateStored * (1 + supplyRatePerBlock * (getBlockNumber - accrualBlockNumber) / 1e18)
-    result: uint256[N_COINS] = PRECISION_MUL
-    use_lending: bool[N_COINS] = USE_LENDING
-    for i in range(N_COINS):
-        rate: uint256 = LENDING_PRECISION  # Used with no lending
-        if use_lending[i]:
-            rate = cERC20(self.coins[i]).exchangeRateStored()
-            supply_rate: uint256 = cERC20(self.coins[i]).supplyRatePerBlock()
-            old_block: uint256 = cERC20(self.coins[i]).accrualBlockNumber()
-            rate += rate * supply_rate * (block.number - old_block) / LENDING_PRECISION
-        result[i] *= rate
-    return result
-
-
-@private
 def _current_rates() -> uint256[N_COINS]:
     result: uint256[N_COINS] = PRECISION_MUL
     use_lending: bool[N_COINS] = USE_LENDING
     for i in range(N_COINS):
         rate: uint256 = LENDING_PRECISION  # Used with no lending
         if use_lending[i]:
-            rate = cERC20(self.coins[i]).exchangeRateCurrent()
+            rate = yERC20(self.coins[i]).getPricePerFullShare()
         result[i] *= rate
     return result
 
@@ -185,7 +169,7 @@ def get_virtual_price() -> uint256:
     Returns portfolio virtual price (for calculating profit)
     scaled up by 1e18
     """
-    D: uint256 = self.get_D(self._xp(self._stored_rates()))
+    D: uint256 = self.get_D(self._xp(self._current_rates()))
     # D is in the units similar to DAI (e.g. converted to precision 1e18)
     # When balanced, D = n * x_u - total virtual value of the portfolio
     token_supply: uint256 = self.token.totalSupply()
@@ -202,7 +186,7 @@ def calc_token_amount(amounts: uint256[N_COINS], deposit: bool) -> uint256:
     Needed to prevent front-running, not for precise calculations!
     """
     _balances: uint256[N_COINS] = self.balances
-    rates: uint256[N_COINS] = self._stored_rates()
+    rates: uint256[N_COINS] = self._current_rates()
     D0: uint256 = self.get_D_mem(rates, _balances)
     for i in range(N_COINS):
         if deposit:
@@ -284,7 +268,7 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256):
             USDT(self.coins[i]).transferFrom(msg.sender, self, amounts[i])
         else:
             assert_modifiable(
-                cERC20(self.coins[i]).transferFrom(msg.sender, self, amounts[i]))
+                ERC20(self.coins[i]).transferFrom(msg.sender, self, amounts[i]))
 
     # Mint pool tokens
     self.token.mint(msg.sender, mint_amount)
@@ -335,7 +319,7 @@ def get_y(i: int128, j: int128, x: uint256, _xp: uint256[N_COINS]) -> uint256:
 @constant
 def get_dy(i: int128, j: int128, dx: uint256) -> uint256:
     # dx and dy in c-units
-    rates: uint256[N_COINS] = self._stored_rates()
+    rates: uint256[N_COINS] = self._current_rates()
     xp: uint256[N_COINS] = self._xp(rates)
 
     x: uint256 = xp[i] + (dx * rates[i] / PRECISION)
@@ -349,7 +333,7 @@ def get_dy(i: int128, j: int128, dx: uint256) -> uint256:
 @constant
 def get_dx(i: int128, j: int128, dy: uint256) -> uint256:
     # dx and dy in c-units
-    rates: uint256[N_COINS] = self._stored_rates()
+    rates: uint256[N_COINS] = self._current_rates()
     xp: uint256[N_COINS] = self._xp(rates)
 
     y: uint256 = xp[j] - (dy * FEE_DENOMINATOR / (FEE_DENOMINATOR - self.fee)) * rates[j] / PRECISION
@@ -362,7 +346,7 @@ def get_dx(i: int128, j: int128, dy: uint256) -> uint256:
 @constant
 def get_dy_underlying(i: int128, j: int128, dx: uint256) -> uint256:
     # dx and dy in underlying units
-    rates: uint256[N_COINS] = self._stored_rates()
+    rates: uint256[N_COINS] = self._current_rates()
     xp: uint256[N_COINS] = self._xp(rates)
     precisions: uint256[N_COINS] = PRECISION_MUL
 
@@ -377,7 +361,7 @@ def get_dy_underlying(i: int128, j: int128, dx: uint256) -> uint256:
 @constant
 def get_dx_underlying(i: int128, j: int128, dy: uint256) -> uint256:
     # dx and dy in underlying units
-    rates: uint256[N_COINS] = self._stored_rates()
+    rates: uint256[N_COINS] = self._current_rates()
     xp: uint256[N_COINS] = self._xp(rates)
     precisions: uint256[N_COINS] = PRECISION_MUL
 
@@ -419,12 +403,12 @@ def exchange(i: int128, j: int128, dx: uint256, min_dy: uint256):
     if tethered[i] and not use_lending[i]:
         USDT(self.coins[i]).transferFrom(msg.sender, self, dx)
     else:
-        assert_modifiable(cERC20(self.coins[i]).transferFrom(msg.sender, self, dx))
+        assert_modifiable(ERC20(self.coins[i]).transferFrom(msg.sender, self, dx))
 
     if tethered[j] and not use_lending[j]:
         USDT(self.coins[j]).transfer(msg.sender, dy)
     else:
-        assert_modifiable(cERC20(self.coins[j]).transfer(msg.sender, dy))
+        assert_modifiable(ERC20(self.coins[j]).transfer(msg.sender, dy))
 
     log.TokenExchange(msg.sender, i, dx, j, dy)
 
@@ -444,7 +428,6 @@ def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256):
     use_lending: bool[N_COINS] = USE_LENDING
     tethered: bool[N_COINS] = TETHERED
 
-    ok: uint256 = 0
     if tethered[i]:
         USDT(self.underlying_coins[i]).transferFrom(msg.sender, self, dx)
     else:
@@ -452,13 +435,9 @@ def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256):
             .transferFrom(msg.sender, self, dx))
     if use_lending[i]:
         ERC20(self.underlying_coins[i]).approve(self.coins[i], dx)
-        ok = cERC20(self.coins[i]).mint(dx)
-        if ok > 0:
-            raise "Could not mint coin"
+        yERC20(self.coins[i]).deposit(dx)
     if use_lending[j]:
-        ok = cERC20(self.coins[j]).redeem(dy_)
-        if ok > 0:
-            raise "Could not redeem coin"
+        yERC20(self.coins[j]).withdraw(dy_)
     if tethered[j]:
         USDT(self.underlying_coins[j]).transfer(msg.sender, dy)
     else:
@@ -485,7 +464,7 @@ def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS]):
         if tethered[i] and not use_lending[i]:
             USDT(self.coins[i]).transfer(msg.sender, value)
         else:
-            assert_modifiable(cERC20(self.coins[i]).transfer(
+            assert_modifiable(ERC20(self.coins[i]).transfer(
                 msg.sender, value))
 
     self.token.burnFrom(msg.sender, _amount)  # Will raise if not enough
@@ -533,7 +512,7 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint2
         if tethered[i] and not use_lending[i]:
             USDT(self.coins[i]).transfer(msg.sender, amounts[i])
         else:
-            assert_modifiable(cERC20(self.coins[i]).transfer(msg.sender, amounts[i]))
+            assert_modifiable(ERC20(self.coins[i]).transfer(msg.sender, amounts[i]))
     self.token.burnFrom(msg.sender, token_amount)  # Will raise if not enough
 
     log.RemoveLiquidityImbalance(msg.sender, amounts, fees, D1, token_supply - token_amount)
@@ -624,12 +603,12 @@ def withdraw_admin_fees():
 
     for i in range(N_COINS):
         c: address = self.coins[i]
-        value: uint256 = cERC20(c).balanceOf(self) - self.balances[i]
+        value: uint256 = ERC20(c).balanceOf(self) - self.balances[i]
         if value > 0:
             if tethered[i] and not use_lending[i]:
                 USDT(c).transfer(msg.sender, value)
             else:
-                assert_modifiable(cERC20(c).transfer(msg.sender, value))
+                assert_modifiable(ERC20(c).transfer(msg.sender, value))
 
 
 @public
