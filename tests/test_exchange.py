@@ -118,7 +118,7 @@ def test_simulated_exchange(w3, coins, yerc20s, swap):
         c.functions.approve(swap.address, 100 * u).transact(from_bob)
 
     # Start trading!
-    for k in range(50):
+    for k in range(5):
         # Tune exchange rates
         for i, (cc, l) in enumerate(zip(yerc20s, use_lending)):
             if l:

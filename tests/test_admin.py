@@ -86,7 +86,7 @@ def test_trade_and_withdraw_fees(tester, w3, coins, yerc20s, swap):
 
     volumes = [0, 0, 0]
 
-    for k in range(10):
+    for k in range(3):
         i, j = random.choice(list(permutations(range(N_COINS), 2)))
         value = int(random.random() * deposits[i] / 10)
         y_0 = yerc20s[j].caller.balanceOf(bob)
