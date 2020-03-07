@@ -153,4 +153,4 @@ def test_simulated_exchange(w3, coins, yerc20s, swap):
     x = [swap.caller.balances(i) for i in range(N_COINS)]
     assert tuple(round(a / b, 10) for a, b in zip(x, curve.x)) == (1.0,) * N_COINS
 
-    assert sum(x[i] * rates[i] / 1e18 for i in range(N_COINS)) > 300 * max(UU)
+    assert sum(x[i] * rates[i] / 1e18 for i in range(N_COINS)) > 200 * max(UU)
