@@ -6,12 +6,12 @@ from os.path import realpath, dirname, join
 from .deploy import deploy_contract
 
 CONTRACT_PATH = join(dirname(dirname(realpath(__file__))), 'vyper')
-N_COINS = 3
-UP = [18, 6, 6]
+N_COINS = 2
+UP = [18, 18]
 UU = [10 ** p for p in UP]
-c_rates = [5 * UU[0], UU[1], 20 * UU[2]]
-use_lending = [True, True, False]
-tethered = [False, False, True]
+c_rates = [5 * UU[0], UU[1]]
+use_lending = [True, False]
+tethered = [False, False]
 PRECISIONS = [10 ** 18 // u for u in UU]
 MAX_UINT = 2 ** 256 - 1
 
@@ -47,9 +47,9 @@ def pool_token(w3):
 
 
 @pytest.fixture
-def cerc20s(w3, coins):
+def yerc20s(w3, coins):
     ccoins = [deploy_contract(
-                w3, 'fake_cerc20.vy', w3.eth.accounts[0],
+                w3, 'fake_yerc20.vy', w3.eth.accounts[0],
                 b'C-Coin ' + str(i).encode(), b'c' + str(i).encode(),
                 18, 0, coins[i].address, c_rates[i])
               for i in range(N_COINS)]
@@ -63,10 +63,10 @@ def cerc20s(w3, coins):
 
 
 @pytest.fixture(scope='function')
-def swap(w3, coins, cerc20s, pool_token):
+def swap(w3, coins, yerc20s, pool_token):
     swap_contract = deploy_contract(
-            w3, ['stableswap.vy', 'ERC20m.vy', 'cERC20.vy'], w3.eth.accounts[1],
-            [c.address for c in cerc20s], [c.address for c in coins],
+            w3, ['stableswap.vy', 'ERC20m.vy', 'yERC20.vy'], w3.eth.accounts[1],
+            [c.address for c in yerc20s], [c.address for c in coins],
             pool_token.address, 360 * 2, 10 ** 7,
             replacements={
                 '___N_COINS___': str(N_COINS),

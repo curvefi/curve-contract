@@ -5,7 +5,7 @@ from time import time
 from eth_tester.exceptions import TransactionFailed
 from .conftest import UU, use_lending, approx
 
-N_COINS = 3
+N_COINS = 2
 
 
 def test_transfer_ownership(tester, w3, swap):
@@ -53,7 +53,7 @@ def test_transfer_ownership(tester, w3, swap):
         swap.functions.apply_transfer_ownership().transact({'from': alice})
 
 
-def test_trade_and_withdraw_fees(tester, w3, coins, cerc20s, swap):
+def test_trade_and_withdraw_fees(tester, w3, coins, yerc20s, swap):
     alice, owner, bob = w3.eth.accounts[:3]
     # Owner is the exchange admin
     # Alice and Bob trade
@@ -64,10 +64,10 @@ def test_trade_and_withdraw_fees(tester, w3, coins, cerc20s, swap):
         ).transact({'from': owner})
 
     deposits = []
-    for c, cc, u, l in zip(coins, cerc20s, UU, use_lending):
+    for c, cc, u, l in zip(coins, yerc20s, UU, use_lending):
         if l:
             c.functions.approve(cc.address, 2000 * u).transact({'from': alice})
-            cc.functions.mint(2000 * u).transact({'from': alice})
+            cc.functions.deposit(2000 * u).transact({'from': alice})
             balance = cc.caller.balanceOf(alice) // 2
         else:
             balance = 1000 * u
@@ -89,17 +89,17 @@ def test_trade_and_withdraw_fees(tester, w3, coins, cerc20s, swap):
     for k in range(10):
         i, j = random.choice(list(permutations(range(N_COINS), 2)))
         value = int(random.random() * deposits[i] / 10)
-        y_0 = cerc20s[j].caller.balanceOf(bob)
-        cerc20s[i].functions.approve(swap.address, 0).transact({'from': bob})
-        cerc20s[i].functions.approve(swap.address, value).transact({'from': bob})
+        y_0 = yerc20s[j].caller.balanceOf(bob)
+        yerc20s[i].functions.approve(swap.address, 0).transact({'from': bob})
+        yerc20s[i].functions.approve(swap.address, value).transact({'from': bob})
         swap.functions.exchange(i, j, value, 0).transact({'from': bob})
-        y_1 = cerc20s[j].caller.balanceOf(bob)
+        y_1 = yerc20s[j].caller.balanceOf(bob)
 
         volumes[j] += y_1 - y_0
 
     swap.functions.withdraw_admin_fees().transact({'from': owner})
 
-    for v, c in zip(volumes, cerc20s):
+    for v, c in zip(volumes, yerc20s):
         b = c.caller.balanceOf(owner)
         f = int((v / 0.999 - v) * 0.2)
         assert abs(f - b) <= 2 or approx(f, b, 1e-3)
