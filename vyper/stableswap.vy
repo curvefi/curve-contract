@@ -449,6 +449,9 @@ def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256):
         yERC20(self.coins[i]).deposit(dx)
     if use_lending[j]:
         yERC20(self.coins[j]).withdraw(dy_)
+        # y-tokens calculate imprecisely - use all available
+        dy = ERC20(self.underlying_coins[j]).balanceOf(self)
+        assert dy >= min_dy, "Exchange resulted in fewer coins than expected"
     if tethered[j]:
         USDT(self.underlying_coins[j]).transfer(msg.sender, dy)
     else:
