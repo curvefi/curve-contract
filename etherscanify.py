@@ -5,7 +5,7 @@ from vyper.signatures.interface import extract_external_interface
 N_COINS = 2
 PRECISIONS = [10 ** 18, 10 ** 18]
 contract_file = 'vyper/stableswap.vy'
-interfaces = ['ERC20m', 'cERC20', 'crvERC20']
+interfaces = ['ERC20m', 'yERC20']
 USE_LENDING = [True, False]
 USE_CURVED = [False, True]
 TETHERED = [False, False]
