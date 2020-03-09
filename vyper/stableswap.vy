@@ -2,7 +2,6 @@
 
 import ERC20m as ERC20m
 import yERC20 as yERC20
-import crvERC20 as crvERC20
 from vyper.interfaces import ERC20
 
 
@@ -10,6 +9,11 @@ from vyper.interfaces import ERC20
 contract USDT:
     def transfer(_to: address, _value: uint256): modifying
     def transferFrom(_from: address, _to: address, _value: uint256): modifying
+
+
+# Curve interface
+contract Curve:
+    def get_virtual_price() -> uint256: constant
 
 
 # This can (and needs to) be changed at compile time
@@ -112,7 +116,7 @@ def _current_rates() -> uint256[N_COINS]:
         if use_lending[i]:
             rate = yERC20(self.coins[i]).getPricePerFullShare()
         if use_curved[i]:
-            rate = crvERC20(self.coins_rates[i]).get_virtual_price()
+            rate = Curve(self.coins_rates[i]).get_virtual_price()
         result[i] *= rate
     return result
 

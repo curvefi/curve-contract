@@ -40,6 +40,7 @@ def coins(w3):
                 b'Coin ' + str(i).encode(), str(i).encode(), UP[i], 10 ** 12)
             for i in range(N_COINS)]
 
+
 @pytest.fixture
 def crvERC20s(w3, coins):
     return [deploy_contract(
@@ -73,7 +74,7 @@ def yerc20s(w3, coins):
 @pytest.fixture(scope='function')
 def swap(w3, coins, yerc20s, crvERC20s, pool_token):
     swap_contract = deploy_contract(
-            w3, ['stableswap.vy', 'ERC20m.vy', 'yERC20.vy', 'crvERC20.vy'], w3.eth.accounts[1],
+            w3, ['stableswap.vy', 'ERC20m.vy', 'yERC20.vy'], w3.eth.accounts[1],
             [c.address for c in yerc20s], [c.address for c in coins],
             [c.address for c in crvERC20s], pool_token.address, 360 * 2, 10 ** 7,
             replacements={
