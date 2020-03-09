@@ -530,6 +530,7 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint2
 
 
 @public
+@nonreentrant('lock')
 def donate_dust(amounts: uint256[N_COINS]):
     for i in range(N_COINS):
         amount: uint256 = amounts[i]
