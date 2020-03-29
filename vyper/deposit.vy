@@ -13,6 +13,9 @@ contract Curve:
     def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256): modifying
     def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS]): modifying
     def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint256): modifying
+    def balances(i: int128) -> uint256: constant
+    def A() -> uint256: constant
+    def fee() -> uint256: constant
 
 
 N_COINS: constant(int128) = ___N_COINS___
@@ -21,6 +24,8 @@ USE_LENDING: constant(bool[N_COINS]) = ___USE_LENDING___
 ZERO256: constant(uint256) = 0  # This hack is really bad XXX
 ZEROS: constant(uint256[N_COINS]) = ___N_ZEROS___  # <- change
 LENDING_PRECISION: constant(uint256) = 10 ** 18
+PRECISION: constant(uint256) = 10 ** 18
+PRECISION_MUL: constant(uint256[N_COINS]) = ___PRECISION_MUL___
 
 coins: public(address[N_COINS])
 underlying_coins: public(address[N_COINS])
@@ -137,3 +142,115 @@ def remove_liquidity_imbalance(uamounts: uint256[N_COINS], max_burn_amount: uint
 
     # Unwrap and transfer all the coins we've got
     self._send_all(msg.sender, ZEROS)
+
+
+@private
+@constant
+def _xp_mem(rates: uint256[N_COINS], _balances: uint256[N_COINS]) -> uint256[N_COINS]:
+    result: uint256[N_COINS] = rates
+    for i in range(N_COINS):
+        result[i] = result[i] * _balances[i] / PRECISION
+    return result
+
+
+@private
+@constant
+def get_D(A: uint256, xp: uint256[N_COINS]) -> uint256:
+    S: uint256 = 0
+    for _x in xp:
+        S += _x
+    if S == 0:
+        return 0
+
+    Dprev: uint256 = 0
+    D: uint256 = S
+    Ann: uint256 = A * N_COINS
+    for _i in range(255):
+        D_P: uint256 = D
+        for _x in xp:
+            D_P = D_P * D / (_x * N_COINS + 1)  # +1 is to prevent /0
+        Dprev = D
+        D = (Ann * S + D_P * N_COINS) * D / ((Ann - 1) * D + (N_COINS + 1) * D_P)
+        # Equality with the precision of 1
+        if D > Dprev:
+            if D - Dprev <= 1:
+                break
+        else:
+            if Dprev - D <= 1:
+                break
+    return D
+
+
+@private
+@constant
+def get_y(A: uint256, i: int128, _xp: uint256[N_COINS], D: uint256) -> uint256:
+    """
+    Calculate x[i] if one reduces D from being calculated for _xp to D
+
+    Done by solving quadratic equation iteratively.
+    x_1**2 + x1 * (sum' - (A*n**n - 1) * D / (A * n**n)) = D ** (n + 1) / (n ** (2 * n) * prod' * A)
+    x_1**2 + b*x_1 = c
+
+    x_1 = (x_1**2 + c) / (2*x_1 + b)
+    """
+    # x in the input is converted to the same price/precision
+
+    assert (i >= 0) and (i < N_COINS)
+
+    c: uint256 = D
+    S_: uint256 = 0
+    Ann: uint256 = A * N_COINS
+
+    _x: uint256 = 0
+    for _i in range(N_COINS):
+        if _i != i:
+            _x = _xp[_i]
+        else:
+            continue
+        S_ += _x
+        c = c * D / (_x * N_COINS)
+    c = c * D / (Ann * N_COINS)
+    b: uint256 = S_ + D / Ann
+    y_prev: uint256 = 0
+    y: uint256 = D
+    for _i in range(255):
+        y_prev = y
+        y = (y*y + c) / (2 * y + b - D)
+        # Equality with the precision of 1
+        if y > y_prev:
+            if y - y_prev <= 1:
+                break
+        else:
+            if y_prev - y <= 1:
+                break
+    return y
+
+
+@public
+@nonreentrant('lock')
+def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_uamount: uint256):
+    """
+    Remove _amount of liquidity all in a form of coin i
+    """
+    # First, need to calculate
+    # * Get current D
+    # * Solve Eqn against y_i for D - _token_amount
+    use_lending: bool[N_COINS] = USE_LENDING
+    tethered: bool[N_COINS] = TETHERED
+    crv: address = self.curve
+    A: uint256 = Curve(crv).A()
+
+    xp: uint256[N_COINS] = PRECISION_MUL
+    for j in range(N_COINS):
+        xp[j] *= Curve(crv).balances(j)
+        if use_lending[j]:
+            rate: uint256 = cERC20(self.coins[j]).exchangeRateCurrent()
+            xp[j] = xp[j] * rate / LENDING_PRECISION
+        # if not use_lending - all good already
+
+    D0: uint256 = self.get_D(A, xp)
+    D1: uint256 = D0 - _token_amount
+    y: uint256 = self.get_y(A, i, xp, D1)
+    for j in range(N_COINS):
+        # Symmetric withdrawal
+        xp[j] = xp[j] * D1 / D0

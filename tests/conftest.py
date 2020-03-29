@@ -97,6 +97,8 @@ def deposit(w3, coins, cerc20s, pool_token, swap):
                         str(i) for i in use_lending) + ']',
                 '___TETHERED___': '[' + ', '.join(
                         str(i) for i in tethered) + ']',
+                '___PRECISION_MUL___': '[' + ', '.join(
+                    'convert(%s, uint256)' % i for i in PRECISIONS) + ']',
             })
     return deposit_contract
 
