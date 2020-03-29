@@ -88,16 +88,24 @@ def remove_liquidity(_amount: uint256, min_uamounts: uint256[N_COINS]):
             ok: uint256 = cERC20(_coin).redeem(cERC20(_coin).balanceOf(self))
             if ok > 0:
                 raise "Could not redeem coin"
+
         _ucoin: address = self.underlying_coins[i]
+        _uamount: uint256 = ERC20(_ucoin).balanceOf(self)
+        assert _uamount >= min_uamounts[i], "Not enough coins withdrawn"
+
         if tethered[i]:
-            USDT(_ucoin).transfer(msg.sender, ERC20(_ucoin).balanceOf(self))
+            USDT(_ucoin).transfer(msg.sender, _uamount)
         else:
-            assert_modifiable(ERC20(_ucoin)\
-                .transfer(msg.sender, ERC20(_ucoin).balanceOf(self)))
+            assert_modifiable(ERC20(_ucoin).transfer(msg.sender, _uamount))
 
 
 
 @public
 @nonreentrant('lock')
 def remove_liquidity_imbalance(uamounts: uint256[N_COINS], max_burn_amount: uint256):
-    pass
+    """
+    Get max_burn_amount in, remove requested liquidity and transfer back what is left
+    """
+    zeros: uint256[N_COINS] = ZEROS
+    use_lending: bool[N_COINS] = USE_LENDING
+    tethered: bool[N_COINS] = TETHERED
