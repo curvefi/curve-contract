@@ -81,25 +81,26 @@ def add_liquidity(uamounts: uint256[N_COINS], min_mint_amount: uint256):
 
 
 @private
-def _send_all(_addr: address, min_uamounts: uint256[N_COINS]):
+def _send_all(_addr: address, min_uamounts: uint256[N_COINS], one: int128):
     use_lending: bool[N_COINS] = USE_LENDING
     tethered: bool[N_COINS] = TETHERED
 
     for i in range(N_COINS):
-        if use_lending[i]:
-            _coin: address = self.coins[i]
-            ok: uint256 = cERC20(_coin).redeem(cERC20(_coin).balanceOf(self))
-            if ok > 0:
-                raise "Could not redeem coin"
+        if (one < 0) or (i == one):
+            if use_lending[i]:
+                _coin: address = self.coins[i]
+                ok: uint256 = cERC20(_coin).redeem(cERC20(_coin).balanceOf(self))
+                if ok > 0:
+                    raise "Could not redeem coin"
 
-        _ucoin: address = self.underlying_coins[i]
-        _uamount: uint256 = ERC20(_ucoin).balanceOf(self)
-        assert _uamount >= min_uamounts[i], "Not enough coins withdrawn"
+            _ucoin: address = self.underlying_coins[i]
+            _uamount: uint256 = ERC20(_ucoin).balanceOf(self)
+            assert _uamount >= min_uamounts[i], "Not enough coins withdrawn"
 
-        if tethered[i]:
-            USDT(_ucoin).transfer(_addr, _uamount)
-        else:
-            assert_modifiable(ERC20(_ucoin).transfer(_addr, _uamount))
+            if tethered[i]:
+                USDT(_ucoin).transfer(_addr, _uamount)
+            else:
+                assert_modifiable(ERC20(_ucoin).transfer(_addr, _uamount))
 
 
 @public
@@ -110,7 +111,7 @@ def remove_liquidity(_amount: uint256, min_uamounts: uint256[N_COINS]):
     assert_modifiable(ERC20(self.token).transferFrom(msg.sender, self, _amount))
     Curve(self.curve).remove_liquidity(_amount, zeros)
 
-    self._send_all(msg.sender, min_uamounts)
+    self._send_all(msg.sender, min_uamounts, -1)
 
 
 @public
@@ -143,7 +144,7 @@ def remove_liquidity_imbalance(uamounts: uint256[N_COINS], max_burn_amount: uint
     assert_modifiable(ERC20(_token).transfer(msg.sender, _tokens))
 
     # Unwrap and transfer all the coins we've got
-    self._send_all(msg.sender, ZEROS)
+    self._send_all(msg.sender, ZEROS, -1)
 
 
 @private
@@ -284,8 +285,8 @@ def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_uamount: ui
     Remove _amount of liquidity all in a form of coin i
     """
     use_lending: bool[N_COINS] = USE_LENDING
-    tethered: bool[N_COINS] = TETHERED
     rates: uint256[N_COINS] = ZEROS
+    _token: address = self.token
 
     for j in range(N_COINS):
         if use_lending[j]:
@@ -294,3 +295,19 @@ def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_uamount: ui
             rates[j] = 10 ** 18
 
     dy: uint256 = self._calc_withdraw_one_coin(_token_amount, i, rates)
+    assert dy >= min_uamount, "Not enough coins removed"
+
+    assert_modifiable(
+        ERC20(self.token).transferFrom(msg.sender, self, _token_amount))
+
+    amounts: uint256[N_COINS] = ZEROS
+    amounts[i] = dy * LENDING_PRECISION / rates[i]
+    Curve(self.curve).remove_liquidity_imbalance(amounts, _token_amount)
+
+    # Unwrap and transfer all the coins we've got
+    self._send_all(msg.sender, ZEROS, i)
+
+    # Transfer unused tokens back
+    assert_modifiable(ERC20(_token).transfer(
+        msg.sender, ERC20(_token).balanceOf(self))
+    )
