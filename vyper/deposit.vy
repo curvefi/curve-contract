@@ -228,32 +228,26 @@ def get_y(A: uint256, i: int128, _xp: uint256[N_COINS], D: uint256) -> uint256:
     return y
 
 
-@public
-@nonreentrant('lock')
-def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_uamount: uint256):
-    """
-    Remove _amount of liquidity all in a form of coin i
-    """
+@private
+@constant
+def _calc_withdraw_one_coin(_token_amount: uint256, i: int128, rates: uint256[N_COINS]) -> uint256:
     # First, need to calculate
     # * Get current D
     # * Solve Eqn against y_i for D - _token_amount
     use_lending: bool[N_COINS] = USE_LENDING
-    tethered: bool[N_COINS] = TETHERED
-    rates: uint256[N_COINS] = ZEROS
+    # tethered: bool[N_COINS] = TETHERED
     crv: address = self.curve
     A: uint256 = Curve(crv).A()
-    fee: uint256 = Curve(crv).fee()* N_COINS / (2 * (N_COINS - 1))
+    fee: uint256 = Curve(crv).fee() * N_COINS / (2 * (N_COINS - 1))
+    precisions: uint256[N_COINS] = PRECISION_MUL
 
     xp: uint256[N_COINS] = PRECISION_MUL
     S: uint256 = 0
     for j in range(N_COINS):
         xp[j] *= Curve(crv).balances(j)
         if use_lending[j]:
-            rate: uint256 = cERC20(self.coins[j]).exchangeRateCurrent()
-            xp[j] = xp[j] * rate / LENDING_PRECISION
-            rates[j] = rate
-        else:
-            rates[j] = LENDING_PRECISION
+            # Use stored rate b/c we have imprecision anyway
+            xp[j] = xp[j] * rates[j] / LENDING_PRECISION
         S += xp[j]
         # if not use_lending - all good already
     fee -= fee * xp[i] / S  # Not the case if too much off the peg
@@ -261,7 +255,42 @@ def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_uamount: ui
 
     D0: uint256 = self.get_D(A, xp)
     D1: uint256 = D0 - _token_amount
-    y: uint256 = self.get_y(A, i, xp, D1)
+    dy: uint256 = xp[i] - self.get_y(A, i, xp, D1)
+    dy = dy - dy * fee / FEE_DENOMINATOR
+    dy /= precisions[i]
+
+    return dy
+
+
+@public
+@constant
+def calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> uint256:
+    rates: uint256[N_COINS] = ZEROS
+    use_lending: bool[N_COINS] = USE_LENDING
+
     for j in range(N_COINS):
-        # Symmetric withdrawal
-        xp[j] = xp[j] * D1 / D0
+        if use_lending[j]:
+            rates[j] = cERC20(self.coins[j]).exchangeRateStored()
+        else:
+            rates[j] = 10 ** 18
+
+    return self._calc_withdraw_one_coin(_token_amount, i, rates)
+
+
+@public
+@nonreentrant('lock')
+def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_uamount: uint256):
+    """
+    Remove _amount of liquidity all in a form of coin i
+    """
+    use_lending: bool[N_COINS] = USE_LENDING
+    tethered: bool[N_COINS] = TETHERED
+    rates: uint256[N_COINS] = ZEROS
+
+    for j in range(N_COINS):
+        if use_lending[j]:
+            rates[j] = cERC20(self.coins[j]).exchangeRateCurrent()
+        else:
+            rates[j] = 10 ** 18
+
+    dy: uint256 = self._calc_withdraw_one_coin(_token_amount, i, rates)
