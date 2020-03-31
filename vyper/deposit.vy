@@ -26,6 +26,8 @@ ZEROS: constant(uint256[N_COINS]) = ___N_ZEROS___  # <- change
 LENDING_PRECISION: constant(uint256) = 10 ** 18
 PRECISION: constant(uint256) = 10 ** 18
 PRECISION_MUL: constant(uint256[N_COINS]) = ___PRECISION_MUL___
+FEE_DENOMINATOR: constant(uint256) = 10 ** 10
+FEE_IMPRECISION: constant(uint256) = 10 ** 6  # 0.01%
 
 coins: public(address[N_COINS])
 underlying_coins: public(address[N_COINS])
@@ -237,16 +239,25 @@ def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_uamount: ui
     # * Solve Eqn against y_i for D - _token_amount
     use_lending: bool[N_COINS] = USE_LENDING
     tethered: bool[N_COINS] = TETHERED
+    rates: uint256[N_COINS] = ZEROS
     crv: address = self.curve
     A: uint256 = Curve(crv).A()
+    fee: uint256 = Curve(crv).fee()* N_COINS / (2 * (N_COINS - 1))
 
     xp: uint256[N_COINS] = PRECISION_MUL
+    S: uint256 = 0
     for j in range(N_COINS):
         xp[j] *= Curve(crv).balances(j)
         if use_lending[j]:
             rate: uint256 = cERC20(self.coins[j]).exchangeRateCurrent()
             xp[j] = xp[j] * rate / LENDING_PRECISION
+            rates[j] = rate
+        else:
+            rates[j] = LENDING_PRECISION
+        S += xp[j]
         # if not use_lending - all good already
+    fee -= fee * xp[i] / S  # Not the case if too much off the peg
+    fee += fee * FEE_IMPRECISION / FEE_DENOMINATOR  # Overcharge to account for imprecision
 
     D0: uint256 = self.get_D(A, xp)
     D1: uint256 = D0 - _token_amount
