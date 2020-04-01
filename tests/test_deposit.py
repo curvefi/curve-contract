@@ -49,6 +49,7 @@ def test_add_liquidity(w3, coins, cerc20s, swap, deposit, pool_token):
     # Remove liquidity
     token_before = pool_token.caller.balanceOf(sam)
     ubalances = [swap.caller.balances(i) * r // 10 ** 18 for i, r in enumerate(rates)]
+    sam_balances = [c.caller.balanceOf(sam) for c in coins]
     pool_token.functions.approve(deposit.address, token_before).transact(from_sam)
     with pytest.raises(TransactionFailed):
         deposit.functions.remove_liquidity(
@@ -60,5 +61,6 @@ def test_add_liquidity(w3, coins, cerc20s, swap, deposit, pool_token):
     token_after = pool_token.caller.balanceOf(sam)
     ubalances_after = [swap.caller.balances(i) * r // 10 ** 18 for i, r in enumerate(rates)]
     assert approx(token_after / token_before, 0.9)
-    for u1, u0 in zip(ubalances_after, ubalances):
+    for c, u1, u0, oldbal in zip(coins, ubalances_after, ubalances, sam_balances):
         assert approx(u1 / u0, 0.9, 1e-7)
+        assert abs((c.caller.balanceOf(sam) - oldbal) - (u0 - u1)) <= 1
