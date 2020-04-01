@@ -128,7 +128,7 @@ def remove_liquidity_imbalance(uamounts: uint256[N_COINS], max_burn_amount: uint
     for i in range(N_COINS):
         if use_lending[i]:
             rate: uint256 = cERC20(self.coins[i]).exchangeRateCurrent()
-            amounts[i] = amounts[i] * rate / LENDING_PRECISION
+            amounts[i] = amounts[i] * LENDING_PRECISION / rate
         # if not use_lending - all good already
 
     # Transfrer max tokens in
