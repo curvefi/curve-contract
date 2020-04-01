@@ -69,8 +69,17 @@ def test_add_liquidity(w3, coins, cerc20s, swap, deposit, pool_token):
     to_withdraw = [u0 - u1 for u0, u1 in zip(ubalances, ubalances_after)]
     # to_withdraw is 1/9 of what is left
     expected_dtoken = token_before - token_after
+    token_before = token_after
+    ubalances = ubalances_after
     with pytest.raises(TransactionFailed):
         deposit.functions.remove_liquidity_imbalance(
                 to_withdraw, int(0.999 * expected_dtoken)).transact(from_sam)
     deposit.functions.remove_liquidity_imbalance(
             to_withdraw, int(1.01 * expected_dtoken)).transact(from_sam)
+    token_after = pool_token.caller.balanceOf(sam)
+    ubalances_after = [swap.caller.balances(i) * r // 10 ** 18 for i, r in enumerate(rates)]
+    assert approx(token_after / token_before, 8 / 9)
+    assert pool_token.caller.balanceOf(deposit.address) == 0
+    for c, u1, u0, oldbal in zip(coins, ubalances_after, ubalances, sam_balances):
+        assert approx(u1 / u0, 8 / 9, 1e-7)
+        assert abs((c.caller.balanceOf(sam) - oldbal) // 2 - (u0 - u1)) <= 1
