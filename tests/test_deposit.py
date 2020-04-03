@@ -132,7 +132,7 @@ def test_withdraw_one_coin(w3, coins, cerc20s, swap, deposit, pool_token):
         amount_after = coins[ii].caller.balanceOf(sam)
         token_after = pool_token.caller.balanceOf(sam)
 
-        assert approx(amount_after - amount_before, amount, 4e-4)
+        assert approx(amount_after - amount_before, amount, max(4e-4, 100 / amount))
         amount_imprecisions.append(abs(1 - (amount_after - amount_before) / amount))
         assert token_before - token_after < dtoken
         token_imprecisions.append(abs(1 - (token_before - token_after) / dtoken))
