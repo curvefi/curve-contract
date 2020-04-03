@@ -4,7 +4,7 @@ from random import randrange
 from .conftest import UU, use_lending, N_COINS, approx
 
 
-def test_add_liquidity(w3, coins, cerc20s, swap, deposit, pool_token):
+def test_add_remove_liquidity(w3, coins, cerc20s, swap, deposit, pool_token):
     sam = w3.eth.accounts[0]  # Sam owns the bank
     from_sam = {'from': sam}
     rates = [c.caller.exchangeRateStored() if l else 10 ** 18 for c, l in
@@ -83,3 +83,62 @@ def test_add_liquidity(w3, coins, cerc20s, swap, deposit, pool_token):
     for c, u1, u0, oldbal in zip(coins, ubalances_after, ubalances, sam_balances):
         assert approx(u1 / u0, 8 / 9, 1e-7)
         assert abs((c.caller.balanceOf(sam) - oldbal) // 2 - (u0 - u1)) <= 1
+
+
+def test_withdraw_one_coin(w3, coins, cerc20s, swap, deposit, pool_token):
+    for _run in range(25):
+        sam = w3.eth.accounts[0]  # Sam owns the bank
+        from_sam = {'from': sam}
+        amounts = [randrange(1000 * u) + 1 for u in UU]
+
+        # First, deposit, measure amounts and withdraw everything
+        for c, a in zip(coins, amounts):
+            c.functions.approve(deposit.address, a).transact(from_sam)
+        deposit.functions.add_liquidity(amounts, 0).transact(from_sam)
+
+        ii = randrange(N_COINS)
+        amount = randrange(1, amounts[ii])
+        amounts_to_remove = [0] * N_COINS
+        amounts_to_remove[ii] = amount
+
+        token_before = pool_token.caller.balanceOf(sam)
+
+        pool_token.functions.approve(deposit.address, token_before).transact(from_sam)
+        deposit.functions.remove_liquidity_imbalance(
+                amounts_to_remove, token_before
+                ).transact(from_sam)
+        token_after = pool_token.caller.balanceOf(sam)
+        dtoken = token_before - token_after
+
+        pool_token.functions.approve(deposit.address, token_after).transact(from_sam)
+        deposit.functions.remove_liquidity(token_after, [0] * N_COINS).transact(from_sam)
+
+        # Now withdraw just one coin
+        # Deposit exactly the same amounts
+        for c, a in zip(coins, amounts):
+            c.functions.approve(deposit.address, a).transact(from_sam)
+        deposit.functions.add_liquidity(amounts, 0).transact(from_sam)
+
+        pool_token.functions.approve(deposit.address, token_after).transact(from_sam)
+        calc_amount = deposit.caller.calc_withdraw_one_coin(dtoken, ii)
+
+        token_before = pool_token.caller.balanceOf(sam)
+        amount_before = coins[ii].caller.balanceOf(sam)
+        with pytest.raises(TransactionFailed):
+            deposit.functions.remove_liquidity_one_coin(dtoken, ii, int(1.001 * calc_amount)).transact(from_sam)
+        deposit.functions.remove_liquidity_one_coin(dtoken, ii, int(0.999 * calc_amount)).transact(from_sam)
+        amount_after = coins[ii].caller.balanceOf(sam)
+        token_after = pool_token.caller.balanceOf(sam)
+
+        assert approx(token_before - token_after, dtoken, 2e-4)
+        assert approx(amount_after - amount_before, amount, 2e-4)
+
+        # Withdraw all back
+        pool_token.functions.approve(deposit.address, 0).transact(from_sam)
+        pool_token.functions.approve(deposit.address, token_after).transact(from_sam)
+        deposit.functions.remove_liquidity(token_after, [0] * N_COINS).transact(from_sam)
+
+        # Reset approvals
+        for c in coins:
+            c.functions.approve(deposit.address, 0).transact(from_sam)
+        pool_token.functions.approve(deposit.address, 0).transact(from_sam)
