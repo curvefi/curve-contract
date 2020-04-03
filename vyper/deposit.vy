@@ -27,7 +27,7 @@ LENDING_PRECISION: constant(uint256) = 10 ** 18
 PRECISION: constant(uint256) = 10 ** 18
 PRECISION_MUL: constant(uint256[N_COINS]) = ___PRECISION_MUL___
 FEE_DENOMINATOR: constant(uint256) = 10 ** 10
-FEE_IMPRECISION: constant(uint256) = 10 ** 6  # 0.01%
+FEE_IMPRECISION: constant(uint256) = 5 * 10 ** 5  # 0.005%
 
 coins: public(address[N_COINS])
 underlying_coins: public(address[N_COINS])
@@ -252,7 +252,7 @@ def _calc_withdraw_one_coin(_token_amount: uint256, i: int128, rates: uint256[N_
         S += xp[j]
         # if not use_lending - all good already
     fee -= fee * xp[i] / S  # Not the case if too much off the peg
-    fee += fee * FEE_IMPRECISION / FEE_DENOMINATOR  # Overcharge to account for imprecision
+    fee += FEE_IMPRECISION  # Overcharge to account for imprecision
 
     D0: uint256 = self.get_D(A, xp)
     D1: uint256 = D0 - _token_amount
@@ -292,7 +292,7 @@ def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_uamount: ui
         if use_lending[j]:
             rates[j] = cERC20(self.coins[j]).exchangeRateCurrent()
         else:
-            rates[j] = 10 ** 18
+            rates[j] = LENDING_PRECISION
 
     dy: uint256 = self._calc_withdraw_one_coin(_token_amount, i, rates)
     assert dy >= min_uamount, "Not enough coins removed"
