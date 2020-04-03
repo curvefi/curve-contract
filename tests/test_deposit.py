@@ -118,19 +118,22 @@ def test_withdraw_one_coin(w3, coins, cerc20s, swap, deposit, pool_token):
         for c, a in zip(coins, amounts):
             c.functions.approve(deposit.address, a).transact(from_sam)
         deposit.functions.add_liquidity(amounts, 0).transact(from_sam)
+        token_before = pool_token.caller.balanceOf(sam)
+        pool_token.functions.approve(deposit.address, token_before).transact(from_sam)
 
-        pool_token.functions.approve(deposit.address, token_after).transact(from_sam)
         calc_amount = deposit.caller.calc_withdraw_one_coin(dtoken, ii)
 
-        token_before = pool_token.caller.balanceOf(sam)
         amount_before = coins[ii].caller.balanceOf(sam)
         with pytest.raises(TransactionFailed):
             deposit.functions.remove_liquidity_one_coin(dtoken, ii, int(1.001 * calc_amount)).transact(from_sam)
-        deposit.functions.remove_liquidity_one_coin(dtoken, ii, int(0.999 * calc_amount)).transact(from_sam)
+        try:
+            deposit.functions.remove_liquidity_one_coin(dtoken, ii, int(0.999 * calc_amount)).transact(from_sam)
+        except Exception:
+            raise Exception
         amount_after = coins[ii].caller.balanceOf(sam)
         token_after = pool_token.caller.balanceOf(sam)
 
-        assert approx(token_before - token_after, dtoken, 2e-4)
+        assert approx(token_before - token_after, dtoken, 3e-4)
         assert approx(amount_after - amount_before, amount, 2e-4)
 
         # Withdraw all back
