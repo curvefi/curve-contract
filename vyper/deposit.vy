@@ -1,6 +1,6 @@
 # A "zap" to deposit/withdraw Curve contract without too many transactions
 from vyper.interfaces import ERC20
-import cERC20 as cERC20
+import yERC20 as yERC20
 
 
 # Tether transfer-only ABI
@@ -62,10 +62,8 @@ def add_liquidity(uamounts: uint256[N_COINS], min_mint_amount: uint256):
 
         # Mint if needed
         ERC20(self.underlying_coins[i]).approve(self.coins[i], uamount)
-        ok: uint256 = cERC20(self.coins[i]).mint(uamount)
-        if ok > 0:
-            raise "Could not mint coin"
-        amounts[i] = cERC20(self.coins[i]).balanceOf(self)
+        yERC20(self.coins[i]).deposit(uamount)
+        amounts[i] = yERC20(self.coins[i]).balanceOf(self)
         ERC20(self.coins[i]).approve(self.curve, amounts[i])
 
     Curve(self.curve).add_liquidity(amounts, min_mint_amount)
@@ -81,9 +79,7 @@ def _send_all(_addr: address, min_uamounts: uint256[N_COINS], one: int128):
     for i in range(N_COINS):
         if (one < 0) or (i == one):
             _coin: address = self.coins[i]
-            ok: uint256 = cERC20(_coin).redeem(cERC20(_coin).balanceOf(self))
-            if ok > 0:
-                raise "Could not redeem coin"
+            yERC20(_coin).withdraw(yERC20(_coin).balanceOf(self))
 
             _ucoin: address = self.underlying_coins[i]
             _uamount: uint256 = ERC20(_ucoin).balanceOf(self)
@@ -117,7 +113,7 @@ def remove_liquidity_imbalance(uamounts: uint256[N_COINS], max_burn_amount: uint
 
     amounts: uint256[N_COINS] = uamounts
     for i in range(N_COINS):
-        rate: uint256 = cERC20(self.coins[i]).exchangeRateCurrent()
+        rate: uint256 = yERC20(self.coins[i]).getPricePerFullShare()
         amounts[i] = amounts[i] * LENDING_PRECISION / rate
 
     # Transfrer max tokens in
@@ -253,7 +249,7 @@ def calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> uint256:
     rates: uint256[N_COINS] = ZEROS
 
     for j in range(N_COINS):
-        rates[j] = cERC20(self.coins[j]).exchangeRateStored()
+        rates[j] = yERC20(self.coins[j]).getPricePerFullShare()
 
     return self._calc_withdraw_one_coin(_token_amount, i, rates)
 
@@ -268,7 +264,7 @@ def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_uamount: ui
     _token: address = self.token
 
     for j in range(N_COINS):
-        rates[j] = cERC20(self.coins[j]).exchangeRateCurrent()
+        rates[j] = yERC20(self.coins[j]).getPricePerFullShare()
 
     dy: uint256 = self._calc_withdraw_one_coin(_token_amount, i, rates)
     assert dy >= min_uamount, "Not enough coins removed"
