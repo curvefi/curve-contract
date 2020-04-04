@@ -79,10 +79,10 @@ def swap(w3, coins, yerc20s, pool_token):
 
 
 @pytest.fixture(scope='function')
-def deposit(w3, coins, cerc20s, pool_token, swap):
+def deposit(w3, coins, yerc20s, pool_token, swap):
     deposit_contract = deploy_contract(
             w3, ['deposit.vy', 'cERC20.vy'], w3.eth.accounts[1],
-            [c.address for c in cerc20s], [c.address for c in coins],
+            [c.address for c in yerc20s], [c.address for c in coins],
             swap.address, pool_token.address,
             replacements={
                 '___N_COINS___': str(N_COINS),

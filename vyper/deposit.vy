@@ -20,7 +20,6 @@ contract Curve:
 
 N_COINS: constant(int128) = ___N_COINS___
 TETHERED: constant(bool[N_COINS]) = ___TETHERED___
-USE_LENDING: constant(bool[N_COINS]) = ___USE_LENDING___
 ZERO256: constant(uint256) = 0  # This hack is really bad XXX
 ZEROS: constant(uint256[N_COINS]) = ___N_ZEROS___  # <- change
 LENDING_PRECISION: constant(uint256) = 10 ** 18
@@ -47,7 +46,6 @@ def __init__(_coins: address[N_COINS], _underlying_coins: address[N_COINS],
 @public
 @nonreentrant('lock')
 def add_liquidity(uamounts: uint256[N_COINS], min_mint_amount: uint256):
-    use_lending: bool[N_COINS] = USE_LENDING
     tethered: bool[N_COINS] = TETHERED
     amounts: uint256[N_COINS] = ZEROS
 
@@ -63,16 +61,12 @@ def add_liquidity(uamounts: uint256[N_COINS], min_mint_amount: uint256):
                 .transferFrom(msg.sender, self, uamount))
 
         # Mint if needed
-        if use_lending[i]:
-            ERC20(self.underlying_coins[i]).approve(self.coins[i], uamount)
-            ok: uint256 = cERC20(self.coins[i]).mint(uamount)
-            if ok > 0:
-                raise "Could not mint coin"
-            amounts[i] = cERC20(self.coins[i]).balanceOf(self)
-            ERC20(self.coins[i]).approve(self.curve, amounts[i])
-        else:
-            amounts[i] = uamount
-            ERC20(self.underlying_coins[i]).approve(self.curve, uamount)
+        ERC20(self.underlying_coins[i]).approve(self.coins[i], uamount)
+        ok: uint256 = cERC20(self.coins[i]).mint(uamount)
+        if ok > 0:
+            raise "Could not mint coin"
+        amounts[i] = cERC20(self.coins[i]).balanceOf(self)
+        ERC20(self.coins[i]).approve(self.curve, amounts[i])
 
     Curve(self.curve).add_liquidity(amounts, min_mint_amount)
 
@@ -82,16 +76,14 @@ def add_liquidity(uamounts: uint256[N_COINS], min_mint_amount: uint256):
 
 @private
 def _send_all(_addr: address, min_uamounts: uint256[N_COINS], one: int128):
-    use_lending: bool[N_COINS] = USE_LENDING
     tethered: bool[N_COINS] = TETHERED
 
     for i in range(N_COINS):
         if (one < 0) or (i == one):
-            if use_lending[i]:
-                _coin: address = self.coins[i]
-                ok: uint256 = cERC20(_coin).redeem(cERC20(_coin).balanceOf(self))
-                if ok > 0:
-                    raise "Could not redeem coin"
+            _coin: address = self.coins[i]
+            ok: uint256 = cERC20(_coin).redeem(cERC20(_coin).balanceOf(self))
+            if ok > 0:
+                raise "Could not redeem coin"
 
             _ucoin: address = self.underlying_coins[i]
             _uamount: uint256 = ERC20(_ucoin).balanceOf(self)
@@ -120,16 +112,13 @@ def remove_liquidity_imbalance(uamounts: uint256[N_COINS], max_burn_amount: uint
     """
     Get max_burn_amount in, remove requested liquidity and transfer back what is left
     """
-    use_lending: bool[N_COINS] = USE_LENDING
     tethered: bool[N_COINS] = TETHERED
     _token: address = self.token
 
     amounts: uint256[N_COINS] = uamounts
     for i in range(N_COINS):
-        if use_lending[i]:
-            rate: uint256 = cERC20(self.coins[i]).exchangeRateCurrent()
-            amounts[i] = amounts[i] * LENDING_PRECISION / rate
-        # if not use_lending - all good already
+        rate: uint256 = cERC20(self.coins[i]).exchangeRateCurrent()
+        amounts[i] = amounts[i] * LENDING_PRECISION / rate
 
     # Transfrer max tokens in
     _tokens: uint256 = ERC20(_token).balanceOf(msg.sender)
@@ -235,8 +224,6 @@ def _calc_withdraw_one_coin(_token_amount: uint256, i: int128, rates: uint256[N_
     # First, need to calculate
     # * Get current D
     # * Solve Eqn against y_i for D - _token_amount
-    use_lending: bool[N_COINS] = USE_LENDING
-    # tethered: bool[N_COINS] = TETHERED
     crv: address = self.curve
     A: uint256 = Curve(crv).A()
     fee: uint256 = Curve(crv).fee() * N_COINS / (2 * (N_COINS - 1))
@@ -246,11 +233,8 @@ def _calc_withdraw_one_coin(_token_amount: uint256, i: int128, rates: uint256[N_
     S: uint256 = 0
     for j in range(N_COINS):
         xp[j] *= Curve(crv).balances(j)
-        if use_lending[j]:
-            # Use stored rate b/c we have imprecision anyway
-            xp[j] = xp[j] * rates[j] / LENDING_PRECISION
+        xp[j] = xp[j] * rates[j] / LENDING_PRECISION
         S += xp[j]
-        # if not use_lending - all good already
     fee -= fee * xp[i] / S  # Not the case if too much off the peg
     fee += FEE_IMPRECISION  # Overcharge to account for imprecision
 
@@ -267,13 +251,9 @@ def _calc_withdraw_one_coin(_token_amount: uint256, i: int128, rates: uint256[N_
 @constant
 def calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> uint256:
     rates: uint256[N_COINS] = ZEROS
-    use_lending: bool[N_COINS] = USE_LENDING
 
     for j in range(N_COINS):
-        if use_lending[j]:
-            rates[j] = cERC20(self.coins[j]).exchangeRateStored()
-        else:
-            rates[j] = 10 ** 18
+        rates[j] = cERC20(self.coins[j]).exchangeRateStored()
 
     return self._calc_withdraw_one_coin(_token_amount, i, rates)
 
@@ -284,15 +264,11 @@ def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_uamount: ui
     """
     Remove _amount of liquidity all in a form of coin i
     """
-    use_lending: bool[N_COINS] = USE_LENDING
     rates: uint256[N_COINS] = ZEROS
     _token: address = self.token
 
     for j in range(N_COINS):
-        if use_lending[j]:
-            rates[j] = cERC20(self.coins[j]).exchangeRateCurrent()
-        else:
-            rates[j] = LENDING_PRECISION
+        rates[j] = cERC20(self.coins[j]).exchangeRateCurrent()
 
     dy: uint256 = self._calc_withdraw_one_coin(_token_amount, i, rates)
     assert dy >= min_uamount, "Not enough coins removed"

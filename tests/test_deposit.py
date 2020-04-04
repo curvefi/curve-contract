@@ -1,14 +1,13 @@
 import pytest
 from eth_tester.exceptions import TransactionFailed
 from random import randrange
-from .conftest import UU, use_lending, N_COINS, approx
+from .conftest import UU, N_COINS, approx
 
 
-def test_add_remove_liquidity(w3, coins, cerc20s, swap, deposit, pool_token):
+def test_add_remove_liquidity(w3, coins, yerc20s, swap, deposit, pool_token):
     sam = w3.eth.accounts[0]  # Sam owns the bank
     from_sam = {'from': sam}
-    rates = [c.caller.exchangeRateStored() if l else 10 ** 18 for c, l in
-             zip(cerc20s, use_lending)]
+    rates = [c.caller.exchangeRateStored() for c in yerc20s]
 
     def to_compounded(amounts):
         return [a * 10 ** 18 // r for a, r in zip(amounts, rates)]
@@ -85,7 +84,7 @@ def test_add_remove_liquidity(w3, coins, cerc20s, swap, deposit, pool_token):
         assert abs((c.caller.balanceOf(sam) - oldbal) // 2 - (u0 - u1)) <= 1
 
 
-def test_withdraw_one_coin(w3, coins, cerc20s, swap, deposit, pool_token):
+def test_withdraw_one_coin(w3, coins, yerc20s, swap, deposit, pool_token):
     amount_imprecisions = []
     token_imprecisions = []
     for _run in range(25):
