@@ -7,7 +7,7 @@ from .conftest import UU, N_COINS, approx
 def test_add_remove_liquidity(w3, coins, yerc20s, swap, deposit, pool_token):
     sam = w3.eth.accounts[0]  # Sam owns the bank
     from_sam = {'from': sam}
-    rates = [c.caller.exchangeRateStored() for c in yerc20s]
+    rates = [c.caller.getPricePerFullShare() for c in yerc20s]
 
     def to_compounded(amounts):
         return [a * 10 ** 18 // r for a, r in zip(amounts, rates)]
@@ -37,12 +37,12 @@ def test_add_remove_liquidity(w3, coins, yerc20s, swap, deposit, pool_token):
 
     # Add random amounts many times
     for i in range(5):
-        amounts = [randrange(1000 * u) + 1 for u in UU]
+        amounts = [randrange(u, 1000 * u) + 1 for u in UU]
         add_and_test(amounts)
 
         coin = randrange(N_COINS)
         amounts = [0] * N_COINS
-        amounts[coin] = randrange(1000 * UU[coin]) + 1
+        amounts[coin] = randrange(UU[coin], 1000 * UU[coin]) + 1
         add_and_test(amounts)
 
     # Remove liquidity
@@ -59,7 +59,7 @@ def test_add_remove_liquidity(w3, coins, yerc20s, swap, deposit, pool_token):
             ).transact(from_sam)
     token_after = pool_token.caller.balanceOf(sam)
     ubalances_after = [swap.caller.balances(i) * r // 10 ** 18 for i, r in enumerate(rates)]
-    assert approx(token_after / token_before, 0.9)
+    assert approx(token_after / token_before, 0.9, 1e-7)
     for c, u1, u0, oldbal in zip(coins, ubalances_after, ubalances, sam_balances):
         assert approx(u1 / u0, 0.9, 1e-7)
         assert abs((c.caller.balanceOf(sam) - oldbal) - (u0 - u1)) <= 1
@@ -77,7 +77,7 @@ def test_add_remove_liquidity(w3, coins, yerc20s, swap, deposit, pool_token):
             to_withdraw, int(1.01 * expected_dtoken)).transact(from_sam)
     token_after = pool_token.caller.balanceOf(sam)
     ubalances_after = [swap.caller.balances(i) * r // 10 ** 18 for i, r in enumerate(rates)]
-    assert approx(token_after / token_before, 8 / 9)
+    assert approx(token_after / token_before, 8 / 9, 1e-7)
     assert pool_token.caller.balanceOf(deposit.address) == 0
     for c, u1, u0, oldbal in zip(coins, ubalances_after, ubalances, sam_balances):
         assert approx(u1 / u0, 8 / 9, 1e-7)
@@ -90,7 +90,7 @@ def test_withdraw_one_coin(w3, coins, yerc20s, swap, deposit, pool_token):
     for _run in range(25):
         sam = w3.eth.accounts[0]  # Sam owns the bank
         from_sam = {'from': sam}
-        amounts = [randrange(1000 * u) + 1 for u in UU]
+        amounts = [randrange(u, 1000 * u) + 1 for u in UU]
 
         # First, deposit, measure amounts and withdraw everything
         for c, a in zip(coins, amounts):
@@ -98,7 +98,7 @@ def test_withdraw_one_coin(w3, coins, yerc20s, swap, deposit, pool_token):
         deposit.functions.add_liquidity(amounts, 0).transact(from_sam)
 
         ii = randrange(N_COINS)
-        amount = randrange(1, amounts[ii])
+        amount = randrange(UU[ii], amounts[ii])
         amounts_to_remove = [0] * N_COINS
         amounts_to_remove[ii] = amount
 
