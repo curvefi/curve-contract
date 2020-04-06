@@ -89,6 +89,8 @@ def test_withdraw_one_coin(w3, coins, cerc20s, swap, deposit, pool_token):
     amount_imprecisions = []
     token_imprecisions = []
     for _run in range(25):
+        print(_run)
+
         sam = w3.eth.accounts[0]  # Sam owns the bank
         from_sam = {'from': sam}
         amounts = [randrange(100000 * u, 1000000 * u) for u in UU]
@@ -128,13 +130,17 @@ def test_withdraw_one_coin(w3, coins, cerc20s, swap, deposit, pool_token):
         amount_before = coins[ii].caller.balanceOf(sam)
         with pytest.raises(TransactionFailed):
             deposit.functions.remove_liquidity_one_coin(dtoken, ii, int(1.001 * calc_amount)).transact(from_sam)
-        deposit.functions.remove_liquidity_one_coin(dtoken, ii, int(0.999 * calc_amount)).transact(from_sam)
+        if random() < 0.5:
+            donate_dust = []
+        else:
+            donate_dust = [True]
+        deposit.functions.remove_liquidity_one_coin(dtoken, ii, int(0.999 * calc_amount), *donate_dust).transact(from_sam)
         amount_after = coins[ii].caller.balanceOf(sam)
         token_after = pool_token.caller.balanceOf(sam)
 
         assert approx(amount_after - amount_before, amount, 25e-4)
         amount_imprecisions.append(abs(1 - (amount_after - amount_before) / amount))
-        assert token_before - token_after < dtoken
+        assert token_before - token_after <= dtoken
         assert approx(token_before - token_after, dtoken, 25e-4)
         token_imprecisions.append(abs(1 - (token_before - token_after) / dtoken))
 

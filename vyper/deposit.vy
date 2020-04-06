@@ -16,6 +16,7 @@ contract Curve:
     def balances(i: int128) -> uint256: constant
     def A() -> uint256: constant
     def fee() -> uint256: constant
+    def owner() -> address: constant
 
 
 N_COINS: constant(int128) = ___N_COINS___
@@ -255,8 +256,7 @@ def _calc_withdraw_one_coin(_token_amount: uint256, i: int128, rates: uint256[N_
         # if not use_lending - all good already
 
     D0: uint256 = self.get_D(A, xp)
-    dD: uint256 = _token_amount * D0 / total_supply
-    D1: uint256 = D0 - dD
+    D1: uint256 = D0 - _token_amount * D0 / total_supply
     xp_reduced: uint256[N_COINS] = xp
 
     # xp = xp - fee * | xp * D1 / D0 - (xp - S * dD / D0 * (0, ... 1, ..0))|
@@ -265,7 +265,7 @@ def _calc_withdraw_one_coin(_token_amount: uint256, i: int128, rates: uint256[N_
         b_ideal: uint256 = xp[j] * D1 / D0
         b_expected: uint256 = xp[j]
         if j == i:
-            b_expected -= S * dD / D0
+            b_expected -= S * (D0 - D1) / D0
         if b_ideal >= b_expected:
             dx_expected += (b_ideal - b_expected)
         else:
@@ -295,7 +295,7 @@ def calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> uint256:
 
 @public
 @nonreentrant('lock')
-def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_uamount: uint256):
+def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_uamount: uint256, donate_dust: bool = False):
     """
     Remove _amount of liquidity all in a form of coin i
     """
@@ -322,7 +322,14 @@ def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_uamount: ui
     # Unwrap and transfer all the coins we've got
     self._send_all(msg.sender, ZEROS, i)
 
-    # Transfer unused tokens back
-    assert_modifiable(ERC20(_token).transfer(
-        msg.sender, ERC20(_token).balanceOf(self))
-    )
+    if donate_dust:
+        # Transfer unused tokens to the owner
+        owner: address = Curve(self.curve).owner()
+        assert_modifiable(ERC20(_token).transfer(
+            owner, ERC20(_token).balanceOf(self))
+        )
+    else:
+        # Transfer unused tokens back
+        assert_modifiable(ERC20(_token).transfer(
+            msg.sender, ERC20(_token).balanceOf(self))
+        )
