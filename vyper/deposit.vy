@@ -317,19 +317,27 @@ def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_uamount: ui
 
     amounts: uint256[N_COINS] = ZEROS
     amounts[i] = dy * LENDING_PRECISION / rates[i]
+    token_amount_before: uint256 = ERC20(_token).balanceOf(self)
     Curve(self.curve).remove_liquidity_imbalance(amounts, _token_amount)
 
     # Unwrap and transfer all the coins we've got
     self._send_all(msg.sender, ZEROS, i)
 
-    if donate_dust:
-        # Transfer unused tokens to the owner
-        owner: address = Curve(self.curve).owner()
-        assert_modifiable(ERC20(_token).transfer(
-            owner, ERC20(_token).balanceOf(self))
-        )
-    else:
+    if not donate_dust:
         # Transfer unused tokens back
-        assert_modifiable(ERC20(_token).transfer(
-            msg.sender, ERC20(_token).balanceOf(self))
-        )
+        token_amount_after: uint256 = ERC20(_token).balanceOf(self)
+        if token_amount_after > token_amount_before:
+            assert_modifiable(ERC20(_token).transfer(
+                msg.sender, token_amount_after - token_amount_before)
+            )
+
+
+@public
+@nonreentrant('lock')
+def withdraw_donated_dust():
+    owner: address = Curve(self.curve).owner()
+    assert msg.sender == owner
+
+    _token: address = self.token
+    assert_modifiable(
+        ERC20(_token).transfer(owner, ERC20(_token).balanceOf(self)))
