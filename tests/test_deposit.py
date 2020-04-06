@@ -78,7 +78,7 @@ def test_add_remove_liquidity(w3, coins, cerc20s, swap, deposit, pool_token):
             to_withdraw, int(1.01 * expected_dtoken)).transact(from_sam)
     token_after = pool_token.caller.balanceOf(sam)
     ubalances_after = [swap.caller.balances(i) * r // 10 ** 18 for i, r in enumerate(rates)]
-    assert approx(token_after / token_before, 8 / 9)
+    assert approx(token_after / token_before, 8 / 9, 1e-7)
     assert pool_token.caller.balanceOf(deposit.address) == 0
     for c, u1, u0, oldbal in zip(coins, ubalances_after, ubalances, sam_balances):
         assert approx(u1 / u0, 8 / 9, 1e-7)
