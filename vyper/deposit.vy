@@ -27,7 +27,7 @@ LENDING_PRECISION: constant(uint256) = 10 ** 18
 PRECISION: constant(uint256) = 10 ** 18
 PRECISION_MUL: constant(uint256[N_COINS]) = ___PRECISION_MUL___
 FEE_DENOMINATOR: constant(uint256) = 10 ** 10
-FEE_IMPRECISION: constant(uint256) = 5 * 10 ** 5  # 0.005%
+FEE_IMPRECISION: constant(uint256) = 40 * 10 ** 8  # % of the fee
 
 coins: public(address[N_COINS])
 underlying_coins: public(address[N_COINS])
@@ -241,6 +241,7 @@ def _calc_withdraw_one_coin(_token_amount: uint256, i: int128, rates: uint256[N_
     A: uint256 = Curve(crv).A()
     fee: uint256 = Curve(crv).fee() * N_COINS / (2 * (N_COINS - 1))
     precisions: uint256[N_COINS] = PRECISION_MUL
+    total_supply: uint256 = ERC20(self.token).totalSupply()
 
     xp: uint256[N_COINS] = PRECISION_MUL
     S: uint256 = 0
@@ -252,10 +253,10 @@ def _calc_withdraw_one_coin(_token_amount: uint256, i: int128, rates: uint256[N_
         S += xp[j]
         # if not use_lending - all good already
     fee -= fee * xp[i] / S  # Not the case if too much off the peg
-    fee += FEE_IMPRECISION  # Overcharge to account for imprecision
+    fee += fee * FEE_IMPRECISION / FEE_DENOMINATOR  # Overcharge to account for imprecision
 
     D0: uint256 = self.get_D(A, xp)
-    D1: uint256 = D0 - _token_amount
+    D1: uint256 = D0 - _token_amount * D0 / total_supply
     dy: uint256 = xp[i] - self.get_y(A, i, xp, D1)
     dy = dy - dy * fee / FEE_DENOMINATOR
     dy /= precisions[i]
