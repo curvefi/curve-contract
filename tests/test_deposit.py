@@ -124,6 +124,7 @@ def test_withdraw_one_coin(w3, coins, cerc20s, swap, deposit, pool_token):
         pool_token.functions.approve(deposit.address, token_before).transact(from_sam)
 
         calc_amount = deposit.caller.calc_withdraw_one_coin(dtoken, ii)
+        print(amount, calc_amount)
 
         amount_before = coins[ii].caller.balanceOf(sam)
         with pytest.raises(TransactionFailed):
@@ -136,14 +137,19 @@ def test_withdraw_one_coin(w3, coins, cerc20s, swap, deposit, pool_token):
         amount_after = coins[ii].caller.balanceOf(sam)
         token_after = pool_token.caller.balanceOf(sam)
 
-        assert approx(amount_after - amount_before, amount, 25e-4)
+        assert approx(amount_after - amount_before, amount, 5e-4)
         assert token_before - token_after <= dtoken
-        assert approx(token_before - token_after, dtoken, 25e-4)
+        assert approx(token_before - token_after, dtoken, 5e-4)
 
         # Withdraw all back
+        deposit.functions.withdraw_donated_dust().transact({'from': w3.eth.accounts[1]})
+        pool_token.functions.transfer(
+            sam,
+            pool_token.caller.balanceOf(w3.eth.accounts[1])).transact({'from': w3.eth.accounts[1]})
         pool_token.functions.approve(deposit.address, 0).transact(from_sam)
-        pool_token.functions.approve(deposit.address, token_after).transact(from_sam)
-        deposit.functions.remove_liquidity(token_after, [0] * N_COINS).transact(from_sam)
+        to_remove = pool_token.caller.balanceOf(sam)
+        pool_token.functions.approve(deposit.address, to_remove).transact(from_sam)
+        deposit.functions.remove_liquidity(to_remove, [0] * N_COINS).transact(from_sam)
 
         # Reset approvals
         for c in coins:

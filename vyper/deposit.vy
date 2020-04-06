@@ -241,7 +241,6 @@ def _calc_withdraw_one_coin(_token_amount: uint256, i: int128, rates: uint256[N_
     crv: address = self.curve
     A: uint256 = Curve(crv).A()
     fee: uint256 = Curve(crv).fee() * N_COINS / (4 * (N_COINS - 1))
-    fee += fee * FEE_IMPRECISION / FEE_DENOMINATOR  # Overcharge to account for imprecision
     precisions: uint256[N_COINS] = PRECISION_MUL
     total_supply: uint256 = ERC20(self.token).totalSupply()
 
@@ -267,13 +266,13 @@ def _calc_withdraw_one_coin(_token_amount: uint256, i: int128, rates: uint256[N_
         if j == i:
             b_expected -= S * (D0 - D1) / D0
         if b_ideal >= b_expected:
-            dx_expected += (b_ideal - b_expected)
+            dx_expected = (b_ideal - b_expected)
         else:
-            dx_expected += (b_expected - b_ideal)
+            dx_expected = (b_expected - b_ideal)
         xp_reduced[j] -= fee * dx_expected / FEE_DENOMINATOR
 
-    dy: uint256 = xp[i] - self.get_y(A, i, xp_reduced, D1)
-    dy = (dy - (xp[i] - xp_reduced[i])) / precisions[i]
+    dy: uint256 = xp_reduced[i] - self.get_y(A, i, xp_reduced, D1)
+    dy = (dy - dy * (fee * FEE_IMPRECISION / FEE_DENOMINATOR) / FEE_DENOMINATOR) / precisions[i]
 
     return dy
 
