@@ -16,6 +16,7 @@ contract Curve:
     def balances(i: int128) -> uint256: constant
     def A() -> uint256: constant
     def fee() -> uint256: constant
+    def owner() -> address: constant
 
 
 N_COINS: constant(int128) = ___N_COINS___
@@ -26,7 +27,7 @@ LENDING_PRECISION: constant(uint256) = 10 ** 18
 PRECISION: constant(uint256) = 10 ** 18
 PRECISION_MUL: constant(uint256[N_COINS]) = ___PRECISION_MUL___
 FEE_DENOMINATOR: constant(uint256) = 10 ** 10
-FEE_IMPRECISION: constant(uint256) = 5 * 10 ** 5  # 0.005%
+FEE_IMPRECISION: constant(uint256) = 25 * 10 ** 8  # % of the fee
 
 coins: public(address[N_COINS])
 underlying_coins: public(address[N_COINS])
@@ -222,8 +223,10 @@ def _calc_withdraw_one_coin(_token_amount: uint256, i: int128, rates: uint256[N_
     # * Solve Eqn against y_i for D - _token_amount
     crv: address = self.curve
     A: uint256 = Curve(crv).A()
-    fee: uint256 = Curve(crv).fee() * N_COINS / (2 * (N_COINS - 1))
+    fee: uint256 = Curve(crv).fee() * N_COINS / (4 * (N_COINS - 1))
+    fee += fee * FEE_IMPRECISION / FEE_DENOMINATOR  # Overcharge to account for imprecision
     precisions: uint256[N_COINS] = PRECISION_MUL
+    total_supply: uint256 = ERC20(self.token).totalSupply()
 
     xp: uint256[N_COINS] = PRECISION_MUL
     S: uint256 = 0
@@ -231,14 +234,26 @@ def _calc_withdraw_one_coin(_token_amount: uint256, i: int128, rates: uint256[N_
         xp[j] *= Curve(crv).balances(j)
         xp[j] = xp[j] * rates[j] / LENDING_PRECISION
         S += xp[j]
-    fee -= fee * xp[i] / S  # Not the case if too much off the peg
-    fee += FEE_IMPRECISION  # Overcharge to account for imprecision
 
     D0: uint256 = self.get_D(A, xp)
-    D1: uint256 = D0 - _token_amount
-    dy: uint256 = xp[i] - self.get_y(A, i, xp, D1)
-    dy = dy - dy * fee / FEE_DENOMINATOR
-    dy /= precisions[i]
+    D1: uint256 = D0 - _token_amount * D0 / total_supply
+    xp_reduced: uint256[N_COINS] = xp
+
+    # xp = xp - fee * | xp * D1 / D0 - (xp - S * dD / D0 * (0, ... 1, ..0))|
+    for j in range(N_COINS):
+        dx_expected: uint256 = 0
+        b_ideal: uint256 = xp[j] * D1 / D0
+        b_expected: uint256 = xp[j]
+        if j == i:
+            b_expected -= S * (D0 - D1) / D0
+        if b_ideal >= b_expected:
+            dx_expected += (b_ideal - b_expected)
+        else:
+            dx_expected += (b_expected - b_ideal)
+        xp_reduced[j] -= fee * dx_expected / FEE_DENOMINATOR
+
+    dy: uint256 = xp[i] - self.get_y(A, i, xp_reduced, D1)
+    dy = (dy - (xp[i] - xp_reduced[i])) / precisions[i]
 
     return dy
 
@@ -256,7 +271,7 @@ def calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> uint256:
 
 @public
 @nonreentrant('lock')
-def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_uamount: uint256):
+def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_uamount: uint256, donate_dust: bool = False):
     """
     Remove _amount of liquidity all in a form of coin i
     """
@@ -274,12 +289,27 @@ def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_uamount: ui
 
     amounts: uint256[N_COINS] = ZEROS
     amounts[i] = dy * LENDING_PRECISION / rates[i]
+    token_amount_before: uint256 = ERC20(_token).balanceOf(self)
     Curve(self.curve).remove_liquidity_imbalance(amounts, _token_amount)
 
     # Unwrap and transfer all the coins we've got
     self._send_all(msg.sender, ZEROS, i)
 
-    # Transfer unused tokens back
-    assert_modifiable(ERC20(_token).transfer(
-        msg.sender, ERC20(_token).balanceOf(self))
-    )
+    if not donate_dust:
+        # Transfer unused tokens back
+        token_amount_after: uint256 = ERC20(_token).balanceOf(self)
+        if token_amount_after > token_amount_before:
+            assert_modifiable(ERC20(_token).transfer(
+                msg.sender, token_amount_after - token_amount_before)
+            )
+
+
+@public
+@nonreentrant('lock')
+def withdraw_donated_dust():
+    owner: address = Curve(self.curve).owner()
+    assert msg.sender == owner
+
+    _token: address = self.token
+    assert_modifiable(
+        ERC20(_token).transfer(owner, ERC20(_token).balanceOf(self)))
