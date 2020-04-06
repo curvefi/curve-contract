@@ -86,8 +86,6 @@ def test_add_remove_liquidity(w3, coins, cerc20s, swap, deposit, pool_token):
 
 
 def test_withdraw_one_coin(w3, coins, cerc20s, swap, deposit, pool_token):
-    amount_imprecisions = []
-    token_imprecisions = []
     for _run in range(25):
         print(_run)
 
@@ -139,10 +137,8 @@ def test_withdraw_one_coin(w3, coins, cerc20s, swap, deposit, pool_token):
         token_after = pool_token.caller.balanceOf(sam)
 
         assert approx(amount_after - amount_before, amount, 25e-4)
-        amount_imprecisions.append(abs(1 - (amount_after - amount_before) / amount))
         assert token_before - token_after <= dtoken
         assert approx(token_before - token_after, dtoken, 25e-4)
-        token_imprecisions.append(abs(1 - (token_before - token_after) / dtoken))
 
         # Withdraw all back
         pool_token.functions.approve(deposit.address, 0).transact(from_sam)
@@ -153,8 +149,3 @@ def test_withdraw_one_coin(w3, coins, cerc20s, swap, deposit, pool_token):
         for c in coins:
             c.functions.approve(deposit.address, 0).transact(from_sam)
         pool_token.functions.approve(deposit.address, 0).transact(from_sam)
-
-    avg_amount_imprecision = sum(amount_imprecisions) / len(amount_imprecisions)
-    avg_token_imprecision = sum(token_imprecisions) / len(token_imprecisions)
-    assert avg_amount_imprecision <= 2e-4
-    assert avg_token_imprecision <= 2e-4
