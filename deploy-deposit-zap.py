@@ -32,7 +32,7 @@ def deploy_zap():
     if GETH_PASSWORD:
         w3.geth.personal.unlockAccount(w3.eth.accounts[0], GETH_PASSWORD)
     deposit_contract = deploy_contract(
-            w3, ['deposit.vy', 'cERC20.vy'], SWAP_DEPLOY_ADDRESS,
+            w3, ['deposit.vy', 'yERC20.vy'], SWAP_DEPLOY_ADDRESS,
             Y_COINS, UNDERLYING_COINS, SWAP_ADDRESS, TOKEN_ADDERESS,
             replacements={
                 '___N_COINS___': str(N_COINS),
