@@ -267,7 +267,7 @@
   "outputs": [
    {
     "type": "uint256",
-    "name": "out"
+    "name": ""
    }
   ],
   "inputs": [],
@@ -281,7 +281,7 @@
   "outputs": [
    {
     "type": "uint256",
-    "name": "out"
+    "name": ""
    }
   ],
   "inputs": [
@@ -322,7 +322,7 @@
   "outputs": [
    {
     "type": "uint256",
-    "name": "out"
+    "name": ""
    }
   ],
   "inputs": [
@@ -349,7 +349,7 @@
   "outputs": [
    {
     "type": "uint256",
-    "name": "out"
+    "name": ""
    }
   ],
   "inputs": [
@@ -376,7 +376,7 @@
   "outputs": [
    {
     "type": "uint256",
-    "name": "out"
+    "name": ""
    }
   ],
   "inputs": [
@@ -403,7 +403,7 @@
   "outputs": [
    {
     "type": "uint256",
-    "name": "out"
+    "name": ""
    }
   ],
   "inputs": [
@@ -617,7 +617,7 @@
   "outputs": [
    {
     "type": "address",
-    "name": "out"
+    "name": ""
    }
   ],
   "inputs": [
@@ -636,7 +636,7 @@
   "outputs": [
    {
     "type": "address",
-    "name": "out"
+    "name": ""
    }
   ],
   "inputs": [
@@ -655,7 +655,7 @@
   "outputs": [
    {
     "type": "uint256",
-    "name": "out"
+    "name": ""
    }
   ],
   "inputs": [
@@ -674,7 +674,7 @@
   "outputs": [
    {
     "type": "uint256",
-    "name": "out"
+    "name": ""
    }
   ],
   "inputs": [],
@@ -688,7 +688,7 @@
   "outputs": [
    {
     "type": "uint256",
-    "name": "out"
+    "name": ""
    }
   ],
   "inputs": [],
@@ -702,7 +702,7 @@
   "outputs": [
    {
     "type": "uint256",
-    "name": "out"
+    "name": ""
    }
   ],
   "inputs": [],
@@ -716,7 +716,7 @@
   "outputs": [
    {
     "type": "address",
-    "name": "out"
+    "name": ""
    }
   ],
   "inputs": [],
@@ -731,7 +731,7 @@
    {
     "type": "uint256",
     "unit": "sec",
-    "name": "out"
+    "name": ""
    }
   ],
   "inputs": [],
@@ -746,7 +746,7 @@
    {
     "type": "uint256",
     "unit": "sec",
-    "name": "out"
+    "name": ""
    }
   ],
   "inputs": [],
@@ -760,7 +760,7 @@
   "outputs": [
    {
     "type": "uint256",
-    "name": "out"
+    "name": ""
    }
   ],
   "inputs": [],
@@ -774,7 +774,7 @@
   "outputs": [
    {
     "type": "uint256",
-    "name": "out"
+    "name": ""
    }
   ],
   "inputs": [],
@@ -788,7 +788,7 @@
   "outputs": [
    {
     "type": "uint256",
-    "name": "out"
+    "name": ""
    }
   ],
   "inputs": [],
@@ -802,7 +802,7 @@
   "outputs": [
    {
     "type": "address",
-    "name": "out"
+    "name": ""
    }
   ],
   "inputs": [],

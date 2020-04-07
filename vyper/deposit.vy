@@ -1,4 +1,5 @@
 # A "zap" to deposit/withdraw Curve contract without too many transactions
+# (c) Curve.Fi, 2020
 from vyper.interfaces import ERC20
 import cERC20 as cERC20
 
@@ -241,6 +242,7 @@ def _calc_withdraw_one_coin(_token_amount: uint256, i: int128, rates: uint256[N_
     crv: address = self.curve
     A: uint256 = Curve(crv).A()
     fee: uint256 = Curve(crv).fee() * N_COINS / (4 * (N_COINS - 1))
+    fee += fee * FEE_IMPRECISION / FEE_DENOMINATOR  # Overcharge to account for imprecision
     precisions: uint256[N_COINS] = PRECISION_MUL
     total_supply: uint256 = ERC20(self.token).totalSupply()
 
@@ -272,7 +274,7 @@ def _calc_withdraw_one_coin(_token_amount: uint256, i: int128, rates: uint256[N_
         xp_reduced[j] -= fee * dx_expected / FEE_DENOMINATOR
 
     dy: uint256 = xp_reduced[i] - self.get_y(A, i, xp_reduced, D1)
-    dy = (dy - dy * (fee * FEE_IMPRECISION / FEE_DENOMINATOR) / FEE_DENOMINATOR) / precisions[i]
+    dy = dy / precisions[i]
 
     return dy
 
