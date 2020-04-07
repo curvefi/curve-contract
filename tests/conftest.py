@@ -78,5 +78,22 @@ def swap(w3, coins, yerc20s, pool_token):
     return swap_contract
 
 
+@pytest.fixture(scope='function')
+def deposit(w3, coins, yerc20s, pool_token, swap):
+    deposit_contract = deploy_contract(
+            w3, ['deposit.vy', 'yERC20.vy'], w3.eth.accounts[1],
+            [c.address for c in yerc20s], [c.address for c in coins],
+            swap.address, pool_token.address,
+            replacements={
+                '___N_COINS___': str(N_COINS),
+                '___N_ZEROS___': '[' + ', '.join(['ZERO256'] * N_COINS) + ']',
+                '___TETHERED___': '[' + ', '.join(
+                        str(i) for i in tethered) + ']',
+                '___PRECISION_MUL___': '[' + ', '.join(
+                    'convert(%s, uint256)' % i for i in PRECISIONS) + ']',
+            })
+    return deposit_contract
+
+
 def approx(a, b, precision=1e-10):
     return 2 * abs(a - b) / (a + b) <= precision
