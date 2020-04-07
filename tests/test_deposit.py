@@ -99,7 +99,8 @@ def test_withdraw_one_coin(w3, coins, cerc20s, swap, deposit, pool_token):
         deposit.functions.add_liquidity(amounts, 0).transact(from_sam)
 
         ii = randrange(N_COINS)
-        amount = randrange(1, amounts[ii]) if random() < 0.5 else randrange(1, 1000 * UU[ii])
+        amount = randrange(1, int(0.8 * amounts[ii])) if random() < 0.5\
+            else randrange(1, min(1000 * UU[ii], amounts[ii] // 2))
         amounts_to_remove = [0] * N_COINS
         amounts_to_remove[ii] = amount
 
