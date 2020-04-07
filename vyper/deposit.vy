@@ -1,4 +1,5 @@
 # A "zap" to deposit/withdraw Curve contract without too many transactions
+# (c) Curve.Fi, 2020
 from vyper.interfaces import ERC20
 import yERC20 as yERC20
 
