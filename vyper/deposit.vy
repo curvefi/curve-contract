@@ -56,25 +56,26 @@ def add_liquidity(uamounts: uint256[N_COINS], min_mint_amount: uint256):
     for i in range(N_COINS):
         uamount: uint256 = uamounts[i]
 
-        # Transfer the underlying coin from owner
-        if tethered[i]:
-            USDT(self.underlying_coins[i]).transferFrom(
-                msg.sender, self, uamount)
-        else:
-            assert_modifiable(ERC20(self.underlying_coins[i])\
-                .transferFrom(msg.sender, self, uamount))
+        if uamount > 0:
+            # Transfer the underlying coin from owner
+            if tethered[i]:
+                USDT(self.underlying_coins[i]).transferFrom(
+                    msg.sender, self, uamount)
+            else:
+                assert_modifiable(ERC20(self.underlying_coins[i])\
+                    .transferFrom(msg.sender, self, uamount))
 
-        # Mint if needed
-        if use_lending[i]:
-            ERC20(self.underlying_coins[i]).approve(self.coins[i], uamount)
-            ok: uint256 = cERC20(self.coins[i]).mint(uamount)
-            if ok > 0:
-                raise "Could not mint coin"
-            amounts[i] = cERC20(self.coins[i]).balanceOf(self)
-            ERC20(self.coins[i]).approve(self.curve, amounts[i])
-        else:
-            amounts[i] = uamount
-            ERC20(self.underlying_coins[i]).approve(self.curve, uamount)
+            # Mint if needed
+            if use_lending[i]:
+                ERC20(self.underlying_coins[i]).approve(self.coins[i], uamount)
+                ok: uint256 = cERC20(self.coins[i]).mint(uamount)
+                if ok > 0:
+                    raise "Could not mint coin"
+                amounts[i] = cERC20(self.coins[i]).balanceOf(self)
+                ERC20(self.coins[i]).approve(self.curve, amounts[i])
+            else:
+                amounts[i] = uamount
+                ERC20(self.underlying_coins[i]).approve(self.curve, uamount)
 
     Curve(self.curve).add_liquidity(amounts, min_mint_amount)
 
@@ -91,7 +92,10 @@ def _send_all(_addr: address, min_uamounts: uint256[N_COINS], one: int128):
         if (one < 0) or (i == one):
             if use_lending[i]:
                 _coin: address = self.coins[i]
-                ok: uint256 = cERC20(_coin).redeem(cERC20(_coin).balanceOf(self))
+                _balance: uint256 = cERC20(_coin).balanceOf(self)
+                if _balance == 0:  # Do nothing if there are 0 coins
+                    continue
+                ok: uint256 = cERC20(_coin).redeem(_balance)
                 if ok > 0:
                     raise "Could not redeem coin"
 
@@ -99,10 +103,12 @@ def _send_all(_addr: address, min_uamounts: uint256[N_COINS], one: int128):
             _uamount: uint256 = ERC20(_ucoin).balanceOf(self)
             assert _uamount >= min_uamounts[i], "Not enough coins withdrawn"
 
-            if tethered[i]:
-                USDT(_ucoin).transfer(_addr, _uamount)
-            else:
-                assert_modifiable(ERC20(_ucoin).transfer(_addr, _uamount))
+            # Send only if we have something to send
+            if _uamount >= 0:
+                if tethered[i]:
+                    USDT(_ucoin).transfer(_addr, _uamount)
+                else:
+                    assert_modifiable(ERC20(_ucoin).transfer(_addr, _uamount))
 
 
 @public
@@ -128,7 +134,7 @@ def remove_liquidity_imbalance(uamounts: uint256[N_COINS], max_burn_amount: uint
 
     amounts: uint256[N_COINS] = uamounts
     for i in range(N_COINS):
-        if use_lending[i]:
+        if use_lending[i] and amounts[i] > 0:
             rate: uint256 = cERC20(self.coins[i]).exchangeRateCurrent()
             amounts[i] = amounts[i] * LENDING_PRECISION / rate
         # if not use_lending - all good already
