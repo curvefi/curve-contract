@@ -54,19 +54,20 @@ def add_liquidity(uamounts: uint256[N_COINS], min_mint_amount: uint256):
     for i in range(N_COINS):
         uamount: uint256 = uamounts[i]
 
-        # Transfer the underlying coin from owner
-        if tethered[i]:
-            USDT(self.underlying_coins[i]).transferFrom(
-                msg.sender, self, uamount)
-        else:
-            assert_modifiable(ERC20(self.underlying_coins[i])\
-                .transferFrom(msg.sender, self, uamount))
+        if uamount > 0:
+            # Transfer the underlying coin from owner
+            if tethered[i]:
+                USDT(self.underlying_coins[i]).transferFrom(
+                    msg.sender, self, uamount)
+            else:
+                assert_modifiable(ERC20(self.underlying_coins[i])\
+                    .transferFrom(msg.sender, self, uamount))
 
-        # Mint if needed
-        ERC20(self.underlying_coins[i]).approve(self.coins[i], uamount)
-        yERC20(self.coins[i]).deposit(uamount)
-        amounts[i] = yERC20(self.coins[i]).balanceOf(self)
-        ERC20(self.coins[i]).approve(self.curve, amounts[i])
+            # Mint if needed
+            ERC20(self.underlying_coins[i]).approve(self.coins[i], uamount)
+            yERC20(self.coins[i]).deposit(uamount)
+            amounts[i] = yERC20(self.coins[i]).balanceOf(self)
+            ERC20(self.coins[i]).approve(self.curve, amounts[i])
 
     Curve(self.curve).add_liquidity(amounts, min_mint_amount)
 
@@ -81,7 +82,10 @@ def _send_all(_addr: address, min_uamounts: uint256[N_COINS], one: int128):
     for i in range(N_COINS):
         if (one < 0) or (i == one):
             _coin: address = self.coins[i]
-            yERC20(_coin).withdraw(yERC20(_coin).balanceOf(self))
+            _balance: uint256 = yERC20(_coin).balanceOf(self)
+            if _balance == 0:  # Do nothing for 0 coins
+                continue
+            yERC20(_coin).withdraw(_balance)
 
             _ucoin: address = self.underlying_coins[i]
             _uamount: uint256 = ERC20(_ucoin).balanceOf(self)
@@ -115,8 +119,9 @@ def remove_liquidity_imbalance(uamounts: uint256[N_COINS], max_burn_amount: uint
 
     amounts: uint256[N_COINS] = uamounts
     for i in range(N_COINS):
-        rate: uint256 = yERC20(self.coins[i]).getPricePerFullShare()
-        amounts[i] = amounts[i] * LENDING_PRECISION / rate
+        if amounts[i] > 0:
+            rate: uint256 = yERC20(self.coins[i]).getPricePerFullShare()
+            amounts[i] = amounts[i] * LENDING_PRECISION / rate
 
     # Transfrer max tokens in
     _tokens: uint256 = ERC20(_token).balanceOf(msg.sender)
