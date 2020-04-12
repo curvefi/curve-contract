@@ -16,6 +16,7 @@ c_rates_y = [5 * UUY[0], UUY[1], 3 * UUY[2], UUY[3]]
 use_lending = [True, False]
 use_curved = [False, True]
 tethered = [False, False]
+tethered_y = [False, False, True, False]
 PRECISIONS = [10 ** 18 // u for u in UU]
 PRECISIONS_Y = [10 ** 18 // u for u in UUY]
 MAX_UINT = 2 ** 256 - 1
@@ -93,9 +94,6 @@ def yerc20s_y(w3, coins_y):
     for t, c, u in zip(coins_y, ccoins, UUY):
         t.functions.transfer(c.address, 10 ** 11 * u)\
                 .transact({'from': w3.eth.accounts[0]})
-    for i, l in enumerate(use_lending):
-        if not l:
-            ccoins[i] = coins[i]
     return ccoins
 
 
@@ -111,6 +109,48 @@ def swap(w3, coins, yerc20s, crvERC20s, pool_token):
             w3, ['stableswap.vy', 'ERC20m.vy', 'yERC20.vy'], w3.eth.accounts[1],
             [c.address for c in yerc20s], [c.address for c in coins],
             [c.address for c in crvERC20s], pool_token.address, 360 * 2, 10 ** 7,
+            replacements={
+                '___N_COINS___': str(N_COINS),
+                '___N_ZEROS___': '[' + ', '.join(['ZERO256'] * N_COINS) + ']',
+                '___PRECISION_MUL___': '[' + ', '.join(
+                    'convert(%s, uint256)' % i for i in PRECISIONS) + ']',
+                '___USE_LENDING___': '[' + ', '.join(
+                        str(i) for i in use_lending) + ']',
+                '___USE_CURVED___': '[' + ', '.join(
+                        str(i) for i in use_curved) + ']',
+                '___TETHERED___': '[' + ', '.join(
+                        str(i) for i in tethered) + ']',
+            })
+    pool_token.functions.set_minter(swap_contract.address).transact()
+    with open(join(CONTRACT_PATH, 'stableswap.abi'), 'w') as f:
+        json.dump(swap_contract.abi, f, indent=True)
+    return swap_contract
+
+
+@pytest.fixture(scope='function')
+def ypool(w3, coins_y, yerc20s_y, pool_token_y):
+    swap_contract = deploy_contract(
+            w3, ['ypool.vy', 'ERC20m.vy', 'yERC20.vy'], w3.eth.accounts[1],
+            [c.address for c in yerc20s_y], [c.address for c in coins_y],
+            pool_token_y.address, 360 * 2, 10 ** 7,
+            replacements={
+                '___N_COINS___': str(len(UUY)),
+                '___N_ZEROS___': '[' + ', '.join(['ZERO256'] * len(UUY)) + ']',
+                '___PRECISION_MUL___': '[' + ', '.join(
+                    'convert(%s, uint256)' % i for i in PRECISIONS_Y) + ']',
+                '___TETHERED___': '[' + ', '.join(
+                        str(i) for i in tethered_y) + ']',
+            })
+    pool_token_y.functions.set_minter(swap_contract.address).transact()
+    return swap_contract
+
+
+@pytest.fixture(scope='function')
+def swap2(w3, coins, coins_y, yerc20s, yerc20s_y, pool_token, pool_token_y, ypool):
+    swap_contract = deploy_contract(
+            w3, ['stableswap.vy', 'ERC20m.vy', 'yERC20.vy'], w3.eth.accounts[1],
+            [yerc20s[0].address, pool_token_y.address], [coins_y[0].address, pool_token_y.address],
+            [yerc20s[0].address, ypool.address], pool_token.address, 360 * 2, 10 ** 7,
             replacements={
                 '___N_COINS___': str(N_COINS),
                 '___N_ZEROS___': '[' + ', '.join(['ZERO256'] * N_COINS) + ']',
