@@ -9,11 +9,15 @@ CONTRACT_PATH = join(dirname(dirname(realpath(__file__))), 'vyper')
 N_COINS = 2
 UP = [18, 18]
 UU = [10 ** p for p in UP]
+UPY = [18, 6, 6, 18]
+UUY = [10 ** p for p in UPY]
 c_rates = [5 * UU[0], UU[1]]
+c_rates_y = [5 * UUY[0], UUY[1], 3 * UUY[2], UUY[3]]
 use_lending = [True, False]
 use_curved = [False, True]
 tethered = [False, False]
 PRECISIONS = [10 ** 18 // u for u in UU]
+PRECISIONS_Y = [10 ** 18 // u for u in UUY]
 MAX_UINT = 2 ** 256 - 1
 
 
@@ -69,6 +73,36 @@ def yerc20s(w3, coins):
         if not l:
             ccoins[i] = coins[i]
     return ccoins
+
+
+@pytest.fixture
+def coins_y(w3):
+    return [deploy_contract(
+                w3, 'ERC20.vy', w3.eth.accounts[0],
+                b'Coin ' + str(i).encode(), str(i).encode(), UPY[i], 10 ** 12)
+            for i in range(len(UPY))]
+
+
+@pytest.fixture
+def yerc20s_y(w3, coins_y):
+    ccoins = [deploy_contract(
+                w3, 'fake_yerc20.vy', w3.eth.accounts[0],
+                b'C-Coin ' + str(i).encode(), b'c' + str(i).encode(),
+                18, 0, coins_y[i].address, c_rates_y[i])
+              for i in range(len(UPY))]
+    for t, c, u in zip(coins_y, ccoins, UUY):
+        t.functions.transfer(c.address, 10 ** 11 * u)\
+                .transact({'from': w3.eth.accounts[0]})
+    for i, l in enumerate(use_lending):
+        if not l:
+            ccoins[i] = coins[i]
+    return ccoins
+
+
+@pytest.fixture
+def pool_token_y(w3):
+    return deploy_contract(w3, 'ERC20.vy', w3.eth.accounts[0],
+                           b'Stableswap', b'STBL', 18, 0)
 
 
 @pytest.fixture(scope='function')
