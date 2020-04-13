@@ -37,8 +37,8 @@ PRECISION: constant(uint256) = 10 ** 18
 PRECISION_MUL: constant(uint256[N_COINS]) = ___PRECISION_MUL___
 FEE_DENOMINATOR: constant(uint256) = 10 ** 10
 FEE_IMPRECISION: constant(uint256) = 25 * 10 ** 8  # % of the fee
-CURVED: constant(bool) = ___CURVED___
-CURVED_MAP: constant(int128) = ___CURVED_MAP___
+CURVED: constant(bool[N_COINS]) = ___CURVED___
+CURVED_MAP: constant(int128[___N_COINS_Y___]) = ___CURVED_MAP___
 
 coins: public(address[N_COINS])
 underlying_coins: public(address[N_COINS])

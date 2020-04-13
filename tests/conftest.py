@@ -17,6 +17,7 @@ use_lending = [True, False]
 use_curved = [False, True]
 tethered = [False, False]
 tethered_y = [False, False, True, False]
+curved_map = [0, 1, 1, 1, 1]
 PRECISIONS = [10 ** 18 // u for u in UU]
 PRECISIONS_Y = [10 ** 18 // u for u in UUY]
 MAX_UINT = 2 ** 256 - 1
@@ -167,6 +168,28 @@ def swap2(w3, coins, coins_y, yerc20s, yerc20s_y, pool_token, pool_token_y, ypoo
     with open(join(CONTRACT_PATH, 'stableswap.abi'), 'w') as f:
         json.dump(swap_contract.abi, f, indent=True)
     return swap_contract
+
+
+@pytest.fixture(scope='function')
+def deposit(w3, coins, yerc20s, pool_token, swap2):
+    deposit_contract = deploy_contract(
+            w3, ['deposit.vy', 'yERC20.vy'], w3.eth.accounts[1],
+            [c.address for c in yerc20s], [c.address for c in coins],
+            swap2.address, pool_token.address,
+            replacements={
+                '___N_COINS___': str(N_COINS),
+                '___N_ZEROS___': '[' + ', '.join(['ZERO256'] * N_COINS) + ']',
+                '___TETHERED___': '[' + ', '.join(
+                        str(i) for i in tethered) + ']',
+                '___CURVED___': '[' + ', '.join(
+                        str(i) for i in use_curved) + ']',
+                '___CURVED_MAP___': '[' + ', '.join(
+                        str(i) for i in curved_map) + ']',
+                '___N_COINS_Y___': str(len(curved_map)),
+                '___PRECISION_MUL___': '[' + ', '.join(
+                    'convert(%s, uint256)' % i for i in PRECISIONS) + ']',
+            })
+    return deposit_contract
 
 
 def approx(a, b, precision=1e-10):
