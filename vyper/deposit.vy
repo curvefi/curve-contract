@@ -26,9 +26,12 @@ contract Curve:
     def A() -> uint256: constant
     def fee() -> uint256: constant
     def owner() -> address: constant
+    def coins(i: int128) -> address: constant
+    def underlying_coins(i: int128) -> address: constant
 
 
 N_COINS: constant(int128) = ___N_COINS___
+N_COINS_Y: constant(int128) = ___N_COINS_Y___
 TETHERED: constant(bool[N_COINS]) = ___TETHERED___
 ZERO256: constant(uint256) = 0  # This hack is really bad XXX
 ZEROS: constant(uint256[N_COINS]) = ___N_ZEROS___  # <- change
@@ -38,10 +41,12 @@ PRECISION_MUL: constant(uint256[N_COINS]) = ___PRECISION_MUL___
 FEE_DENOMINATOR: constant(uint256) = 10 ** 10
 FEE_IMPRECISION: constant(uint256) = 25 * 10 ** 8  # % of the fee
 CURVED: constant(bool[N_COINS]) = ___CURVED___
-CURVED_MAP: constant(int128[___N_COINS_Y___]) = ___CURVED_MAP___
+CURVED_MAP: constant(int128[N_COINS_Y]) = ___CURVED_MAP___
+CURVED_SUBINDEX: constant(int128[N_COINS_Y]) = ___CURVED_SUBINDEX___
 
-coins: public(address[N_COINS])
-underlying_coins: public(address[N_COINS])
+curve_subcontracts: public(address[N_COINS])
+coins: public(address[N_COINS_Y])
+underlying_coins: public(address[N_COINS_Y])
 curve: public(address)
 token: public(address)
 
@@ -49,8 +54,25 @@ token: public(address)
 @public
 def __init__(_coins: address[N_COINS], _underlying_coins: address[N_COINS],
              _curve: address, _token: address):
-    self.coins = _coins
-    self.underlying_coins = _underlying_coins
+    curved: bool[N_COINS] = CURVED
+    curved_map: int128[N_COINS_Y] = CURVED_MAP
+    curved_subindex: int128[N_COINS_Y] = CURVED_SUBINDEX
+
+    for i in range(N_COINS):
+        if curved[i]:
+            self.curve_subcontracts[i] = _underlying_coins[i]
+        else:
+            self.curve_subcontracts[i] = ZERO_ADDRESS
+
+    for i in range(N_COINS_Y):
+        base: int128 = curved_map[i]
+        if curved[base]:
+            self.coins[i] = Curve(_underlying_coins[base]).coins(curved_subindex[i])
+            self.underlying_coins[i] = Curve(_underlying_coins[base]).underlying_coins(curved_subindex[i])
+        else:
+            self.coins[i] = _coins[base]
+            self.underlying_coins[i] = _underlying_coins[base]
+
     self.curve = _curve
     self.token = _token
 
