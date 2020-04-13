@@ -10,6 +10,10 @@ import yERC20 as yERC20
 # * remove_liquidity_imbalance
 # * remove_liquidity_one_coin
 # * exchange
+# * exchange_underlying
+# * get_dy_underlying
+# * get_dy
+# * Events for exchanges?
 
 
 # Tether transfer-only ABI
@@ -32,7 +36,7 @@ contract Curve:
 
 N_COINS: constant(int128) = ___N_COINS___
 N_COINS_Y: constant(int128) = ___N_COINS_Y___
-TETHERED: constant(bool[N_COINS]) = ___TETHERED___
+TETHERED: constant(bool[N_COINS_Y]) = ___TETHERED___
 ZERO256: constant(uint256) = 0  # This hack is really bad XXX
 ZEROS: constant(uint256[N_COINS]) = ___N_ZEROS___  # <- change
 LENDING_PRECISION: constant(uint256) = 10 ** 18
@@ -43,6 +47,7 @@ FEE_IMPRECISION: constant(uint256) = 25 * 10 ** 8  # % of the fee
 CURVED: constant(bool[N_COINS]) = ___CURVED___
 CURVED_MAP: constant(int128[N_COINS_Y]) = ___CURVED_MAP___
 CURVED_SUBINDEX: constant(int128[N_COINS_Y]) = ___CURVED_SUBINDEX___
+CURVED_SIZE: int128 = ___CURVED_SIZE___
 
 curve_subcontracts: public(address[N_COINS])
 coins: public(address[N_COINS_Y])
@@ -62,7 +67,7 @@ def __init__(_coins: address[N_COINS], _underlying_coins: address[N_COINS],
         if curved[i]:
             self.curve_subcontracts[i] = _underlying_coins[i]
         else:
-            self.curve_subcontracts[i] = ZERO_ADDRESS
+            self.curve_subcontracts[i] = _curve
 
     for i in range(N_COINS_Y):
         base: int128 = curved_map[i]
@@ -79,11 +84,13 @@ def __init__(_coins: address[N_COINS], _underlying_coins: address[N_COINS],
 
 @public
 @nonreentrant('lock')
-def add_liquidity(uamounts: uint256[N_COINS], min_mint_amount: uint256):
-    tethered: bool[N_COINS] = TETHERED
-    amounts: uint256[N_COINS] = ZEROS
+def add_liquidity(uamounts: uint256[N_COINS_Y], min_mint_amount: uint256):
+    tethered: bool[N_COINS_Y] = TETHERED
+    amounts: uint256[N_COINS_Y] = ZEROS
+    curved: bool[N_COINS] = CURVED
+    curved_map: int128[N_COINS] = CURVED_MAP
 
-    for i in range(N_COINS):
+    for i in range(N_COINS_Y):
         uamount: uint256 = uamounts[i]
 
         if uamount > 0:
@@ -99,8 +106,11 @@ def add_liquidity(uamounts: uint256[N_COINS], min_mint_amount: uint256):
             ERC20(self.underlying_coins[i]).approve(self.coins[i], uamount)
             yERC20(self.coins[i]).deposit(uamount)
             amounts[i] = yERC20(self.coins[i]).balanceOf(self)
-            ERC20(self.coins[i]).approve(self.curve, amounts[i])
+            ERC20(self.coins[i]).approve(
+                self.curve_subcontracts[curved_map[i]], amounts[i])
 
+    # XXX
+    #
     Curve(self.curve).add_liquidity(amounts, min_mint_amount)
 
     tokens: uint256 = ERC20(self.token).balanceOf(self)

@@ -17,7 +17,9 @@ use_lending = [True, False]
 use_curved = [False, True]
 tethered = [False, False]
 tethered_y = [False, False, True, False]
+curved_tethered = [False, False, False, True, False]
 curved_map = [0, 1, 1, 1, 1]
+curved_size = 4
 curved_subindex = [0, 0, 1, 2, 3]
 PRECISIONS = [10 ** 18 // u for u in UU]
 PRECISIONS_Y = [10 ** 18 // u for u in UUY]
@@ -182,13 +184,14 @@ def deposit(w3, coins, yerc20s, pool_token, pool_token_y, swap2, ypool):
                 '___N_COINS___': str(N_COINS),
                 '___N_ZEROS___': '[' + ', '.join(['ZERO256'] * N_COINS) + ']',
                 '___TETHERED___': '[' + ', '.join(
-                        str(i) for i in tethered) + ']',
+                        str(i) for i in curved_tethered) + ']',
                 '___CURVED___': '[' + ', '.join(
                         str(i) for i in use_curved) + ']',
                 '___CURVED_MAP___': '[' + ', '.join(
                         str(i) for i in curved_map) + ']',
                 '___CURVED_SUBINDEX___': '[' + ', '.join(
                         str(i) for i in curved_subindex) + ']',
+                '___CURVED_SIZE___': str(curved_size),
                 '___N_COINS_Y___': str(len(curved_map)),
                 '___PRECISION_MUL___': '[' + ', '.join(
                     'convert(%s, uint256)' % i for i in PRECISIONS) + ']',
