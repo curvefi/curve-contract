@@ -14,6 +14,7 @@ import yERC20 as yERC20
 # * get_dy_underlying
 # * get_dy
 # * Events for exchanges?
+# * Use ypool's zap to withdraw one coin from there?
 
 
 # Tether transfer-only ABI
