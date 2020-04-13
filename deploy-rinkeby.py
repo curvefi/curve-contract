@@ -9,7 +9,7 @@ import json
 
 # Deployment parameters
 provider = Web3.IPCProvider('~/.ethereum/rinkeby/geth.ipc', timeout=10000, request_kwargs={'timeout': 10000})
-POA = False
+POA = True
 # DAI, USDC
 UNDERLYING_COINS = [
         '0x5592EC0cfb4dbc12D3aB100b257153436a1f0FEa',
