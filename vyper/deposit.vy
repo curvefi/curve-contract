@@ -58,6 +58,8 @@ ZEROS_Y: constant(uint256[N_COINS_Y]) = [ZERO256, ZERO256, ZERO256, ZERO256]
 ZEROS_CURVED: constant(uint256[N_COINS_CURVED]) = [ZERO256, ZERO256, ZERO256, ZERO256, ZERO256]
 LENDING_PRECISION: constant(uint256) = 10 ** 18
 PRECISION: constant(uint256) = 10 ** 18
+ONE256: constant(uint256) = 1  # Oh man, here we go XXX
+PRECISION_OUTER_MUL: constant(uint256[N_COINS]) = [ONE256, ONE256]
 PRECISION_MUL: constant(uint256[N_COINS_CURVED]) = ___PRECISION_MUL___
 FEE_DENOMINATOR: constant(uint256) = 10 ** 10
 FEE_IMPRECISION: constant(uint256) = 25 * 10 ** 8  # % of the fee
@@ -339,10 +341,10 @@ def _calc_withdraw_one_coin(_token_amount: uint256, i: int128, rates: uint256[N_
     A: uint256 = Curve(crv).A()
     fee: uint256 = Curve(crv).fee() * N_COINS / (4 * (N_COINS - 1))
     fee += fee * FEE_IMPRECISION / FEE_DENOMINATOR  # Overcharge to account for imprecision
-    precisions: uint256[N_COINS] = PRECISION_MUL
+    precisions: uint256[N_COINS] = PRECISION_OUTER_MUL
     total_supply: uint256 = ERC20(self.token).totalSupply()
 
-    xp: uint256[N_COINS] = PRECISION_MUL
+    xp: uint256[N_COINS] = PRECISION_OUTER_MUL
     S: uint256 = 0
     for j in range(N_COINS):
         xp[j] *= Curve(crv).balances(j)
