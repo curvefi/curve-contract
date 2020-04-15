@@ -141,8 +141,8 @@ def add_liquidity(uamounts: uint256[N_COINS_CURVED], min_mint_amount: uint256):
 
 
 @private
-def _send_all(_addr: address, min_uamounts: uint256[N_COINS], one: int128):
-    tethered: bool[N_COINS] = TETHERED
+def _send_all(_addr: address, min_uamounts: uint256[N_COINS_CURVED], one: int128):
+    tethered: bool[N_COINS_CURVED] = TETHERED
 
     for i in range(N_COINS):
         if (one < 0) or (i == one):
@@ -164,11 +164,16 @@ def _send_all(_addr: address, min_uamounts: uint256[N_COINS], one: int128):
 
 @public
 @nonreentrant('lock')
-def remove_liquidity(_amount: uint256, min_uamounts: uint256[N_COINS]):
-    zeros: uint256[N_COINS] = ZEROS
-
+def remove_liquidity(_amount: uint256, min_uamounts: uint256[N_COINS_CURVED]):
     assert_modifiable(ERC20(self.token).transferFrom(msg.sender, self, _amount))
+
+    # First - withdraw outer coins
+    zeros: uint256[N_COINS] = ZEROS
     Curve(self.curve).remove_liquidity(_amount, zeros)
+
+    yamount: uint256 = ERC20(self.ytoken).balanceOf(self)
+    zeros_y: uint256[N_COINS_Y] = ZEROS_Y
+    YCurve(self.ycurve).remove_liquidity(yamount, zeros_y)
 
     self._send_all(msg.sender, min_uamounts, -1)
 
