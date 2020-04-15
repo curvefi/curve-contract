@@ -72,11 +72,12 @@ token: public(address)
 
 ycurve: public(address)
 ytoken: public(address)
+yzap: public(address)
 
 
 @public
 def __init__(_coins: address[N_COINS], _underlying_coins: address[N_COINS],
-             _curve: address, _token: address):
+             _curve: address, _token: address, _yzap: address):
 
     for i in range(N_COINS - 1):
         self.coins[i] = _coins[i]
@@ -92,6 +93,7 @@ def __init__(_coins: address[N_COINS], _underlying_coins: address[N_COINS],
 
     self.curve = _curve
     self.token = _token
+    self.yzap = _yzap
 
 
 @public

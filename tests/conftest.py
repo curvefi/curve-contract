@@ -174,12 +174,29 @@ def swap2(w3, coins, coins_y, yerc20s, yerc20s_y, pool_token, pool_token_y, ypoo
 
 
 @pytest.fixture(scope='function')
-def deposit(w3, coins, yerc20s, pool_token, pool_token_y, swap2, ypool):
+def deposit_y(w3, coins_y, yerc20s_y, pool_token_y, ypool):
+    deposit_contract = deploy_contract(
+            w3, ['deposit_y.vy', 'yERC20.vy'], w3.eth.accounts[1],
+            [c.address for c in yerc20s_y], [c.address for c in coins_y],
+            ypool.address, pool_token_y.address,
+            replacements={
+                '___N_COINS___': str(len(UPY)),
+                '___N_ZEROS___': '[' + ', '.join(['ZERO256'] * len(UPY)) + ']',
+                '___TETHERED___': '[' + ', '.join(
+                        str(i) for i in tethered_y) + ']',
+                '___PRECISION_MUL___': '[' + ', '.join(
+                    'convert(%s, uint256)' % i for i in PRECISIONS_Y) + ']',
+            })
+    return deposit_contract
+
+
+@pytest.fixture(scope='function')
+def deposit(w3, coins, yerc20s, pool_token, pool_token_y, swap2, ypool, deposit_y):
     deposit_contract = deploy_contract(
             w3, ['deposit.vy', 'yERC20.vy'], w3.eth.accounts[1],
             [yerc20s[0].address, pool_token_y.address],
             [coins[0].address, ypool.address],
-            swap2.address, pool_token.address,
+            swap2.address, pool_token.address, deposit_y.address,
             replacements={
                 '___PRECISION_MUL___': '[' + ', '.join(
                     'convert(%s, uint256)' % i for i in PRECISIONS[:-1] + PRECISIONS_Y) + ']',
