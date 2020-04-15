@@ -48,6 +48,7 @@ contract YCurve:
     def owner() -> address: constant
     def coins(i: int128) -> address: constant
     def underlying_coins(i: int128) -> address: constant
+    def calc_token_amount(amounts: uint256[N_COINS_Y], deposit: bool) -> uint256: constant
 
 
 TETHERED: constant(bool[N_COINS_CURVED]) = [False, False, False, True, False]
@@ -144,7 +145,7 @@ def add_liquidity(uamounts: uint256[N_COINS_CURVED], min_mint_amount: uint256):
 def _send_all(_addr: address, min_uamounts: uint256[N_COINS_CURVED], one: int128):
     tethered: bool[N_COINS_CURVED] = TETHERED
 
-    for i in range(N_COINS):
+    for i in range(N_COINS_CURVED):
         if (one < 0) or (i == one):
             _coin: address = self.coins[i]
             _balance: uint256 = yERC20(_coin).balanceOf(self)
@@ -180,15 +181,17 @@ def remove_liquidity(_amount: uint256, min_uamounts: uint256[N_COINS_CURVED]):
 
 @public
 @nonreentrant('lock')
-def remove_liquidity_imbalance(uamounts: uint256[N_COINS], max_burn_amount: uint256):
+def remove_liquidity_imbalance(uamounts: uint256[N_COINS_CURVED], max_burn_amount: uint256):
     """
     Get max_burn_amount in, remove requested liquidity and transfer back what is left
     """
-    tethered: bool[N_COINS] = TETHERED
     _token: address = self.token
+    _ytoken: address = self.ytoken
+    _curve: address = self.curve
+    _ycurve: address = self.ycurve
 
-    amounts: uint256[N_COINS] = uamounts
-    for i in range(N_COINS):
+    amounts: uint256[N_COINS_CURVED] = uamounts
+    for i in range(N_COINS_CURVED):
         if amounts[i] > 0:
             rate: uint256 = yERC20(self.coins[i]).getPricePerFullShare()
             amounts[i] = amounts[i] * LENDING_PRECISION / rate
@@ -199,14 +202,49 @@ def remove_liquidity_imbalance(uamounts: uint256[N_COINS], max_burn_amount: uint
         _tokens = max_burn_amount
     assert_modifiable(ERC20(_token).transferFrom(msg.sender, self, _tokens))
 
-    Curve(self.curve).remove_liquidity_imbalance(amounts, max_burn_amount)
+    # Now this is tricky.
+    # * We calculate token amount needed for Y with over-estimation
+    # * Remove that token amount and sUSD
+    # * Remove individual coins other than sUSD from that Y Token
+    # * Deposit the rest of ytoken back to the pool
+    # * Return the rest of pool token back to the sender
+    # Phew. Expensive!
+
+    # So, calculate (the excessive) amount of ytokens to remove...
+    yfee: uint256 = YCurve(_ycurve).fee()
+    yamounts: uint256[N_COINS_Y] = ZEROS_Y
+    withdraw_y: bool = False
+    for i in range(N_COINS_Y):
+        j: int128 = i + N_COINS - 1
+        if amounts[j] > 0:
+            withdraw_y = True
+            yamounts[j] = amounts[i]
+    ytokens: uint256 = 0
+    if withdraw_y:
+        ytokens = YCurve(_ycurve).calc_token_amount(yamounts, False)
+        ytokens = ytokens + ytokens * yfee / FEE_DENOMINATOR
+
+    # Remove those amounts from the outer pool
+    outer_amounts: uint256[N_COINS] = ZEROS
+    for i in range(N_COINS - 1):
+        outer_amounts[i] = amounts[i]
+    outer_amounts[N_COINS-1] = ytokens
+    Curve(_curve).remove_liquidity_imbalance(outer_amounts, max_burn_amount)
+
+    # Remove yamounts from from ypool
+    if withdraw_y:
+        YCurve(_ycurve).remove_liquidity_imbalance(yamounts, ytokens)
+        # Add the rest of ytokens back
+        yback: uint256[N_COINS] = ZEROS
+        yback[N_COINS-1] = ERC20(_ytoken).balanceOf(self)
+        Curve(_curve).add_liquidity(yback, 0)
 
     # Transfer unused tokens back
     _tokens = ERC20(_token).balanceOf(self)
     assert_modifiable(ERC20(_token).transfer(msg.sender, _tokens))
 
     # Unwrap and transfer all the coins we've got
-    self._send_all(msg.sender, ZEROS, -1)
+    self._send_all(msg.sender, ZEROS_CURVED, -1)
 
 
 @private
