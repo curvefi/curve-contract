@@ -16,6 +16,9 @@ import yERC20 as yERC20
 # * Events for exchanges?
 # * Use ypool's zap to withdraw one coin from there?
 
+N_COINS: constant(int128) = 2
+N_COINS_Y: constant(int128) = 4
+N_COINS_CURVED: constant(int128) = 5
 
 # Tether transfer-only ABI
 contract USDT:
@@ -35,49 +38,54 @@ contract Curve:
     def underlying_coins(i: int128) -> address: constant
 
 
-N_COINS: constant(int128) = ___N_COINS___
-N_COINS_Y: constant(int128) = ___N_COINS_Y___
-TETHERED: constant(bool[N_COINS_Y]) = ___TETHERED___
+contract YCurve:
+    def add_liquidity(amounts: uint256[N_COINS_Y], min_mint_amount: uint256): modifying
+    def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS_Y]): modifying
+    def remove_liquidity_imbalance(amounts: uint256[N_COINS_Y], max_burn_amount: uint256): modifying
+    def balances(i: int128) -> uint256: constant
+    def A() -> uint256: constant
+    def fee() -> uint256: constant
+    def owner() -> address: constant
+    def coins(i: int128) -> address: constant
+    def underlying_coins(i: int128) -> address: constant
+
+
+TETHERED: constant(bool[N_COINS_CURVED]) = [False, False, False, True, False]
 ZERO256: constant(uint256) = 0  # This hack is really bad XXX
-ZEROS: constant(uint256[N_COINS]) = ___N_ZEROS___  # <- change
+ZEROS: constant(uint256[N_COINS]) = [ZERO256, ZERO256]
+ZEROS_Y: constant(uint256[N_COINS_Y]) = [ZERO256, ZERO256, ZERO256, ZERO256]
+ZEROS_CURVED: constant(uint256[N_COINS_CURVED]) = [ZERO256, ZERO256, ZERO256, ZERO256, ZERO256]
 LENDING_PRECISION: constant(uint256) = 10 ** 18
 PRECISION: constant(uint256) = 10 ** 18
-PRECISION_MUL: constant(uint256[N_COINS]) = ___PRECISION_MUL___
+PRECISION_MUL: constant(uint256[N_COINS_CURVED]) = ___PRECISION_MUL___
 FEE_DENOMINATOR: constant(uint256) = 10 ** 10
 FEE_IMPRECISION: constant(uint256) = 25 * 10 ** 8  # % of the fee
-CURVED: constant(bool[N_COINS]) = ___CURVED___
-CURVED_MAP: constant(int128[N_COINS_Y]) = ___CURVED_MAP___
-CURVED_SUBINDEX: constant(int128[N_COINS_Y]) = ___CURVED_SUBINDEX___
-CURVED_SIZE: int128 = ___CURVED_SIZE___
 
-curve_subcontracts: public(address[N_COINS])
-coins: public(address[N_COINS_Y])
-underlying_coins: public(address[N_COINS_Y])
+coins: public(address[N_COINS_CURVED])
+underlying_coins: public(address[N_COINS_CURVED])
+
 curve: public(address)
 token: public(address)
+
+ycurve: public(address)
+ytoken: public(address)
 
 
 @public
 def __init__(_coins: address[N_COINS], _underlying_coins: address[N_COINS],
              _curve: address, _token: address):
-    curved: bool[N_COINS] = CURVED
-    curved_map: int128[N_COINS_Y] = CURVED_MAP
-    curved_subindex: int128[N_COINS_Y] = CURVED_SUBINDEX
 
-    for i in range(N_COINS):
-        if curved[i]:
-            self.curve_subcontracts[i] = _underlying_coins[i]
-        else:
-            self.curve_subcontracts[i] = _curve
+    for i in range(N_COINS - 1):
+        self.coins[i] = _coins[i]
+        self.underlying_coins[i] = _underlying_coins[i]
 
-    for i in range(N_COINS_Y):
-        base: int128 = curved_map[i]
-        if curved[base]:
-            self.coins[i] = Curve(_underlying_coins[base]).coins(curved_subindex[i])
-            self.underlying_coins[i] = Curve(_underlying_coins[base]).underlying_coins(curved_subindex[i])
-        else:
-            self.coins[i] = _coins[base]
-            self.underlying_coins[i] = _underlying_coins[base]
+    self.ycurve = _underlying_coins[N_COINS - 1]
+    self.ytoken = _coins[N_COINS - 1]
+
+    for i in range(N_COINS - 1, N_COINS_CURVED):
+        j: int128 = i + 1 - N_COINS
+        self.coins[i] = Curve(_underlying_coins[N_COINS-1]).coins(j)
+        self.underlying_coins[i] = Curve(_underlying_coins[N_COINS-1]).underlying_coins(j)
 
     self.curve = _curve
     self.token = _token
@@ -85,13 +93,15 @@ def __init__(_coins: address[N_COINS], _underlying_coins: address[N_COINS],
 
 @public
 @nonreentrant('lock')
-def add_liquidity(uamounts: uint256[N_COINS_Y], min_mint_amount: uint256):
-    tethered: bool[N_COINS_Y] = TETHERED
-    amounts: uint256[N_COINS_Y] = ZEROS
-    curved: bool[N_COINS] = CURVED
-    curved_map: int128[N_COINS] = CURVED_MAP
+def add_liquidity(uamounts: uint256[N_COINS_CURVED], min_mint_amount: uint256):
+    tethered: bool[N_COINS_CURVED] = TETHERED
+    amounts: uint256[N_COINS_CURVED] = ZEROS_CURVED
+    _curve: address = self.curve
+    _token: address = self.token
+    _ycurve: address = self.ycurve
+    _ytoken: address = self.ytoken
 
-    for i in range(N_COINS_Y):
+    for i in range(N_COINS_CURVED):
         uamount: uint256 = uamounts[i]
 
         if uamount > 0:
@@ -107,15 +117,27 @@ def add_liquidity(uamounts: uint256[N_COINS_Y], min_mint_amount: uint256):
             ERC20(self.underlying_coins[i]).approve(self.coins[i], uamount)
             yERC20(self.coins[i]).deposit(uamount)
             amounts[i] = yERC20(self.coins[i]).balanceOf(self)
-            ERC20(self.coins[i]).approve(
-                self.curve_subcontracts[curved_map[i]], amounts[i])
+            if i < N_COINS - 1:
+                ERC20(self.coins[i]).approve(_curve, amounts[i])
+            else:
+                ERC20(self.coins[i]).approve(_ycurve, amounts[i])
+    # Now we have self owning amounts[] of ycoins, approved to both Curve contracts
 
-    # XXX
-    #
-    Curve(self.curve).add_liquidity(amounts, min_mint_amount)
+    amounts_inner: uint256[N_COINS_Y] = ZEROS_Y
+    for i in range(N_COINS-1, N_COINS_CURVED):
+        amounts_inner[i - (N_COINS - 1)] = amounts[i]
+    YCurve(_ycurve).add_liquidity(amounts_inner, 0)
+    ytoken_amount: uint256 = ERC20(_ytoken).balanceOf(self)
 
-    tokens: uint256 = ERC20(self.token).balanceOf(self)
-    assert_modifiable(ERC20(self.token).transfer(msg.sender, tokens))
+    amounts_outer: uint256[N_COINS] = ZEROS
+    for i in range(N_COINS-1):
+        amounts_outer[i] = amounts[i]
+    amounts_outer[N_COINS-1] = ytoken_amount
+
+    Curve(_curve).add_liquidity(amounts_outer, min_mint_amount)
+
+    tokens: uint256 = ERC20(_token).balanceOf(self)
+    assert_modifiable(ERC20(_token).transfer(msg.sender, tokens))
 
 
 @private

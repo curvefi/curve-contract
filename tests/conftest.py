@@ -181,20 +181,8 @@ def deposit(w3, coins, yerc20s, pool_token, pool_token_y, swap2, ypool):
             [coins[0].address, ypool.address],
             swap2.address, pool_token.address,
             replacements={
-                '___N_COINS___': str(N_COINS),
-                '___N_ZEROS___': '[' + ', '.join(['ZERO256'] * N_COINS) + ']',
-                '___TETHERED___': '[' + ', '.join(
-                        str(i) for i in curved_tethered) + ']',
-                '___CURVED___': '[' + ', '.join(
-                        str(i) for i in use_curved) + ']',
-                '___CURVED_MAP___': '[' + ', '.join(
-                        str(i) for i in curved_map) + ']',
-                '___CURVED_SUBINDEX___': '[' + ', '.join(
-                        str(i) for i in curved_subindex) + ']',
-                '___CURVED_SIZE___': str(curved_size),
-                '___N_COINS_Y___': str(len(curved_map)),
                 '___PRECISION_MUL___': '[' + ', '.join(
-                    'convert(%s, uint256)' % i for i in PRECISIONS) + ']',
+                    'convert(%s, uint256)' % i for i in PRECISIONS[:-1] + PRECISIONS_Y) + ']',
             })
     return deposit_contract
 
