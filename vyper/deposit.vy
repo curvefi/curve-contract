@@ -51,6 +51,10 @@ contract YCurve:
     def calc_token_amount(amounts: uint256[N_COINS_Y], deposit: bool) -> uint256: constant
 
 
+contract YZap:
+    def calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> uint256: constant
+
+
 TETHERED: constant(bool[N_COINS_CURVED]) = [False, False, False, True, False]
 ZERO256: constant(uint256) = 0  # This hack is really bad XXX
 ZEROS: constant(uint256[N_COINS]) = [ZERO256, ZERO256]
@@ -335,7 +339,7 @@ def get_y(A: uint256, i: int128, _xp: uint256[N_COINS], D: uint256) -> uint256:
 
 @private
 @constant
-def _calc_withdraw_one_coin(_token_amount: uint256, i: int128, rates: uint256[N_COINS]) -> uint256:
+def _calc_withdraw_one_coin(_token_amount: uint256, k: int128, rates: uint256[N_COINS]) -> uint256:
     # First, need to calculate
     # * Get current D
     # * Solve Eqn against y_i for D - _token_amount
@@ -345,6 +349,12 @@ def _calc_withdraw_one_coin(_token_amount: uint256, i: int128, rates: uint256[N_
     fee += fee * FEE_IMPRECISION / FEE_DENOMINATOR  # Overcharge to account for imprecision
     precisions: uint256[N_COINS] = PRECISION_OUTER_MUL
     total_supply: uint256 = ERC20(self.token).totalSupply()
+
+    i: int128 = k
+    if i >= N_COINS:
+        i = N_COINS - 1
+    # if k <= N_COINS-1: proceed as we did
+    # if k >= N_COINS-1: calculate number of ytoken, then call another zap to get ytoken number
 
     xp: uint256[N_COINS] = PRECISION_OUTER_MUL
     S: uint256 = 0
@@ -373,6 +383,9 @@ def _calc_withdraw_one_coin(_token_amount: uint256, i: int128, rates: uint256[N_
     dy: uint256 = xp_reduced[i] - self.get_y(A, i, xp_reduced, D1)
     dy = dy / precisions[i]
 
+    if i == N_COINS - 1:
+        dy = YZap(self.yzap).calc_withdraw_one_coin(dy, k - (N_COINS-1))
+
     return dy
 
 
@@ -381,8 +394,9 @@ def _calc_withdraw_one_coin(_token_amount: uint256, i: int128, rates: uint256[N_
 def calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> uint256:
     rates: uint256[N_COINS] = ZEROS
 
-    for j in range(N_COINS):
+    for j in range(N_COINS-1):
         rates[j] = yERC20(self.coins[j]).getPricePerFullShare()
+    rates[N_COINS-1] = 10 ** 18
 
     return self._calc_withdraw_one_coin(_token_amount, i, rates)
 
