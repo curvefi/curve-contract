@@ -428,16 +428,22 @@ def calc_token_amount(amounts: uint256[N_COINS_CURVED], deposit: bool) -> uint25
     return Curve(self.curve).calc_token_amount(amounts_outer, deposit)
 
 
-@public
+@private
 @constant
-def get_dy(i: int128, j: int128, dx: uint256) -> uint256:
+def _get_dy(i: int128, j: int128, dx_: uint256, underlying: bool) -> uint256:
     assert (i >= N_COINS-1) or (j >= N_COINS-1)
+
+    dx: uint256 = dx_
+    if underlying:
+        dx = dx_ * LENDING_PRECISION / yERC20(self.coins[i]).getPricePerFullShare()
 
     if i < N_COINS-1:
         # In outer pool -> out of inner pool
         dytoken_amount: uint256 = Curve(self.curve).get_dy(i, N_COINS-1, dx)
         dy: uint256 = YZap(self.yzap).calc_withdraw_one_coin(dytoken_amount, j - (N_COINS-1))
-        return dy * LENDING_PRECISION / yERC20(self.coins[j]).getPricePerFullShare()
+        if not underlying:
+            dy = dy * LENDING_PRECISION / yERC20(self.coins[j]).getPricePerFullShare()
+        return dy
 
     else:
         # Deposit to inner pool -> get out of outer pool
@@ -445,13 +451,21 @@ def get_dy(i: int128, j: int128, dx: uint256) -> uint256:
         amounts[i - (N_COINS-1)] = dx
         dytoken_amount: uint256 = YCurve(self.ycurve).calc_token_amount(amounts, True)
         dy: uint256 = Curve(self.curve).get_dy(N_COINS-1, j, dytoken_amount)
+        if underlying:
+            dy = dy * yERC20(self.coins[j]).getPricePerFullShare() / LENDING_PRECISION
         return dy
 
 
 @public
 @constant
+def get_dy(i: int128, j: int128, dx: uint256) -> uint256:
+    return self._get_dy(i, j, dx, False)
+
+
+@public
+@constant
 def get_dy_underlying(i: int128, j: int128, dx: uint256) -> uint256:
-    pass
+    return self._get_dy(i, j, dx, True)
 
 
 @public
