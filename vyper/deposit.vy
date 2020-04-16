@@ -402,6 +402,24 @@ def calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> uint256:
 
 
 @public
+@constant
+def calc_token_amount(amounts: uint256[N_COINS_CURVED], deposit: bool) -> uint256:
+    pass
+
+
+@public
+@constant
+def get_dy(i: int128, j: int128, dx: uint256) -> uint256:
+    pass
+
+
+@public
+@constant
+def get_dy_underlying(i: int128, j: int128, dx: uint256) -> uint256:
+    pass
+
+
+@public
 @nonreentrant('lock')
 def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_uamount: uint256, donate_dust: bool = False):
     """
