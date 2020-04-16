@@ -499,15 +499,36 @@ def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256):
         dytoken_amount: uint256 = ERC20(_ytoken).balanceOf(self)
         ERC20(_ytoken).approve(_yzap, dytoken_amount)
         YZap(_yzap).remove_liquidity_one_coin(dytoken_amount, j - (N_COINS-1), min_dy, True)
-        dy: uint256 = ERC20(ucoin_out).balanceOf(self)
-        if tethered[j]:
-            USDT(ucoin_out).transfer(msg.sender, dy)
-        else:
-            assert_modifiable(ERC20(ucoin_out).transfer(msg.sender, dy))
 
     else:
         # Deposit to inner pool -> get out of outer pool
-        pass
+        coin_in: address = self.coins[i]
+        _ycurve: address = self.ycurve
+
+        # Wraps etc
+        ERC20(ucoin_in).approve(coin_in, dx)
+        yERC20(coin_in).deposit(dx)
+        dxc: uint256 = ERC20(coin_in).balanceOf(self)
+        amounts: uint256[N_COINS_Y] = ZEROS_Y
+        amounts[i - (N_COINS-1)] = dxc
+
+        # Deposit to YPool
+        ERC20(coin_in).approve(_ycurve, dxc)
+        YCurve(_ycurve).add_liquidity(amounts, 0)
+
+        dx_ytoken: uint256 = ERC20(_ytoken).balanceOf(self)
+        ERC20(_ytoken).approve(_curve, dx_ytoken)
+        # Exchange in outer pool
+        Curve(_curve).exchange_underlying(N_COINS-1, j, dx_ytoken, 0)
+
+    dy: uint256 = ERC20(ucoin_out).balanceOf(self)
+
+    # Check if we've got enough and send
+    assert dy >= min_dy, "Not enough coins produced as a result"
+    if tethered[j]:
+        USDT(ucoin_out).transfer(msg.sender, dy)
+    else:
+        assert_modifiable(ERC20(ucoin_out).transfer(msg.sender, dy))
 
 
 @public
