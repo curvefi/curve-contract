@@ -40,6 +40,7 @@ contract Curve:
     def donate_dust(amounts: uint256[N_COINS]): modifying
     def calc_token_amount(amounts: uint256[N_COINS], deposit: bool) -> uint256: constant
     def get_dy(i: int128, j: int128, dx: uint256) -> uint256: constant
+    def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256): modifying
 
 
 contract YCurve:
@@ -58,6 +59,7 @@ contract YCurve:
 
 contract YZap:
     def calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> uint256: constant
+    def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_uamount: uint256, donate_dust: bool = False): modifying
 
 
 TETHERED: constant(bool[N_COINS_CURVED]) = [False, False, False, True, False]
@@ -477,7 +479,35 @@ def exchange(i: int128, j: int128, dx: uint256, min_dy: uint256):
 @public
 @nonreentrant('lock')
 def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256):
-    pass
+    assert (i >= N_COINS-1) or (j >= N_COINS-1)
+    tethered: bool[N_COINS_CURVED] = TETHERED
+
+    ucoin_in: address = self.underlying_coins[i]
+    ucoin_out: address = self.underlying_coins[j]
+    if tethered[i]:
+        USDT(ucoin_in).transferFrom(msg.sender, self, dx)
+    else:
+        assert_modifiable(ERC20(ucoin_in).transferFrom(msg.sender, self, dx))
+
+    _curve: address = self.curve
+    _yzap: address = self.yzap
+    _ytoken: address = self.ytoken
+    if i < N_COINS-1:
+        # In outer pool -> out of inner pool
+        ERC20(ucoin_in).approve(_curve, dx)
+        Curve(_curve).exchange_underlying(i, N_COINS-1, dx, 0)
+        dytoken_amount: uint256 = ERC20(_ytoken).balanceOf(self)
+        ERC20(_ytoken).approve(_yzap, dytoken_amount)
+        YZap(_yzap).remove_liquidity_one_coin(dytoken_amount, j - (N_COINS-1), min_dy, True)
+        dy: uint256 = ERC20(ucoin_out).balanceOf(self)
+        if tethered[j]:
+            USDT(ucoin_out).transfer(msg.sender, dy)
+        else:
+            assert_modifiable(ERC20(ucoin_out).transfer(msg.sender, dy))
+
+    else:
+        # Deposit to inner pool -> get out of outer pool
+        pass
 
 
 @public
