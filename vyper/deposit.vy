@@ -36,6 +36,8 @@ contract Curve:
     def owner() -> address: constant
     def coins(i: int128) -> address: constant
     def underlying_coins(i: int128) -> address: constant
+    def get_virtual_price() -> uint256: constant
+    def donate_dust(amounts: uint256[N_COINS]): modifying
 
 
 contract YCurve:
@@ -257,15 +259,6 @@ def remove_liquidity_imbalance(uamounts: uint256[N_COINS_CURVED], max_burn_amoun
 
 @private
 @constant
-def _xp_mem(rates: uint256[N_COINS], _balances: uint256[N_COINS]) -> uint256[N_COINS]:
-    result: uint256[N_COINS] = rates
-    for i in range(N_COINS):
-        result[i] = result[i] * _balances[i] / PRECISION
-    return result
-
-
-@private
-@constant
 def get_D(A: uint256, xp: uint256[N_COINS]) -> uint256:
     S: uint256 = 0
     for _x in xp:
@@ -339,7 +332,7 @@ def get_y(A: uint256, i: int128, _xp: uint256[N_COINS], D: uint256) -> uint256:
 
 @private
 @constant
-def _calc_withdraw_one_coin(_token_amount: uint256, k: int128, rates: uint256[N_COINS]) -> uint256:
+def _calc_withdraw_one_coin(_token_amount: uint256, k: int128, rates: uint256[N_COINS]) -> uint256[2]:
     # First, need to calculate
     # * Get current D
     # * Solve Eqn against y_i for D - _token_amount
@@ -381,12 +374,15 @@ def _calc_withdraw_one_coin(_token_amount: uint256, k: int128, rates: uint256[N_
         xp_reduced[j] -= fee * dx_expected / FEE_DENOMINATOR
 
     dy: uint256 = xp_reduced[i] - self.get_y(A, i, xp_reduced, D1)
-    dy = dy / precisions[i]
 
+    dy_inner: uint256 = 0
     if i == N_COINS - 1:
-        dy = YZap(self.yzap).calc_withdraw_one_coin(dy, k - (N_COINS-1))
+        dy = dy * LENDING_PRECISION / rates[N_COINS-1]  # YToken
+        dy_inner = YZap(self.yzap).calc_withdraw_one_coin(dy, k - (N_COINS-1))
+    else:
+        dy = dy / precisions[i]  # Plain assets - plain results
 
-    return dy
+    return [dy, dy_inner]
 
 
 @public
@@ -396,9 +392,13 @@ def calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> uint256:
 
     for j in range(N_COINS-1):
         rates[j] = yERC20(self.coins[j]).getPricePerFullShare()
-    rates[N_COINS-1] = 10 ** 18
+    rates[N_COINS-1] = Curve(self.curve).get_virtual_price()
 
-    return self._calc_withdraw_one_coin(_token_amount, i, rates)
+    dys: uint256[2] = self._calc_withdraw_one_coin(_token_amount, i, rates)
+    if dys[1] == 0:
+        return dys[0]
+    else:
+        return dys[1]
 
 
 @public
@@ -408,24 +408,55 @@ def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_uamount: ui
     Remove _amount of liquidity all in a form of coin i
     """
     rates: uint256[N_COINS] = ZEROS
+    _curve: address = self.curve
     _token: address = self.token
+    _ytoken: address = self.ytoken
+    k: int128 = i
+    if k >= N_COINS:
+        k = N_COINS - 1
 
-    for j in range(N_COINS):
+    for j in range(N_COINS-1):
         rates[j] = yERC20(self.coins[j]).getPricePerFullShare()
+    rates[N_COINS-1] = Curve(self.curve).get_virtual_price()
 
-    dy: uint256 = self._calc_withdraw_one_coin(_token_amount, i, rates)
+    # [dy_outer, dy_inner]
+    dys: uint256[2] = self._calc_withdraw_one_coin(_token_amount, i, rates)
+    dy_outer: uint256 = dys[0]
+    dy_inner: uint256 = dys[1]
+    dy: uint256 = 0
+    if dy_inner == 0:
+        dy = dy_outer
+    else:
+        dy = dy_inner
     assert dy >= min_uamount, "Not enough coins removed"
 
     assert_modifiable(
         ERC20(self.token).transferFrom(msg.sender, self, _token_amount))
 
+    # First, remove any asset we need from SCurve pool
     amounts: uint256[N_COINS] = ZEROS
-    amounts[i] = dy * LENDING_PRECISION / rates[i]
+    if k == N_COINS - 1:
+        amounts[k] = dy_outer  # YToken
+    else:
+        amounts[k] = dy_outer * LENDING_PRECISION / rates[k]  # Compounded
     token_amount_before: uint256 = ERC20(_token).balanceOf(self)
-    Curve(self.curve).remove_liquidity_imbalance(amounts, _token_amount)
+    Curve(_curve).remove_liquidity_imbalance(amounts, _token_amount)
+
+    if k == N_COINS - 1:
+        # We need to withdraw from YToken
+        inner_amounts: uint256[N_COINS_Y] = ZEROS_Y
+        rate: uint256 = yERC20(self.coins[i]).getPricePerFullShare()
+        inner_amounts[i - (N_COINS - 1)] = dy_inner * LENDING_PRECISION / rate
+        YCurve(self.ycurve).remove_liquidity_imbalance(inner_amounts, dy_outer)
+        # We have some YToken dust, and we can donate it to LPs
+        amounts[k] = ERC20(_ytoken).balanceOf(self)
+        if amounts[k] > 0:
+            ERC20(_ytoken).approve(_curve, amounts[k])
+            Curve(_curve).donate_dust(amounts)
 
     # Unwrap and transfer all the coins we've got
-    self._send_all(msg.sender, ZEROS, i)
+    # And we really got only i-th coin
+    self._send_all(msg.sender, ZEROS_CURVED, i)
 
     if not donate_dust:
         # Transfer unused tokens back
