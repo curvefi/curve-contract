@@ -38,6 +38,7 @@ contract Curve:
     def underlying_coins(i: int128) -> address: constant
     def get_virtual_price() -> uint256: constant
     def donate_dust(amounts: uint256[N_COINS]): modifying
+    def calc_token_amount(amounts: uint256[N_COINS], deposit: bool) -> uint256: constant
 
 
 contract YCurve:
@@ -404,7 +405,25 @@ def calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> uint256:
 @public
 @constant
 def calc_token_amount(amounts: uint256[N_COINS_CURVED], deposit: bool) -> uint256:
-    pass
+    # amounts are compounded
+    amounts_inner: uint256[N_COINS_Y] = ZEROS_Y
+    amounts_outer: uint256[N_COINS] = ZEROS
+
+    y_needed: bool = False
+    for i in range(N_COINS_Y):
+        amounts_inner[i] = amounts[N_COINS - 1 + i]
+        if amounts_inner[i] > 0:
+            y_needed = True
+
+    ypool_token: uint256 = 0
+    if y_needed:
+        ypool_token = YCurve(self.ycurve).calc_token_amount(amounts_inner, deposit)
+
+    for i in range(N_COINS-1):
+        amounts_outer[i] = amounts[i]
+    amounts_outer[N_COINS-1] = ypool_token
+
+    return Curve(self.curve).calc_token_amount(amounts_outer, deposit)
 
 
 @public
