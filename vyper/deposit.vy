@@ -39,6 +39,7 @@ contract Curve:
     def get_virtual_price() -> uint256: constant
     def donate_dust(amounts: uint256[N_COINS]): modifying
     def calc_token_amount(amounts: uint256[N_COINS], deposit: bool) -> uint256: constant
+    def get_dy(i: int128, j: int128, dx: uint256) -> uint256: constant
 
 
 contract YCurve:
@@ -52,6 +53,7 @@ contract YCurve:
     def coins(i: int128) -> address: constant
     def underlying_coins(i: int128) -> address: constant
     def calc_token_amount(amounts: uint256[N_COINS_Y], deposit: bool) -> uint256: constant
+    def get_dy(i: int128, j: int128, dx: uint256) -> uint256: constant
 
 
 contract YZap:
@@ -429,12 +431,38 @@ def calc_token_amount(amounts: uint256[N_COINS_CURVED], deposit: bool) -> uint25
 @public
 @constant
 def get_dy(i: int128, j: int128, dx: uint256) -> uint256:
-    pass
+    assert (i >= N_COINS-1) or (j >= N_COINS-1)
+
+    if i < N_COINS-1:
+        # In outer pool -> out of inner pool
+        dytoken_amount: uint256 = Curve(self.curve).get_dy(i, N_COINS-1, dx)
+        dy: uint256 = YZap(self.yzap).calc_withdraw_one_coin(dytoken_amount, j - (N_COINS-1))
+        return dy * LENDING_PRECISION / yERC20(self.coins[j]).getPricePerFullShare()
+
+    else:
+        # Deposit to inner pool -> get out of outer pool
+        amounts: uint256[N_COINS_Y] = ZEROS_Y
+        amounts[i - (N_COINS-1)] = dx
+        dytoken_amount: uint256 = YCurve(self.ycurve).calc_token_amount(amounts, True)
+        dy: uint256 = Curve(self.curve).get_dy(N_COINS-1, j, dytoken_amount)
+        return dy
 
 
 @public
 @constant
 def get_dy_underlying(i: int128, j: int128, dx: uint256) -> uint256:
+    pass
+
+
+@public
+@nonreentrant('lock')
+def exchange(i: int128, j: int128, dx: uint256, min_dy: uint256):
+    pass
+
+
+@public
+@nonreentrant('lock')
+def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256):
     pass
 
 
