@@ -140,6 +140,7 @@ def add_liquidity(uamounts: uint256[N_COINS_CURVED], min_mint_amount: uint256):
         amounts_outer[i] = amounts[i]
     amounts_outer[N_COINS-1] = ytoken_amount
 
+    ERC20(_ytoken).approve(_curve, ytoken_amount)
     Curve(_curve).add_liquidity(amounts_outer, min_mint_amount)
 
     tokens: uint256 = ERC20(_token).balanceOf(self)
