@@ -4,17 +4,6 @@ from vyper.interfaces import ERC20
 import yERC20 as yERC20
 
 # Pool looks like [ySUSD, [yDAI, yUSDC, yUSDT, yTUSD]]
-# Implements (in plain coins):
-# * add_liquidity
-# * remove_liquidity
-# * remove_liquidity_imbalance
-# * remove_liquidity_one_coin
-# * exchange
-# * exchange_underlying
-# * get_dy_underlying
-# * get_dy
-# * Events for exchanges?
-# * Use ypool's zap to withdraw one coin from there?
 
 N_COINS: constant(int128) = 2
 N_COINS_Y: constant(int128) = 4
@@ -41,6 +30,7 @@ contract Curve:
     def calc_token_amount(amounts: uint256[N_COINS], deposit: bool) -> uint256: constant
     def get_dy(i: int128, j: int128, dx: uint256) -> uint256: constant
     def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256): modifying
+    def exchange(i: int128, j: int128, dx: uint256, min_dy: uint256): modifying
 
 
 contract YCurve:
@@ -473,7 +463,59 @@ def get_dy_underlying(i: int128, j: int128, dx: uint256) -> uint256:
 @public
 @nonreentrant('lock')
 def exchange(i: int128, j: int128, dx: uint256, min_dy: uint256):
-    pass
+    assert (i >= N_COINS-1) or (j >= N_COINS-1)
+
+    coin_in: address = self.coins[i]
+    coin_out: address = self.coins[j]
+    assert_modifiable(ERC20(coin_in).transferFrom(msg.sender, self, dx))
+
+    _curve: address = self.curve
+    _yzap: address = self.yzap
+    _ytoken: address = self.ytoken
+    dy: uint256 = 0
+
+    if i < N_COINS-1:
+        # In outer pool -> out of inner pool
+        ERC20(coin_in).approve(_curve, dx)
+        Curve(_curve).exchange(i, N_COINS-1, dx, 0)
+        dytoken_amount: uint256 = ERC20(_ytoken).balanceOf(self)
+
+        # We repeat calculation of the other zap and do remove_liquidity_imbalance outselves
+        # in order to not wrap/unwrap twice
+        dy = YZap(_yzap).calc_withdraw_one_coin(dytoken_amount, j - (N_COINS-1))
+        amounts: uint256[N_COINS_Y] = ZEROS_Y
+        amounts[j - (N_COINS-1)] = dy
+
+        # Remove liquidity from Y
+        YCurve(self.ycurve).remove_liquidity_imbalance(amounts, dytoken_amount)
+
+        # Donate any dust left to LPs
+        dytoken_amount = ERC20(_ytoken).balanceOf(self)
+        if dytoken_amount > 0:
+            dust_amounts: uint256[N_COINS] = ZEROS
+            dust_amounts[N_COINS-1] = dytoken_amount
+            Curve(_curve).donate_dust(dust_amounts)
+
+    else:
+        # Deposit to inner pool -> get out of outer pool
+        _ycurve: address = self.ycurve
+
+        # Deposit to YPool
+        amounts: uint256[N_COINS_Y] = ZEROS_Y
+        amounts[i - (N_COINS-1)] = dx
+        ERC20(coin_in).approve(_ycurve, dx)
+        YCurve(_ycurve).add_liquidity(amounts, 0)
+
+        dx_ytoken: uint256 = ERC20(_ytoken).balanceOf(self)
+        ERC20(_ytoken).approve(_curve, dx_ytoken)
+        # Exchange in outer pool
+        Curve(_curve).exchange(N_COINS-1, j, dx_ytoken, 0)
+
+        dy = ERC20(coin_out).balanceOf(self)
+
+    # Check if we've got enough and send
+    assert dy >= min_dy, "Not enough coins produced as a result"
+    assert_modifiable(ERC20(coin_out).transfer(msg.sender, dy))
 
 
 @public
@@ -492,6 +534,7 @@ def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256):
     _curve: address = self.curve
     _yzap: address = self.yzap
     _ytoken: address = self.ytoken
+
     if i < N_COINS-1:
         # In outer pool -> out of inner pool
         ERC20(ucoin_in).approve(_curve, dx)
