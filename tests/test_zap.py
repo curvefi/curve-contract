@@ -86,7 +86,7 @@ def test_remove_liquidity_imbalance(
     withdraw_amounts = [int(a * random() / 2) for a in amounts]
     camounts = [a * 10 ** 18 // r for a, r in zip(withdraw_amounts, rates)]
     token_amount = deposit.caller.calc_token_amount(camounts, False)
-    token_amount = int(1.005 * token_amount)
+    token_amount = int(1.002 * token_amount)
     pool_token.functions.approve(deposit.address, token_amount).transact(from_sam)
     with pytest.raises(TransactionFailed):
         deposit.functions.remove_liquidity_imbalance(withdraw_amounts, int(0.99 * token_amount)).transact(from_sam)
