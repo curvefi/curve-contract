@@ -62,3 +62,32 @@ def test_deposit_withdraw(
     balances = [c.caller.balanceOf(sam) for c in coins]
     for old, new, a in zip(old_balances, balances, half_amounts):
         assert approx((new - old), a, 1e-8)  # <- approx b/c of precision of rates
+
+
+def test_remove_liquidity_imbalance(
+        w3, ypool, coins, coins_y, yerc20s, yerc20s_y, pool_token_y, swap2,
+        pool_token, deposit):
+    sam = w3.eth.accounts[0]  # Sam owns the bank
+    from_sam = {'from': sam}
+
+    coins = [coins[0]] + coins_y
+    ycoins = [yerc20s[0]] + yerc20s_y
+
+    U = [UU[0]] + UUY
+    amounts = [10000 * u for u in U]
+    rates = [c.caller.getPricePerFullShare() for c in ycoins]
+
+    # Deposit plain
+    for amount, c in zip(amounts, coins):
+        c.functions.approve(deposit.address, amount).transact(from_sam)
+    # For the first deposit, calc_token_amount is not working
+    deposit.functions.add_liquidity(amounts, 0).transact(from_sam)
+
+    withdraw_amounts = [int(a * random() / 2) for a in amounts]
+    camounts = [a * 10 ** 18 // r for a, r in zip(withdraw_amounts, rates)]
+    token_amount = deposit.caller.calc_token_amount(camounts, False)
+    token_amount = int(1.005 * token_amount)
+    pool_token.functions.approve(deposit.address, token_amount).transact(from_sam)
+    with pytest.raises(TransactionFailed):
+        deposit.functions.remove_liquidity_imbalance(withdraw_amounts, int(0.99 * token_amount)).transact(from_sam)
+    deposit.functions.remove_liquidity_imbalance(withdraw_amounts, token_amount).transact(from_sam)

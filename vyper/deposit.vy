@@ -224,7 +224,7 @@ def remove_liquidity_imbalance(uamounts: uint256[N_COINS_CURVED], max_burn_amoun
         j: int128 = i + N_COINS - 1
         if amounts[j] > 0:
             withdraw_y = True
-            yamounts[j] = amounts[i]
+            yamounts[i] = amounts[j]
     ytokens: uint256 = 0
     if withdraw_y:
         ytokens = YCurve(_ycurve).calc_token_amount(yamounts, False)
@@ -243,6 +243,7 @@ def remove_liquidity_imbalance(uamounts: uint256[N_COINS_CURVED], max_burn_amoun
         # Add the rest of ytokens back
         yback: uint256[N_COINS] = ZEROS
         yback[N_COINS-1] = ERC20(_ytoken).balanceOf(self)
+        ERC20(_ytoken).approve(_curve, yback[N_COINS-1])
         Curve(_curve).add_liquidity(yback, 0)
 
     # Transfer unused tokens back
