@@ -1,5 +1,6 @@
 import pytest
 from random import randrange, random
+from itertools import permutations
 from eth_tester.exceptions import TransactionFailed
 from .conftest import UU, UUY, approx
 
@@ -118,7 +119,6 @@ def test_withdraw_one_coin(
     # Deposit plain
     for amount, c in zip(amounts, coins):
         c.functions.approve(deposit.address, amount).transact(from_sam)
-    # For the first deposit, calc_token_amount is not working
     deposit.functions.add_liquidity(amounts, 0).transact(from_sam)
 
     tokens = pool_token.caller.balanceOf(sam)
@@ -151,3 +151,55 @@ def test_withdraw_one_coin(
             assert approx(balances[j] - old_balances[j], coins_to_withdraw, 2e-4)
         else:
             assert balances[j] == old_balances[j]
+
+
+def test_exchange(
+        w3, ypool, coins, coins_y, yerc20s, yerc20s_y, pool_token_y, swap2,
+        pool_token, deposit, deposit_y):
+    sam = w3.eth.accounts[0]  # Sam owns the bank
+    from_sam = {'from': sam}
+
+    coins = [coins[0]] + coins_y
+    ycoins = [yerc20s[0]] + yerc20s_y
+
+    U = [UU[0]] + UUY
+    amounts = [10000 * u for u in U]
+
+    # Deposit plain
+    for amount, c in zip(amounts, coins):
+        c.functions.approve(deposit.address, amount).transact(from_sam)
+    deposit.functions.add_liquidity(amounts, 0).transact(from_sam)
+
+    # Underlying
+    for i, j in permutations(range(5), 2):
+        if i != 0 and j != 0:
+            continue  # Can only swap with susd
+        amount = int(0.5 * random() * amounts[i] / 10)
+        expected_dy = deposit.caller.get_dy_underlying(i, j, amount)
+        coins[i].functions.approve(deposit.address, amount).transact(from_sam)
+        old_balances = [c.caller.balanceOf(sam) for c in coins]
+        with pytest.raises(TransactionFailed):
+            deposit.functions.exchange_underlying(i, j, amount, int(1.01 * expected_dy)).transact(from_sam)
+        deposit.functions.exchange_underlying(i, j, amount, int(0.99 * expected_dy)).transact(from_sam)
+        balances = [c.caller.balanceOf(sam) for c in coins]
+        assert old_balances[i] - balances[i] == amount
+        assert approx(balances[j] - old_balances[j], expected_dy, 1e-3)
+
+    # Compounded
+    for i, j in permutations(range(5), 2):
+        if i != 0 and j != 0:
+            continue  # Can only swap with susd
+        amount = int(0.5 * random() * amounts[i] / 10)
+        coins[i].functions.approve(ycoins[i].address, amount).transact(from_sam)
+        ycoins[i].functions.deposit(amount).transact(from_sam)
+        camount = ycoins[i].caller.balanceOf(sam)
+
+        expected_dy = deposit.caller.get_dy(i, j, camount)
+        ycoins[i].functions.approve(deposit.address, camount).transact(from_sam)
+        old_balances = [c.caller.balanceOf(sam) for c in ycoins]
+        with pytest.raises(TransactionFailed):
+            deposit.functions.exchange(i, j, camount, int(1.01 * expected_dy)).transact(from_sam)
+        deposit.functions.exchange(i, j, camount, int(0.99 * expected_dy)).transact(from_sam)
+        balances = [c.caller.balanceOf(sam) for c in ycoins]
+        assert old_balances[i] - balances[i] == camount
+        assert approx(balances[j] - old_balances[j], expected_dy, 2e-4)

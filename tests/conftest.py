@@ -153,7 +153,7 @@ def ypool(w3, coins_y, yerc20s_y, pool_token_y):
 def swap2(w3, coins, coins_y, yerc20s, yerc20s_y, pool_token, pool_token_y, ypool):
     swap_contract = deploy_contract(
             w3, ['stableswap.vy', 'ERC20m.vy', 'yERC20.vy'], w3.eth.accounts[1],
-            [yerc20s[0].address, pool_token_y.address], [coins_y[0].address, pool_token_y.address],
+            [yerc20s[0].address, pool_token_y.address], [coins[0].address, pool_token_y.address],
             [yerc20s[0].address, ypool.address], pool_token.address, 360 * 2, 10 ** 7,
             replacements={
                 '___N_COINS___': str(N_COINS),

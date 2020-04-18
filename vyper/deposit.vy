@@ -440,10 +440,14 @@ def _get_dy(i: int128, j: int128, dx_: uint256, underlying: bool) -> uint256:
         return dy
 
     else:
+        _ycurve: address = self.ycurve
         # Deposit to inner pool -> get out of outer pool
         amounts: uint256[N_COINS_Y] = ZEROS_Y
         amounts[i - (N_COINS-1)] = dx
-        dytoken_amount: uint256 = YCurve(self.ycurve).calc_token_amount(amounts, True)
+        yfee: uint256 = YCurve(_ycurve).fee()
+        dytoken_amount: uint256 = YCurve(_ycurve).calc_token_amount(amounts, True)
+        # Half fee is taken for "half an exchange" on average (not precise)
+        dytoken_amount -= dytoken_amount * yfee / FEE_DENOMINATOR / 2
         dy: uint256 = Curve(self.curve).get_dy(N_COINS-1, j, dytoken_amount)
         if underlying:
             dy = dy * yERC20(self.coins[j]).getPricePerFullShare() / LENDING_PRECISION
@@ -486,6 +490,7 @@ def exchange(i: int128, j: int128, dx: uint256, min_dy: uint256):
         # in order to not wrap/unwrap twice
         dy = YZap(_yzap).calc_withdraw_one_coin(dytoken_amount, j - (N_COINS-1))
         amounts: uint256[N_COINS_Y] = ZEROS_Y
+        dy = dy * LENDING_PRECISION / yERC20(coin_out).getPricePerFullShare()
         amounts[j - (N_COINS-1)] = dy
 
         # Remove liquidity from Y
@@ -496,6 +501,7 @@ def exchange(i: int128, j: int128, dx: uint256, min_dy: uint256):
         if dytoken_amount > 0:
             dust_amounts: uint256[N_COINS] = ZEROS
             dust_amounts[N_COINS-1] = dytoken_amount
+            ERC20(_ytoken).approve(_curve, dytoken_amount)
             Curve(_curve).donate_dust(dust_amounts)
 
     else:
