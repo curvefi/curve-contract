@@ -99,3 +99,55 @@ def test_remove_liquidity_imbalance(
 
     for old, new, a in zip(old_balances, balances, withdraw_amounts):
         assert approx((new - old), a, 1e-10)
+
+
+@pytest.mark.parametrize("i", range(5))
+def test_withdraw_one_coin(
+        w3, ypool, coins, coins_y, yerc20s, yerc20s_y, pool_token_y, swap2,
+        pool_token, deposit, i):
+    sam = w3.eth.accounts[0]  # Sam owns the bank
+    from_sam = {'from': sam}
+
+    coins = [coins[0]] + coins_y
+    ycoins = [yerc20s[0]] + yerc20s_y
+
+    U = [UU[0]] + UUY
+    amounts = [10000 * u for u in U]
+    rates = [c.caller.getPricePerFullShare() for c in ycoins]
+
+    # Deposit plain
+    for amount, c in zip(amounts, coins):
+        c.functions.approve(deposit.address, amount).transact(from_sam)
+    # For the first deposit, calc_token_amount is not working
+    deposit.functions.add_liquidity(amounts, 0).transact(from_sam)
+
+    tokens = pool_token.caller.balanceOf(sam)
+    old_balances = [c.caller.balanceOf(sam) for c in coins]
+
+    tokens_to_withdraw = int(0.1 * random() * tokens)
+    coins_to_withdraw = deposit.caller.calc_withdraw_one_coin(tokens_to_withdraw, i)
+
+    # Double-check that back-calculation approximately works
+    _amounts = [0] * len(U)
+    _amounts[i] = coins_to_withdraw * 10 ** 18 // rates[i]
+    tokens_recheck = deposit.caller.calc_token_amount(_amounts, False)
+    assert approx(tokens_to_withdraw, tokens_recheck, 0.002)  # 2 x fee
+
+    # Withdraw one coin
+    pool_token.functions.approve(deposit.address, tokens_to_withdraw).transact(from_sam)
+    # Don't donate dust
+    deposit.functions.remove_liquidity_one_coin(
+            tokens_to_withdraw // 2, i, int(0.5 * 0.999 * coins_to_withdraw)
+    ).transact(from_sam)
+    # Donate dust
+    deposit.functions.remove_liquidity_one_coin(
+            tokens_to_withdraw - tokens_to_withdraw // 2, i, int(0.5 * 0.999 * coins_to_withdraw), True
+    ).transact(from_sam)
+
+    balances = [c.caller.balanceOf(sam) for c in coins]
+
+    for j in range(len(U)):
+        if j == i:
+            assert approx(balances[j] - old_balances[j], coins_to_withdraw, 2e-4)
+        else:
+            assert balances[j] == old_balances[j]

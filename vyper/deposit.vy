@@ -365,9 +365,9 @@ def _calc_withdraw_one_coin(_token_amount: uint256, k: int128, rates: uint256[N_
         if j == i:
             b_expected -= S * (D0 - D1) / D0
         if b_ideal >= b_expected:
-            dx_expected += (b_ideal - b_expected)
+            dx_expected = (b_ideal - b_expected)
         else:
-            dx_expected += (b_expected - b_ideal)
+            dx_expected = (b_expected - b_ideal)
         xp_reduced[j] -= fee * dx_expected / FEE_DENOMINATOR
 
     dy: uint256 = xp_reduced[i] - self.get_y(A, i, xp_reduced, D1)
