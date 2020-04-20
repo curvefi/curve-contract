@@ -5,7 +5,7 @@ from web3 import Web3
 from web3 import middleware
 from web3.gas_strategies.time_based import fast_gas_price_strategy
 from tests.deploy import deploy_contract
-from deploy_config_compound import (
+from deploy_config_susd import (
         SWAP_DEPLOY_ADDRESS, C_COINS, UNDERLYING_COINS, USE_LENDING, TETHERED,
         PRECISIONS, SWAP_ADDRESS, TOKEN_ADDERESS)
 import json
