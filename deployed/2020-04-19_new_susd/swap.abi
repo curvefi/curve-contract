@@ -72,12 +72,12 @@
     "indexed": true
    },
    {
-    "type": "uint256[3]",
+    "type": "uint256[4]",
     "name": "token_amounts",
     "indexed": false
    },
    {
-    "type": "uint256[3]",
+    "type": "uint256[4]",
     "name": "fees",
     "indexed": false
    },
@@ -104,12 +104,12 @@
     "indexed": true
    },
    {
-    "type": "uint256[3]",
+    "type": "uint256[4]",
     "name": "token_amounts",
     "indexed": false
    },
    {
-    "type": "uint256[3]",
+    "type": "uint256[4]",
     "name": "fees",
     "indexed": false
    },
@@ -131,12 +131,12 @@
     "indexed": true
    },
    {
-    "type": "uint256[3]",
+    "type": "uint256[4]",
     "name": "token_amounts",
     "indexed": false
    },
    {
-    "type": "uint256[3]",
+    "type": "uint256[4]",
     "name": "fees",
     "indexed": false
    },
@@ -238,11 +238,11 @@
   "outputs": [],
   "inputs": [
    {
-    "type": "address[3]",
+    "type": "address[4]",
     "name": "_coins"
    },
    {
-    "type": "address[3]",
+    "type": "address[4]",
     "name": "_underlying_coins"
    },
    {
@@ -274,7 +274,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 1327351
+  "gas": 1570535
  },
  {
   "name": "calc_token_amount",
@@ -286,7 +286,7 @@
   ],
   "inputs": [
    {
-    "type": "uint256[3]",
+    "type": "uint256[4]",
     "name": "amounts"
    },
    {
@@ -297,14 +297,14 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 5171741
+  "gas": 6103471
  },
  {
   "name": "add_liquidity",
   "outputs": [],
   "inputs": [
    {
-    "type": "uint256[3]",
+    "type": "uint256[4]",
     "name": "amounts"
    },
    {
@@ -315,7 +315,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 7905846
+  "gas": 9331701
  },
  {
   "name": "get_dy",
@@ -342,7 +342,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 3016651
+  "gas": 3489637
  },
  {
   "name": "get_dy_underlying",
@@ -369,7 +369,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 3016464
+  "gas": 3489467
  },
  {
   "name": "exchange",
@@ -395,7 +395,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 6109340
+  "gas": 7034253
  },
  {
   "name": "exchange_underlying",
@@ -421,7 +421,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 6125579
+  "gas": 7050488
  },
  {
   "name": "remove_liquidity",
@@ -432,21 +432,21 @@
     "name": "_amount"
    },
    {
-    "type": "uint256[3]",
+    "type": "uint256[4]",
     "name": "min_amounts"
    }
   ],
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 197514
+  "gas": 241191
  },
  {
   "name": "remove_liquidity_imbalance",
   "outputs": [],
   "inputs": [
    {
-    "type": "uint256[3]",
+    "type": "uint256[4]",
     "name": "amounts"
    },
    {
@@ -457,7 +457,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 7905253
+  "gas": 9330864
  },
  {
   "name": "commit_new_parameters",
@@ -538,7 +538,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 18109
+  "gas": 23448
  },
  {
   "name": "kill_me",
