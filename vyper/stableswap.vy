@@ -347,19 +347,6 @@ def get_dy(i: int128, j: int128, dx: uint256) -> uint256:
 
 @public
 @constant
-def get_dx(i: int128, j: int128, dy: uint256) -> uint256:
-    # dx and dy in c-units
-    rates: uint256[N_COINS] = self._stored_rates()
-    xp: uint256[N_COINS] = self._xp(rates)
-
-    y: uint256 = xp[j] - (dy * FEE_DENOMINATOR / (FEE_DENOMINATOR - self.fee)) * rates[j] / PRECISION
-    x: uint256 = self.get_y(j, i, y, xp)
-    dx: uint256 = (x - xp[i]) * PRECISION / rates[i]
-    return dx
-
-
-@public
-@constant
 def get_dy_underlying(i: int128, j: int128, dx: uint256) -> uint256:
     # dx and dy in underlying units
     rates: uint256[N_COINS] = self._stored_rates()
@@ -371,20 +358,6 @@ def get_dy_underlying(i: int128, j: int128, dx: uint256) -> uint256:
     dy: uint256 = (xp[j] - y) / precisions[j]
     _fee: uint256 = self.fee * dy / FEE_DENOMINATOR
     return dy - _fee
-
-
-@public
-@constant
-def get_dx_underlying(i: int128, j: int128, dy: uint256) -> uint256:
-    # dx and dy in underlying units
-    rates: uint256[N_COINS] = self._stored_rates()
-    xp: uint256[N_COINS] = self._xp(rates)
-    precisions: uint256[N_COINS] = PRECISION_MUL
-
-    y: uint256 = xp[j] - (dy * FEE_DENOMINATOR / (FEE_DENOMINATOR - self.fee)) * precisions[j]
-    x: uint256 = self.get_y(j, i, y, xp)
-    dx: uint256 = (x - xp[i]) / precisions[i]
-    return dx
 
 
 @private
