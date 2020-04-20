@@ -7,7 +7,7 @@ from web3.gas_strategies.time_based import fast_gas_price_strategy
 from tests.deploy import deploy_contract
 import json
 
-from deploy_config_susd import (
+from deploy_config_ren import (
         C_COINS, SWAP_DEPLOY_ADDRESS, UNDERLYING_COINS,
         PRECISIONS, USE_LENDING, TETHERED)
 
@@ -39,7 +39,7 @@ def deploy_swap(A, fee):
         w3.geth.personal.unlockAccount(w3.eth.accounts[0], GETH_PASSWORD)
     fee = int(fee * 10 ** 10)
     pool_token = deploy_contract(
-        w3, 'ERC20.vy', SWAP_DEPLOY_ADDRESS, b'Curve.fi DAI/USDC/USDT/sUSD', b'crvPlain3andSUSD', 18, 0)
+        w3, 'ERC20.vy', SWAP_DEPLOY_ADDRESS, b'Curve.fi ren/wBTC', b'crvRenWBTC', 18, 0)
     swap_contract = deploy_contract(
             w3, ['stableswap.vy', 'ERC20m.vy', 'cERC20.vy'], SWAP_DEPLOY_ADDRESS,
             C_COINS, UNDERLYING_COINS, pool_token.address, A, fee,
