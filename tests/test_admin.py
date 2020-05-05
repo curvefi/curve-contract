@@ -4,6 +4,7 @@ from itertools import permutations
 from time import time
 from eth_tester.exceptions import TransactionFailed
 from .conftest import UU, use_lending, approx
+from .deploy import deploy_contract
 
 N_COINS = 3
 
@@ -146,3 +147,22 @@ def test_ramp_A(tester, w3, coins, cerc20s, swap):
     tester.time_travel(t1 + 20000)
     tester.mine_block()
     assert A == swap.caller.A()
+
+
+def test_airdrop(w3, swap, coins):
+    alice, owner, bob = w3.eth.accounts[:3]
+    DOGE = deploy_contract(w3, 'ERC20.vy', bob,
+                           b'eDogecoin', b'DOGE', 18, 10 ** 9)
+    with pytest.raises(TransactionFailed):
+        swap.functions.set_airdropper(alice).transact({'from': bob})
+    swap.functions.set_airdropper(alice).transact({'from': owner})
+
+    DOGE.functions.transfer(swap.address, 10 ** 18).transact({'from': bob})
+
+    with pytest.raises(TransactionFailed):
+        swap.functions.claim_airdrop(coins[1].address, 0).transact({'from': alice})
+    value = DOGE.caller.balanceOf(swap.address)
+    with pytest.raises(TransactionFailed):
+        swap.functions.claim_airdrop(DOGE.address, value).transact({'from': bob})
+    swap.functions.claim_airdrop(DOGE.address, value).transact({'from': alice})
+    assert DOGE.caller.balanceOf(alice) == value

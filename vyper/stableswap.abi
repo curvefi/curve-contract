@@ -663,7 +663,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 11176
+  "gas": 66278
  },
  {
   "name": "coins",

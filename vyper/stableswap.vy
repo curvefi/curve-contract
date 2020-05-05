@@ -694,9 +694,10 @@ def set_airdropper(addr: address):
 
 
 @public
+@nonreentrant('lock')
 def claim_airdrop(addr: address, value: uint256):
     assert msg.sender == self.airdropper
     for i in range(N_COINS):
         assert addr != self.coins[i]
         assert addr != self.underlying_coins[i]
-    assert_modifiable(ERC20(addr).transfer(self.airdropper, value))
+    assert_modifiable(ERC20(addr).transfer(msg.sender, value))
