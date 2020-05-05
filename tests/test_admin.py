@@ -8,6 +8,10 @@ from .conftest import UU, use_lending, approx
 N_COINS = 3
 
 
+def block_timestamp(w3):
+    return w3.eth.getBlock(w3.eth.blockNumber)['timestamp']
+
+
 def test_transfer_ownership(tester, w3, swap):
     alice, bob, charlie = w3.eth.accounts[:3]
 
@@ -103,3 +107,42 @@ def test_trade_and_withdraw_fees(tester, w3, coins, cerc20s, swap):
         b = c.caller.balanceOf(owner)
         f = int((v / 0.999 - v) * 0.2)
         assert abs(f - b) <= 2 or approx(f, b, 1e-3)
+
+
+def test_ramp_A(tester, w3, coins, cerc20s, swap):
+    owner = w3.eth.accounts[1]
+    t0 = block_timestamp(w3)
+    t1 = t0 + 86400 * 2  # 2 days
+    with pytest.raises(TransactionFailed):
+        # Too much of a change
+        swap.functions.ramp_A(10, t1).transact({'from': owner})
+    with pytest.raises(TransactionFailed):
+        # Too much of a change
+        swap.functions.ramp_A(10000, t1).transact({'from': owner})
+    with pytest.raises(TransactionFailed):
+        # Too fast
+        swap.functions.ramp_A(120, t0 + 10000).transact({'from': owner})
+
+    swap.functions.ramp_A(120, t1).transact({'from': owner})
+    tester.time_travel((t0 + t1) // 2)
+    tester.mine_block()
+    A = swap.caller.A()
+    assert abs((720 + 120) // 2 - A) <= 1
+    swap.functions.stop_ramp_A().transact({'from': owner})
+    A = swap.caller.A()
+    assert abs((720 + 120) // 2 - A) <= 1
+    tester.time_travel(t1)
+    tester.mine_block()
+    assert A == swap.caller.A()
+
+    t0 = block_timestamp(w3)
+    t1 = t0 + 86400 * 2  # 2 days
+    A0 = A
+    swap.functions.ramp_A(A0 * 9, t1).transact({'from': owner})
+    tester.time_travel(t1 + 3000)
+    tester.mine_block()
+    A = swap.caller.A()
+    assert A == A0 * 9
+    tester.time_travel(t1 + 20000)
+    tester.mine_block()
+    assert A == swap.caller.A()
