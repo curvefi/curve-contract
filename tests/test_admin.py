@@ -59,8 +59,8 @@ def test_trade_and_withdraw_fees(tester, w3, coins, cerc20s, swap):
     # Alice and Bob trade
 
     # Owner wants to charge 20%
-    swap.functions.commit_new_parameters(
-        2 * 360, int(0.001 * 10 ** 10), int(0.2 * 10 ** 10)
+    swap.functions.commit_new_fee(
+        int(0.001 * 10 ** 10), int(0.2 * 10 ** 10)
         ).transact({'from': owner})
 
     deposits = []
@@ -82,7 +82,7 @@ def test_trade_and_withdraw_fees(tester, w3, coins, cerc20s, swap):
     tester.time_travel(current_time)
     tester.mine_block()
 
-    swap.functions.apply_new_parameters().transact({'from': owner})
+    swap.functions.apply_new_fee().transact({'from': owner})
 
     volumes = [0, 0, 0]
 
