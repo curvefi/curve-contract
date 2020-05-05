@@ -323,11 +323,12 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256):
 
     # Take coins from the sender
     for i in range(N_COINS):
-        if tethered[i] and not use_lending[i]:
-            USDT(self.coins[i]).transferFrom(msg.sender, self, amounts[i])
-        else:
-            assert_modifiable(
-                cERC20(self.coins[i]).transferFrom(msg.sender, self, amounts[i]))
+        if amounts[i] > 0:
+            if tethered[i] and not use_lending[i]:
+                USDT(self.coins[i]).transferFrom(msg.sender, self, amounts[i])
+            else:
+                assert_modifiable(
+                    cERC20(self.coins[i]).transferFrom(msg.sender, self, amounts[i]))
 
     # Mint pool tokens
     self.token.mint(msg.sender, mint_amount)
@@ -548,10 +549,11 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint2
     assert token_amount <= max_burn_amount, "Slippage screwed you"
 
     for i in range(N_COINS):
-        if tethered[i] and not use_lending[i]:
-            USDT(self.coins[i]).transfer(msg.sender, amounts[i])
-        else:
-            assert_modifiable(cERC20(self.coins[i]).transfer(msg.sender, amounts[i]))
+        if amounts[i] > 0:
+            if tethered[i] and not use_lending[i]:
+                USDT(self.coins[i]).transfer(msg.sender, amounts[i])
+            else:
+                assert_modifiable(cERC20(self.coins[i]).transfer(msg.sender, amounts[i]))
     self.token.burnFrom(msg.sender, token_amount)  # Will raise if not enough
 
     log.RemoveLiquidityImbalance(msg.sender, amounts, fees, D1, token_supply - token_amount)

@@ -366,7 +366,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 7907320
+  "gas": 7907638
  },
  {
   "name": "get_dy",
@@ -508,7 +508,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 7906727
+  "gas": 7907045
  },
  {
   "name": "ramp_A",
