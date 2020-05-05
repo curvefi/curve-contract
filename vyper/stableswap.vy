@@ -61,6 +61,7 @@ max_A: constant(uint256) = 10 ** 6
 max_A_change: constant(uint256) = 10
 
 owner: public(address)
+airdropper: public(address)
 token: ERC20m
 
 initial_A: public(uint256)
@@ -103,6 +104,7 @@ def __init__(_coins: address[N_COINS], _underlying_coins: address[N_COINS],
     self.fee = _fee
     self.admin_fee = 0
     self.owner = msg.sender
+    self.airdropper = msg.sender
     self.kill_deadline = block.timestamp + kill_deadline_dt
     self.is_killed = False
     self.token = ERC20m(_pool_token)
@@ -683,3 +685,18 @@ def kill_me():
 def unkill_me():
     assert msg.sender == self.owner
     self.is_killed = False
+
+
+@public
+def set_airdropper(addr: address):
+    assert msg.sender == self.owner
+    self.airdropper = addr
+
+
+@public
+def claim_airdrop(addr: address, value: uint256):
+    assert msg.sender == self.airdropper
+    for i in range(N_COINS):
+        assert addr != self.coins[i]
+        assert addr != self.underlying_coins[i]
+    assert_modifiable(ERC20(addr).transfer(self.airdropper, value))
