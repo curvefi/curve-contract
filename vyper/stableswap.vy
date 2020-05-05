@@ -1,26 +1,14 @@
 # (c) Curve.Fi, 2020
+# Pool for plain (no lending) ERC20 (no Tether) assets
 
 import ERC20m as ERC20m
-import cERC20 as cERC20
 from vyper.interfaces import ERC20
-
-
-# Tether transfer-only ABI
-contract USDT:
-    def transfer(_to: address, _value: uint256): modifying
-    def transferFrom(_from: address, _to: address, _value: uint256): modifying
-
 
 # This can (and needs to) be changed at compile time
 N_COINS: constant(int128) = ___N_COINS___  # <- change
 
 ZERO256: constant(uint256) = 0  # This hack is really bad XXX
 ZEROS: constant(uint256[N_COINS]) = ___N_ZEROS___  # <- change
-
-USE_LENDING: constant(bool[N_COINS]) = ___USE_LENDING___
-
-# Flag "ERC20s" which don't return from transfer() and transferFrom()
-TETHERED: constant(bool[N_COINS]) = ___TETHERED___
 
 FEE_DENOMINATOR: constant(uint256) = 10 ** 10
 LENDING_PRECISION: constant(uint256) = 10 ** 18
@@ -37,7 +25,6 @@ min_ramp_time: constant(uint256) = 86400
 
 # Events
 TokenExchange: event({buyer: indexed(address), sold_id: int128, tokens_sold: uint256, bought_id: int128, tokens_bought: uint256})
-TokenExchangeUnderlying: event({buyer: indexed(address), sold_id: int128, tokens_sold: uint256, bought_id: int128, tokens_bought: uint256})
 AddLiquidity: event({provider: indexed(address), token_amounts: uint256[N_COINS], fees: uint256[N_COINS], invariant: uint256, token_supply: uint256})
 RemoveLiquidity: event({provider: indexed(address), token_amounts: uint256[N_COINS], fees: uint256[N_COINS], token_supply: uint256})
 RemoveLiquidityImbalance: event({provider: indexed(address), token_amounts: uint256[N_COINS], fees: uint256[N_COINS], invariant: uint256, token_supply: uint256})
@@ -50,7 +37,6 @@ RampA: event({old_A: uint256, new_A: uint256, initial_time: timestamp, future_ti
 StopRampA: event({A: uint256, t: timestamp})
 
 coins: public(address[N_COINS])
-underlying_coins: public(address[N_COINS])
 balances: public(uint256[N_COINS])
 fee: public(uint256)  # fee * 1e10
 admin_fee: public(uint256)  # admin_fee * 1e10
@@ -61,7 +47,6 @@ max_A: constant(uint256) = 10 ** 6
 max_A_change: constant(uint256) = 10
 
 owner: public(address)
-airdropper: public(address)
 token: ERC20m
 
 initial_A: public(uint256)
@@ -81,22 +66,19 @@ is_killed: bool
 
 
 @public
-def __init__(_coins: address[N_COINS], _underlying_coins: address[N_COINS],
+def __init__(_coins: address[N_COINS],
              _pool_token: address,
              _A: uint256, _fee: uint256):
     """
-    _coins: Addresses of ERC20 conracts of coins (c-tokens) involved
-    _underlying_coins: Addresses of plain coins (ERC20)
+    _coins: Addresses of ERC20 conracts of coins
     _pool_token: Address of the token representing LP share
     _A: Amplification coefficient multiplied by n * (n - 1)
     _fee: Fee to charge for exchanges
     """
     for i in range(N_COINS):
         assert _coins[i] != ZERO_ADDRESS
-        assert _underlying_coins[i] != ZERO_ADDRESS
         self.balances[i] = 0
     self.coins = _coins
-    self.underlying_coins = _underlying_coins
     self.initial_A = _A
     self.future_A = _A
     self.initial_A_time = 0
@@ -104,7 +86,6 @@ def __init__(_coins: address[N_COINS], _underlying_coins: address[N_COINS],
     self.fee = _fee
     self.admin_fee = 0
     self.owner = msg.sender
-    self.airdropper = msg.sender
     self.kill_deadline = block.timestamp + kill_deadline_dt
     self.is_killed = False
     self.token = ERC20m(_pool_token)
