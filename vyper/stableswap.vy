@@ -119,56 +119,19 @@ def A() -> uint256:
     return self._A()
 
 
-@private
 @constant
-def _stored_rates() -> uint256[N_COINS]:
-    # exchangeRateStored * (1 + supplyRatePerBlock * (getBlockNumber - accrualBlockNumber) / 1e18)
-    result: uint256[N_COINS] = PRECISION_MUL
-    use_lending: bool[N_COINS] = USE_LENDING
-    for i in range(N_COINS):
-        rate: uint256 = LENDING_PRECISION  # Used with no lending
-        if use_lending[i]:
-            rate = cERC20(self.coins[i]).exchangeRateStored()
-            supply_rate: uint256 = cERC20(self.coins[i]).supplyRatePerBlock()
-            old_block: uint256 = cERC20(self.coins[i]).accrualBlockNumber()
-            rate += rate * supply_rate * (block.number - old_block) / LENDING_PRECISION
-        result[i] *= rate
-    return result
-
-
 @private
-def _current_rates() -> uint256[N_COINS]:
-    result: uint256[N_COINS] = PRECISION_MUL
-    use_lending: bool[N_COINS] = USE_LENDING
+def _xp() -> uint256[N_COINS]:
+    xp: uint256 = PRECISION_MUL
     for i in range(N_COINS):
-        rate: uint256 = LENDING_PRECISION  # Used with no lending
-        if use_lending[i]:
-            rate = cERC20(self.coins[i]).exchangeRateCurrent()
-        result[i] *= rate
-    return result
-
-
-@private
-@constant
-def _xp(rates: uint256[N_COINS]) -> uint256[N_COINS]:
-    result: uint256[N_COINS] = rates
-    for i in range(N_COINS):
-        result[i] = result[i] * self.balances[i] / PRECISION
-    return result
-
-
-@private
-@constant
-def _xp_mem(rates: uint256[N_COINS], _balances: uint256[N_COINS]) -> uint256[N_COINS]:
-    result: uint256[N_COINS] = rates
-    for i in range(N_COINS):
-        result[i] = result[i] * _balances[i] / PRECISION
-    return result
+        xp[i] *= self.balances[i]
+    return xp
 
 
 @private
 @constant
 def get_D(xp: uint256[N_COINS], amp: uint256) -> uint256:
+    # xp = PRECISION_MUL * self.balances
     S: uint256 = 0
     for _x in xp:
         S += _x
@@ -194,12 +157,6 @@ def get_D(xp: uint256[N_COINS], amp: uint256) -> uint256:
     return D
 
 
-@private
-@constant
-def get_D_mem(rates: uint256[N_COINS], _balances: uint256[N_COINS], amp: uint256) -> uint256:
-    return self.get_D(self._xp_mem(rates, _balances), amp)
-
-
 @public
 @constant
 def get_virtual_price() -> uint256:
@@ -207,7 +164,7 @@ def get_virtual_price() -> uint256:
     Returns portfolio virtual price (for calculating profit)
     scaled up by 1e18
     """
-    D: uint256 = self.get_D(self._xp(self._stored_rates()), self._A())
+    D: uint256 = self.get_D(self._xp(), self._A())
     # D is in the units similar to DAI (e.g. converted to precision 1e18)
     # When balanced, D = n * x_u - total virtual value of the portfolio
     token_supply: uint256 = self.token.totalSupply()
@@ -304,11 +261,12 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256):
 
     # Take coins from the sender
     for i in range(N_COINS):
-        if tethered[i] and not use_lending[i]:
-            USDT(self.coins[i]).transferFrom(msg.sender, self, amounts[i])
-        else:
-            assert_modifiable(
-                cERC20(self.coins[i]).transferFrom(msg.sender, self, amounts[i]))
+        if amounts[i] > 0:
+            if tethered[i] and not use_lending[i]:
+                USDT(self.coins[i]).transferFrom(msg.sender, self, amounts[i])
+            else:
+                assert_modifiable(
+                    cERC20(self.coins[i]).transferFrom(msg.sender, self, amounts[i]))
 
     # Mint pool tokens
     self.token.mint(msg.sender, mint_amount)
@@ -529,10 +487,11 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint2
     assert token_amount <= max_burn_amount, "Slippage screwed you"
 
     for i in range(N_COINS):
-        if tethered[i] and not use_lending[i]:
-            USDT(self.coins[i]).transfer(msg.sender, amounts[i])
-        else:
-            assert_modifiable(cERC20(self.coins[i]).transfer(msg.sender, amounts[i]))
+        if amounts[i] > 0:
+            if tethered[i] and not use_lending[i]:
+                USDT(self.coins[i]).transfer(msg.sender, amounts[i])
+            else:
+                assert_modifiable(cERC20(self.coins[i]).transfer(msg.sender, amounts[i]))
     self.token.burnFrom(msg.sender, token_amount)  # Will raise if not enough
 
     log.RemoveLiquidityImbalance(msg.sender, amounts, fees, D1, token_supply - token_amount)
