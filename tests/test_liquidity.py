@@ -1,9 +1,14 @@
 import pytest
+import math
 from random import random, randrange
 from eth_tester.exceptions import TransactionFailed
 from .conftest import UU, MAX_UINT, PRECISIONS, approx
 
 N_COINS = 3
+
+
+def block_timestamp(w3):
+    return w3.eth.getBlock(w3.eth.blockNumber)['timestamp']
 
 
 def test_add_liquidity(w3, coins, swap):
@@ -292,6 +297,55 @@ def test_withdraw_one_coin(w3, coins, swap, pool_token):
         assert approx(amount_after - amount_before, amount, 5e-4)
         assert token_before - token_after <= dtoken
         assert approx(token_before - token_after, dtoken, 5e-4)
+
+        # Withdraw all back
+        pool_token.functions.transfer(
+            sam,
+            pool_token.caller.balanceOf(w3.eth.accounts[1])).transact({'from': w3.eth.accounts[1]})
+        to_remove = pool_token.caller.balanceOf(sam)
+        swap.functions.remove_liquidity(to_remove, [0] * N_COINS).transact(from_sam)
+
+        # Reset approvals
+        for c in coins:
+            c.functions.approve(swap.address, 0).transact(from_sam)
+
+
+def test_withdraw_one_coin_nogain(tester, w3, coins, swap, pool_token):
+    # Try to attack withdraw_one_coin when there are no fees
+    # Rounding errors shouldn't give an attacker any edge
+    sam, deployer = w3.eth.accounts[:2]
+    from_sam = {'from': sam}
+
+    # Set fee to 0
+    swap.functions.commit_new_fee(0, 0).transact({'from': deployer})
+    tester.time_travel(block_timestamp(w3) + 4 * 86400)
+    tester.mine_block()
+    swap.functions.apply_new_fee().transact({'from': deployer})
+
+    for _run in range(25):
+        amounts = [randrange(100000 * u, 1000000 * u) for u in UU]
+
+        # First, deposit, measure amounts and withdraw everything
+        for c in coins:
+            a = c.caller.balanceOf(sam)
+            c.functions.approve(swap.address, a).transact(from_sam)
+        swap.functions.add_liquidity(amounts, 0).transact(from_sam)
+
+        i = randrange(0, len(UU))
+        amount_before = coins[i].caller.balanceOf(sam)
+        token_before = pool_token.caller.balanceOf(sam)
+        to_deposit = int(10 ** (random() * math.log10(amount_before)))  # Can go very high
+        amounts = [0] * N_COINS
+        amounts[i] = to_deposit
+
+        swap.functions.add_liquidity(amounts, 0).transact(from_sam)
+        token_amount = pool_token.caller.balanceOf(sam) - token_before
+        swap.functions.remove_liquidity_one_coin(token_amount, 0, 0).transact(from_sam)
+        amount_after = coins[i].caller.balanceOf(sam)
+        token_after = pool_token.caller.balanceOf(sam)
+
+        assert token_before == token_after
+        assert amount_after <= amount_before, "Sam hacked it again!"
 
         # Withdraw all back
         pool_token.functions.transfer(

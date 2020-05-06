@@ -499,7 +499,7 @@ def _calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> (uint256, uint
         xp_reduced[j] -= _fee * dx_expected / FEE_DENOMINATOR
 
     dy: uint256 = xp_reduced[i] - self.get_y_D(amp, i, xp_reduced, D1)
-    dy = dy / precisions[i]
+    dy = (dy - 1) / precisions[i]  # Withdraw less to account for rounding errors
 
     return dy, dy_0 - dy
 
