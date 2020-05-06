@@ -468,7 +468,7 @@ def get_y_D(A: uint256, i: int128, xp: uint256[N_COINS], D: uint256) -> uint256:
 
 @private
 @constant
-def _calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> uint256:
+def _calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> (uint256, uint256):
     # First, need to calculate
     # * Get current D
     # * Solve Eqn against y_i for D - _token_amount
@@ -488,6 +488,7 @@ def _calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> uint256:
     xp_reduced: uint256[N_COINS] = xp
 
     new_y: uint256 = self.get_y_D(amp, i, xp, D1)
+    dy_0: uint256 = (xp[i] - new_y) / precisions[i]  # w/o fees
 
     for j in range(N_COINS):
         dx_expected: uint256 = 0
@@ -500,13 +501,13 @@ def _calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> uint256:
     dy: uint256 = xp_reduced[i] - self.get_y_D(amp, i, xp_reduced, D1)
     dy = dy / precisions[i]
 
-    return dy
+    return dy, dy_0 - dy
 
 
 @public
 @constant
 def calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> uint256:
-    return self._calc_withdraw_one_coin(_token_amount, i)
+    return self._calc_withdraw_one_coin(_token_amount, i)[0]
 
 
 @public
@@ -515,9 +516,12 @@ def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_uamount: ui
     """
     Remove _amount of liquidity all in a form of coin i
     """
-    dy: uint256 = self._calc_withdraw_one_coin(_token_amount, i)
+    dy: uint256 = 0
+    dy_fee: uint256 = 0
+    dy, dy_fee = self._calc_withdraw_one_coin(_token_amount, i)
     assert dy >= min_uamount, "Not enough coins removed"
 
+    self.balances[i] -= (dy + dy_fee * self.admin_fee / FEE_DENOMINATOR)
     self.token.burnFrom(msg.sender, _token_amount)
     assert_modifiable(ERC20(self.coins[i]).transfer(msg.sender, dy))
 
