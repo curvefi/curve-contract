@@ -27,6 +27,7 @@ min_ramp_time: constant(uint256) = 86400
 TokenExchange: event({buyer: indexed(address), sold_id: int128, tokens_sold: uint256, bought_id: int128, tokens_bought: uint256})
 AddLiquidity: event({provider: indexed(address), token_amounts: uint256[N_COINS], fees: uint256[N_COINS], invariant: uint256, token_supply: uint256})
 RemoveLiquidity: event({provider: indexed(address), token_amounts: uint256[N_COINS], fees: uint256[N_COINS], token_supply: uint256})
+RemoveLiquidityOne: event({provider: indexed(address), token_amount: uint256, coin_amount: uint256})
 RemoveLiquidityImbalance: event({provider: indexed(address), token_amounts: uint256[N_COINS], fees: uint256[N_COINS], invariant: uint256, token_supply: uint256})
 CommitNewAdmin: event({deadline: indexed(timestamp), admin: indexed(address)})
 NewAdmin: event({admin: indexed(address)})
@@ -418,6 +419,109 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint2
     self.token.burnFrom(msg.sender, token_amount)  # Will raise if not enough
 
     log.RemoveLiquidityImbalance(msg.sender, amounts, fees, D1, token_supply - token_amount)
+
+
+@private
+@constant
+def get_y_D(A: uint256, i: int128, xp: uint256[N_COINS], D: uint256) -> uint256:
+    """
+    Calculate x[i] if one reduces D from being calculated for xp to D
+
+    Done by solving quadratic equation iteratively.
+    x_1**2 + x1 * (sum' - (A*n**n - 1) * D / (A * n**n)) = D ** (n + 1) / (n ** (2 * n) * prod' * A)
+    x_1**2 + b*x_1 = c
+
+    x_1 = (x_1**2 + c) / (2*x_1 + b)
+    """
+    # x in the input is converted to the same price/precision
+
+    assert (i >= 0) and (i < N_COINS)
+
+    c: uint256 = D
+    S_: uint256 = 0
+    Ann: uint256 = A * N_COINS
+
+    _x: uint256 = 0
+    for _i in range(N_COINS):
+        if _i != i:
+            _x = xp[_i]
+        else:
+            continue
+        S_ += _x
+        c = c * D / (_x * N_COINS)
+    c = c * D / (Ann * N_COINS)
+    b: uint256 = S_ + D / Ann
+    y_prev: uint256 = 0
+    y: uint256 = D
+    for _i in range(255):
+        y_prev = y
+        y = (y*y + c) / (2 * y + b - D)
+        # Equality with the precision of 1
+        if y > y_prev:
+            if y - y_prev <= 1:
+                break
+        else:
+            if y_prev - y <= 1:
+                break
+    return y
+
+
+@private
+@constant
+def _calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> uint256:
+    # First, need to calculate
+    # * Get current D
+    # * Solve Eqn against y_i for D - _token_amount
+    amp: uint256 = self._A()
+    _fee: uint256 = self.fee * N_COINS / (4 * (N_COINS - 1))
+    precisions: uint256[N_COINS] = PRECISION_MUL
+    total_supply: uint256 = self.token.totalSupply()
+
+    xp: uint256[N_COINS] = self.balances
+    S: uint256 = 0
+    for j in range(N_COINS):
+        xp[j] *= precisions[j]
+        S += xp[j]
+
+    D0: uint256 = self.get_D(xp, amp)
+    D1: uint256 = D0 - _token_amount * D0 / total_supply
+    xp_reduced: uint256[N_COINS] = xp
+
+    new_y: uint256 = self.get_y_D(amp, i, xp, D1)
+
+    for j in range(N_COINS):
+        dx_expected: uint256 = 0
+        if j == i:
+            dx_expected = xp[j] * D1 / D0 - new_y
+        else:
+            dx_expected = xp[j] - xp[j] * D1 / D0
+        xp_reduced[j] -= _fee * dx_expected / FEE_DENOMINATOR
+
+    dy: uint256 = xp_reduced[i] - self.get_y_D(amp, i, xp_reduced, D1)
+    dy = dy / precisions[i]
+
+    return dy
+
+
+@public
+@constant
+def calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> uint256:
+    return self._calc_withdraw_one_coin(_token_amount, i)
+
+
+@public
+@nonreentrant('lock')
+def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_uamount: uint256):
+    """
+    Remove _amount of liquidity all in a form of coin i
+    """
+    dy: uint256 = self._calc_withdraw_one_coin(_token_amount, i)
+    assert dy >= min_uamount, "Not enough coins removed"
+
+    self.token.burnFrom(msg.sender, _token_amount)
+    assert_modifiable(ERC20(self.coins[i]).transfer(msg.sender, dy))
+
+    log.RemoveLiquidityOne(msg.sender, _token_amount, dy)
 
 
 ### Admin functions ###
