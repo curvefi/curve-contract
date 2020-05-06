@@ -121,11 +121,17 @@ def A() -> uint256:
 
 @constant
 @private
-def _xp() -> uint256[N_COINS]:
-    xp: uint256 = PRECISION_MUL
+def _xp_mem(_balances: uint256[N_COINS]) -> uint256[N_COINS]:
+    xp: uint256[N_COINS] = PRECISION_MUL
     for i in range(N_COINS):
-        xp[i] *= self.balances[i]
+        xp[i] *= _balances[i]
     return xp
+
+
+@constant
+@private
+def _xp() -> uint256[N_COINS]:
+    return self._xp_mem(self.balances)
 
 
 @private
@@ -181,15 +187,14 @@ def calc_token_amount(amounts: uint256[N_COINS], deposit: bool) -> uint256:
     Needed to prevent front-running, not for precise calculations!
     """
     _balances: uint256[N_COINS] = self.balances
-    rates: uint256[N_COINS] = self._stored_rates()
     amp: uint256 = self._A()
-    D0: uint256 = self.get_D_mem(rates, _balances, amp)
+    D0: uint256 = self.get_D(self._xp_mem(_balances), amp)
     for i in range(N_COINS):
         if deposit:
             _balances[i] += amounts[i]
         else:
             _balances[i] -= amounts[i]
-    D1: uint256 = self.get_D_mem(rates, _balances, amp)
+    D1: uint256 = self.get_D(self._xp_mem(_balances), amp)
     token_amount: uint256 = self.token.totalSupply()
     diff: uint256 = 0
     if deposit:
@@ -205,20 +210,17 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256):
     # Amounts is amounts of c-tokens
     assert not self.is_killed
 
-    tethered: bool[N_COINS] = TETHERED
-    use_lending: bool[N_COINS] = USE_LENDING
     fees: uint256[N_COINS] = ZEROS
     _fee: uint256 = self.fee * N_COINS / (4 * (N_COINS - 1))
     _admin_fee: uint256 = self.admin_fee
     amp: uint256 = self._A()
 
     token_supply: uint256 = self.token.totalSupply()
-    rates: uint256[N_COINS] = self._current_rates()
     # Initial invariant
     D0: uint256 = 0
     old_balances: uint256[N_COINS] = self.balances
     if token_supply > 0:
-        D0 = self.get_D_mem(rates, old_balances, amp)
+        D0 = self.get_D(self._xp_mem(old_balances), amp)
     new_balances: uint256[N_COINS] = old_balances
 
     for i in range(N_COINS):
@@ -228,7 +230,7 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256):
         new_balances[i] = old_balances[i] + amounts[i]
 
     # Invariant after change
-    D1: uint256 = self.get_D_mem(rates, new_balances, amp)
+    D1: uint256 = self.get_D(self._xp_mem(new_balances), amp)
     assert D1 > D0
 
     # We need to recalculate the invariant accounting for fees
@@ -246,7 +248,7 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256):
             fees[i] = _fee * difference / FEE_DENOMINATOR
             self.balances[i] = new_balances[i] - (fees[i] * _admin_fee / FEE_DENOMINATOR)
             new_balances[i] -= fees[i]
-        D2 = self.get_D_mem(rates, new_balances, amp)
+        D2 = self.get_D(self._xp_mem(new_balances), amp)
     else:
         self.balances = new_balances
 
@@ -262,11 +264,8 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256):
     # Take coins from the sender
     for i in range(N_COINS):
         if amounts[i] > 0:
-            if tethered[i] and not use_lending[i]:
-                USDT(self.coins[i]).transferFrom(msg.sender, self, amounts[i])
-            else:
-                assert_modifiable(
-                    cERC20(self.coins[i]).transferFrom(msg.sender, self, amounts[i]))
+            assert_modifiable(
+                ERC20(self.coins[i]).transferFrom(msg.sender, self, amounts[i]))
 
     # Mint pool tokens
     self.token.mint(msg.sender, mint_amount)
@@ -318,23 +317,8 @@ def get_y(i: int128, j: int128, x: uint256, _xp: uint256[N_COINS]) -> uint256:
 @constant
 def get_dy(i: int128, j: int128, dx: uint256) -> uint256:
     # dx and dy in c-units
-    rates: uint256[N_COINS] = self._stored_rates()
-    xp: uint256[N_COINS] = self._xp(rates)
-
-    x: uint256 = xp[i] + (dx * rates[i] / PRECISION)
-    y: uint256 = self.get_y(i, j, x, xp)
-    dy: uint256 = (xp[j] - y) * PRECISION / rates[j]
-    _fee: uint256 = self.fee * dy / FEE_DENOMINATOR
-    return dy - _fee
-
-
-@public
-@constant
-def get_dy_underlying(i: int128, j: int128, dx: uint256) -> uint256:
-    # dx and dy in underlying units
-    rates: uint256[N_COINS] = self._stored_rates()
-    xp: uint256[N_COINS] = self._xp(rates)
     precisions: uint256[N_COINS] = PRECISION_MUL
+    xp: uint256[N_COINS] = self._xp()
 
     x: uint256 = xp[i] + dx * precisions[i]
     y: uint256 = self.get_y(i, j, x, xp)
@@ -344,21 +328,21 @@ def get_dy_underlying(i: int128, j: int128, dx: uint256) -> uint256:
 
 
 @private
-def _exchange(i: int128, j: int128, dx: uint256, rates: uint256[N_COINS]) -> uint256:
+def _exchange(i: int128, j: int128, dx: uint256) -> uint256:
     assert not self.is_killed
-    # dx and dy are in c-tokens
+    precisions: uint256[N_COINS] = PRECISION_MUL
 
-    xp: uint256[N_COINS] = self._xp(rates)
+    xp: uint256[N_COINS] = self._xp()
 
-    x: uint256 = xp[i] + dx * rates[i] / PRECISION
+    x: uint256 = xp[i] + dx * precisions[i]
     y: uint256 = self.get_y(i, j, x, xp)
     dy: uint256 = xp[j] - y
     dy_fee: uint256 = dy * self.fee / FEE_DENOMINATOR
     dy_admin_fee: uint256 = dy_fee * self.admin_fee / FEE_DENOMINATOR
-    self.balances[i] = x * PRECISION / rates[i]
-    self.balances[j] = (y + (dy_fee - dy_admin_fee)) * PRECISION / rates[j]
+    self.balances[i] = x / precisions[i]
+    self.balances[j] = (y + (dy_fee - dy_admin_fee)) / precisions[j]
 
-    _dy: uint256 = (dy - dy_fee) * PRECISION / rates[j]
+    _dy: uint256 = (dy - dy_fee) / precisions[j]
 
     return _dy
 
@@ -366,62 +350,13 @@ def _exchange(i: int128, j: int128, dx: uint256, rates: uint256[N_COINS]) -> uin
 @public
 @nonreentrant('lock')
 def exchange(i: int128, j: int128, dx: uint256, min_dy: uint256):
-    rates: uint256[N_COINS] = self._current_rates()
-    dy: uint256 = self._exchange(i, j, dx, rates)
+    dy: uint256 = self._exchange(i, j, dx)
     assert dy >= min_dy, "Exchange resulted in fewer coins than expected"
-    tethered: bool[N_COINS] = TETHERED
-    use_lending: bool[N_COINS] = USE_LENDING
 
-    if tethered[i] and not use_lending[i]:
-        USDT(self.coins[i]).transferFrom(msg.sender, self, dx)
-    else:
-        assert_modifiable(cERC20(self.coins[i]).transferFrom(msg.sender, self, dx))
-
-    if tethered[j] and not use_lending[j]:
-        USDT(self.coins[j]).transfer(msg.sender, dy)
-    else:
-        assert_modifiable(cERC20(self.coins[j]).transfer(msg.sender, dy))
+    assert_modifiable(ERC20(self.coins[i]).transferFrom(msg.sender, self, dx))
+    assert_modifiable(ERC20(self.coins[j]).transfer(msg.sender, dy))
 
     log.TokenExchange(msg.sender, i, dx, j, dy)
-
-
-@public
-@nonreentrant('lock')
-def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256):
-    rates: uint256[N_COINS] = self._current_rates()
-    precisions: uint256[N_COINS] = PRECISION_MUL
-    rate_i: uint256 = rates[i] / precisions[i]
-    rate_j: uint256 = rates[j] / precisions[j]
-    dx_: uint256 = dx * PRECISION / rate_i
-
-    dy_: uint256 = self._exchange(i, j, dx_, rates)
-    dy: uint256 = dy_ * rate_j / PRECISION
-    assert dy >= min_dy, "Exchange resulted in fewer coins than expected"
-    use_lending: bool[N_COINS] = USE_LENDING
-    tethered: bool[N_COINS] = TETHERED
-
-    ok: uint256 = 0
-    if tethered[i]:
-        USDT(self.underlying_coins[i]).transferFrom(msg.sender, self, dx)
-    else:
-        assert_modifiable(ERC20(self.underlying_coins[i])\
-            .transferFrom(msg.sender, self, dx))
-    if use_lending[i]:
-        ERC20(self.underlying_coins[i]).approve(self.coins[i], dx)
-        ok = cERC20(self.coins[i]).mint(dx)
-        if ok > 0:
-            raise "Could not mint coin"
-    if use_lending[j]:
-        ok = cERC20(self.coins[j]).redeem(dy_)
-        if ok > 0:
-            raise "Could not redeem coin"
-    if tethered[j]:
-        USDT(self.underlying_coins[j]).transfer(msg.sender, dy)
-    else:
-        assert_modifiable(ERC20(self.underlying_coins[j])\
-            .transfer(msg.sender, dy))
-
-    log.TokenExchangeUnderlying(msg.sender, i, dx, j, dy)
 
 
 @public
@@ -430,19 +365,13 @@ def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS]):
     total_supply: uint256 = self.token.totalSupply()
     amounts: uint256[N_COINS] = ZEROS
     fees: uint256[N_COINS] = ZEROS
-    tethered: bool[N_COINS] = TETHERED
-    use_lending: bool[N_COINS] = USE_LENDING
 
     for i in range(N_COINS):
         value: uint256 = self.balances[i] * _amount / total_supply
         assert value >= min_amounts[i], "Withdrawal resulted in fewer coins than expected"
         self.balances[i] -= value
         amounts[i] = value
-        if tethered[i] and not use_lending[i]:
-            USDT(self.coins[i]).transfer(msg.sender, value)
-        else:
-            assert_modifiable(cERC20(self.coins[i]).transfer(
-                msg.sender, value))
+        assert_modifiable(ERC20(self.coins[i]).transfer(msg.sender, value))
 
     self.token.burnFrom(msg.sender, _amount)  # Will raise if not enough
 
@@ -453,22 +382,19 @@ def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS]):
 @nonreentrant('lock')
 def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint256):
     assert not self.is_killed
-    tethered: bool[N_COINS] = TETHERED
-    use_lending: bool[N_COINS] = USE_LENDING
 
     token_supply: uint256 = self.token.totalSupply()
     assert token_supply > 0
     _fee: uint256 = self.fee * N_COINS / (4 * (N_COINS - 1))
     _admin_fee: uint256 = self.admin_fee
-    rates: uint256[N_COINS] = self._current_rates()
     amp: uint256 = self._A()
 
     old_balances: uint256[N_COINS] = self.balances
     new_balances: uint256[N_COINS] = old_balances
-    D0: uint256 = self.get_D_mem(rates, old_balances, amp)
+    D0: uint256 = self.get_D(self._xp_mem(old_balances), amp)
     for i in range(N_COINS):
         new_balances[i] -= amounts[i]
-    D1: uint256 = self.get_D_mem(rates, new_balances, amp)
+    D1: uint256 = self.get_D(self._xp_mem(new_balances), amp)
     fees: uint256[N_COINS] = ZEROS
     for i in range(N_COINS):
         ideal_balance: uint256 = D1 * old_balances[i] / D0
@@ -480,7 +406,7 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint2
         fees[i] = _fee * difference / FEE_DENOMINATOR
         self.balances[i] = new_balances[i] - (fees[i] * _admin_fee / FEE_DENOMINATOR)
         new_balances[i] -= fees[i]
-    D2: uint256 = self.get_D_mem(rates, new_balances, amp)
+    D2: uint256 = self.get_D(self._xp_mem(new_balances), amp)
 
     token_amount: uint256 = (D0 - D2) * token_supply / D0
     assert token_amount > 0
@@ -488,10 +414,7 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint2
 
     for i in range(N_COINS):
         if amounts[i] > 0:
-            if tethered[i] and not use_lending[i]:
-                USDT(self.coins[i]).transfer(msg.sender, amounts[i])
-            else:
-                assert_modifiable(cERC20(self.coins[i]).transfer(msg.sender, amounts[i]))
+            assert_modifiable(ERC20(self.coins[i]).transfer(msg.sender, amounts[i]))
     self.token.burnFrom(msg.sender, token_amount)  # Will raise if not enough
 
     log.RemoveLiquidityImbalance(msg.sender, amounts, fees, D1, token_supply - token_amount)
@@ -600,18 +523,12 @@ def revert_transfer_ownership():
 @public
 def withdraw_admin_fees():
     assert msg.sender == self.owner
-    _precisions: uint256[N_COINS] = PRECISION_MUL
-    tethered: bool[N_COINS] = TETHERED
-    use_lending: bool[N_COINS] = USE_LENDING
 
     for i in range(N_COINS):
         c: address = self.coins[i]
-        value: uint256 = cERC20(c).balanceOf(self) - self.balances[i]
+        value: uint256 = ERC20(c).balanceOf(self) - self.balances[i]
         if value > 0:
-            if tethered[i] and not use_lending[i]:
-                USDT(c).transfer(msg.sender, value)
-            else:
-                assert_modifiable(cERC20(c).transfer(msg.sender, value))
+            assert_modifiable(ERC20(c).transfer(msg.sender, value))
 
 
 @public
@@ -625,19 +542,3 @@ def kill_me():
 def unkill_me():
     assert msg.sender == self.owner
     self.is_killed = False
-
-
-@public
-def set_airdropper(addr: address):
-    assert msg.sender == self.owner
-    self.airdropper = addr
-
-
-@public
-@nonreentrant('lock')
-def claim_airdrop(addr: address, value: uint256):
-    assert msg.sender == self.airdropper
-    for i in range(N_COINS):
-        assert addr != self.coins[i]
-        assert addr != self.underlying_coins[i]
-    assert_modifiable(ERC20(addr).transfer(msg.sender, value))
