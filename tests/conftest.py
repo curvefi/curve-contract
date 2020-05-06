@@ -9,9 +9,6 @@ CONTRACT_PATH = join(dirname(dirname(realpath(__file__))), 'vyper')
 N_COINS = 3
 UP = [18, 6, 6]
 UU = [10 ** p for p in UP]
-c_rates = [5 * UU[0], UU[1], 20 * UU[2]]
-use_lending = [True, True, False]
-tethered = [False, False, True]
 PRECISIONS = [10 ** 18 // u for u in UU]
 MAX_UINT = 2 ** 256 - 1
 
@@ -46,37 +43,17 @@ def pool_token(w3):
                            b'Stableswap', b'STBL', 18, 0)
 
 
-@pytest.fixture
-def cerc20s(w3, coins):
-    ccoins = [deploy_contract(
-                w3, 'fake_cerc20.vy', w3.eth.accounts[0],
-                b'C-Coin ' + str(i).encode(), b'c' + str(i).encode(),
-                18, 0, coins[i].address, c_rates[i])
-              for i in range(N_COINS)]
-    for t, c, u in zip(coins, ccoins, UU):
-        t.functions.transfer(c.address, 10 ** 11 * u)\
-                .transact({'from': w3.eth.accounts[0]})
-    for i, l in enumerate(use_lending):
-        if not l:
-            ccoins[i] = coins[i]
-    return ccoins
-
-
 @pytest.fixture(scope='function')
-def swap(w3, coins, cerc20s, pool_token):
+def swap(w3, coins, pool_token):
     swap_contract = deploy_contract(
             w3, ['stableswap.vy', 'ERC20m.vy', 'cERC20.vy'], w3.eth.accounts[1],
-            [c.address for c in cerc20s], [c.address for c in coins],
+            [c.address for c in coins],
             pool_token.address, 360 * 2, 10 ** 7,
             replacements={
                 '___N_COINS___': str(N_COINS),
                 '___N_ZEROS___': '[' + ', '.join(['ZERO256'] * N_COINS) + ']',
                 '___PRECISION_MUL___': '[' + ', '.join(
                     'convert(%s, uint256)' % i for i in PRECISIONS) + ']',
-                '___USE_LENDING___': '[' + ', '.join(
-                        str(i) for i in use_lending) + ']',
-                '___TETHERED___': '[' + ', '.join(
-                        str(i) for i in tethered) + ']',
             })
     pool_token.functions.set_minter(swap_contract.address).transact()
     with open(join(CONTRACT_PATH, 'stableswap.abi'), 'w') as f:
@@ -85,18 +62,14 @@ def swap(w3, coins, cerc20s, pool_token):
 
 
 @pytest.fixture(scope='function')
-def deposit(w3, coins, cerc20s, pool_token, swap):
+def deposit(w3, coins, pool_token, swap):
     deposit_contract = deploy_contract(
             w3, ['deposit.vy', 'cERC20.vy'], w3.eth.accounts[1],
-            [c.address for c in cerc20s], [c.address for c in coins],
+            [c.address for c in coins],
             swap.address, pool_token.address,
             replacements={
                 '___N_COINS___': str(N_COINS),
                 '___N_ZEROS___': '[' + ', '.join(['ZERO256'] * N_COINS) + ']',
-                '___USE_LENDING___': '[' + ', '.join(
-                        str(i) for i in use_lending) + ']',
-                '___TETHERED___': '[' + ', '.join(
-                        str(i) for i in tethered) + ']',
                 '___PRECISION_MUL___': '[' + ', '.join(
                     'convert(%s, uint256)' % i for i in PRECISIONS) + ']',
             })

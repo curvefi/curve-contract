@@ -3,8 +3,7 @@ import random
 from itertools import permutations
 from time import time
 from eth_tester.exceptions import TransactionFailed
-from .conftest import UU, use_lending, approx
-from .deploy import deploy_contract
+from .conftest import UU, approx
 
 N_COINS = 3
 
@@ -58,7 +57,7 @@ def test_transfer_ownership(tester, w3, swap):
         swap.functions.apply_transfer_ownership().transact({'from': alice})
 
 
-def test_trade_and_withdraw_fees(tester, w3, coins, cerc20s, swap):
+def test_trade_and_withdraw_fees(tester, w3, coins, swap):
     alice, owner, bob = w3.eth.accounts[:3]
     # Owner is the exchange admin
     # Alice and Bob trade
@@ -69,17 +68,12 @@ def test_trade_and_withdraw_fees(tester, w3, coins, cerc20s, swap):
         ).transact({'from': owner})
 
     deposits = []
-    for c, cc, u, l in zip(coins, cerc20s, UU, use_lending):
-        if l:
-            c.functions.approve(cc.address, 2000 * u).transact({'from': alice})
-            cc.functions.mint(2000 * u).transact({'from': alice})
-            balance = cc.caller.balanceOf(alice) // 2
-        else:
-            balance = 1000 * u
+    for c, u in zip(coins, UU):
+        balance = 1000 * u
         deposits.append(balance)
-        cc.functions.approve(swap.address, balance).transact({'from': alice})
-        cc.functions.transfer(bob, balance).transact({'from': alice})
-        cc.functions.approve(swap.address, balance).transact({'from': bob})
+        c.functions.approve(swap.address, balance).transact({'from': alice})
+        c.functions.transfer(bob, balance).transact({'from': alice})
+        c.functions.approve(swap.address, balance).transact({'from': bob})
 
     swap.functions.add_liquidity(deposits, 0).transact({'from': alice})
 
@@ -94,23 +88,23 @@ def test_trade_and_withdraw_fees(tester, w3, coins, cerc20s, swap):
     for k in range(10):
         i, j = random.choice(list(permutations(range(N_COINS), 2)))
         value = int(random.random() * deposits[i] / 10)
-        y_0 = cerc20s[j].caller.balanceOf(bob)
-        cerc20s[i].functions.approve(swap.address, 0).transact({'from': bob})
-        cerc20s[i].functions.approve(swap.address, value).transact({'from': bob})
+        y_0 = coins[j].caller.balanceOf(bob)
+        coins[i].functions.approve(swap.address, 0).transact({'from': bob})
+        coins[i].functions.approve(swap.address, value).transact({'from': bob})
         swap.functions.exchange(i, j, value, 0).transact({'from': bob})
-        y_1 = cerc20s[j].caller.balanceOf(bob)
+        y_1 = coins[j].caller.balanceOf(bob)
 
         volumes[j] += y_1 - y_0
 
     swap.functions.withdraw_admin_fees().transact({'from': owner})
 
-    for v, c in zip(volumes, cerc20s):
+    for v, c in zip(volumes, coins):
         b = c.caller.balanceOf(owner)
         f = int((v / 0.999 - v) * 0.2)
         assert abs(f - b) <= 2 or approx(f, b, 1e-3)
 
 
-def test_ramp_A(tester, w3, coins, cerc20s, swap):
+def test_ramp_A(tester, w3, coins, swap):
     owner = w3.eth.accounts[1]
     t0 = block_timestamp(w3)
     t1 = t0 + 86400 * 2  # 2 days
@@ -147,22 +141,3 @@ def test_ramp_A(tester, w3, coins, cerc20s, swap):
     tester.time_travel(t1 + 20000)
     tester.mine_block()
     assert A == swap.caller.A()
-
-
-def test_airdrop(w3, swap, coins):
-    alice, owner, bob = w3.eth.accounts[:3]
-    DOGE = deploy_contract(w3, 'ERC20.vy', bob,
-                           b'eDogecoin', b'DOGE', 18, 10 ** 9)
-    with pytest.raises(TransactionFailed):
-        swap.functions.set_airdropper(alice).transact({'from': bob})
-    swap.functions.set_airdropper(alice).transact({'from': owner})
-
-    DOGE.functions.transfer(swap.address, 10 ** 18).transact({'from': bob})
-
-    with pytest.raises(TransactionFailed):
-        swap.functions.claim_airdrop(coins[1].address, 0).transact({'from': alice})
-    value = DOGE.caller.balanceOf(swap.address)
-    with pytest.raises(TransactionFailed):
-        swap.functions.claim_airdrop(DOGE.address, value).transact({'from': bob})
-    swap.functions.claim_airdrop(DOGE.address, value).transact({'from': alice})
-    assert DOGE.caller.balanceOf(alice) == value
