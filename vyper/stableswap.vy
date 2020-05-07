@@ -532,6 +532,7 @@ def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_uamount: ui
 @public
 def ramp_A(_future_A: uint256, _future_time: timestamp):
     assert msg.sender == self.owner
+    assert block.timestamp >= self.initial_A_time + min_ramp_time
     assert _future_time >= block.timestamp + min_ramp_time
 
     _initial_A: uint256 = self._A()
@@ -553,8 +554,9 @@ def stop_ramp_A():
     current_A: uint256 = self._A()
     self.initial_A = current_A
     self.future_A = current_A
-    self.initial_A_time = 0
-    self.future_A_time = 0
+    self.initial_A_time = block.timestamp
+    self.future_A_time = block.timestamp
+    # now (block.timestamp < t1) is always False, so we return saved A
 
     log.StopRampA(current_A, block.timestamp)
 

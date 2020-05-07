@@ -505,7 +505,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 150774
+  "gas": 151847
  },
  {
   "name": "stop_ramp_A",
@@ -514,7 +514,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 118609
+  "gas": 148607
  },
  {
   "name": "commit_new_fee",
