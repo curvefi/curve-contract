@@ -566,7 +566,7 @@ def ramp_A(_future_A: uint256, _future_time: timestamp):
     assert _future_time >= block.timestamp + min_ramp_time
 
     _initial_A: uint256 = self._A()
-    assert _future_A > 0
+    assert (_future_A > 0) and (_future_A < max_A)
     assert ((_future_A >= _initial_A) and (_future_A <= _initial_A * max_A_change)) or\
            ((_future_A < _initial_A) and (_future_A * max_A_change >= _initial_A))
     self.initial_A = _initial_A
