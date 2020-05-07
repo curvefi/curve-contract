@@ -505,7 +505,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 150759
+  "gas": 150774
  },
  {
   "name": "stop_ramp_A",
