@@ -385,7 +385,7 @@ def get_dy(i: int128, j: int128, dx: uint256) -> uint256:
 
     x: uint256 = xp[i] + (dx * rates[i] / PRECISION)
     y: uint256 = self.get_y(i, j, x, xp)
-    dy: uint256 = (xp[j] - y) * PRECISION / rates[j]
+    dy: uint256 = (xp[j] - y - 1) * PRECISION / rates[j]
     _fee: uint256 = self.fee * dy / FEE_DENOMINATOR
     return dy - _fee
 
@@ -400,7 +400,7 @@ def get_dy_underlying(i: int128, j: int128, dx: uint256) -> uint256:
 
     x: uint256 = xp[i] + dx * precisions[i]
     y: uint256 = self.get_y(i, j, x, xp)
-    dy: uint256 = (xp[j] - y) / precisions[j]
+    dy: uint256 = (xp[j] - y - 1) / precisions[j]
     _fee: uint256 = self.fee * dy / FEE_DENOMINATOR
     return dy - _fee
 
@@ -544,8 +544,7 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint2
         new_balances[i] -= fees[i]
     D2: uint256 = self.get_D_mem(rates, new_balances, amp)
 
-    token_amount: uint256 = (D0 - D2) * token_supply / D0
-    assert token_amount > 0
+    token_amount: uint256 = (D0 - D2) * token_supply / D0 + 1
     assert token_amount <= max_burn_amount, "Slippage screwed you"
 
     for i in range(N_COINS):
