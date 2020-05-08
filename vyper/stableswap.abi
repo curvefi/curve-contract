@@ -379,7 +379,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 2675502
+  "gas": 2675669
  },
  {
   "name": "exchange",
@@ -405,7 +405,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 5490112
+  "gas": 5490309
  },
  {
   "name": "remove_liquidity",
@@ -441,7 +441,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 3580971
+  "gas": 3581047
  },
  {
   "name": "calc_withdraw_one_coin",
