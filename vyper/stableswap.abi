@@ -480,7 +480,7 @@
    },
    {
     "type": "uint256",
-    "name": "min_uamount"
+    "name": "min_amount"
    }
   ],
   "constant": false,

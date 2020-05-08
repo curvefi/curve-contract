@@ -512,14 +512,14 @@ def calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> uint256:
 
 @public
 @nonreentrant('lock')
-def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_uamount: uint256):
+def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_amount: uint256):
     """
     Remove _amount of liquidity all in a form of coin i
     """
     dy: uint256 = 0
     dy_fee: uint256 = 0
     dy, dy_fee = self._calc_withdraw_one_coin(_token_amount, i)
-    assert dy >= min_uamount, "Not enough coins removed"
+    assert dy >= min_amount, "Not enough coins removed"
 
     self.balances[i] -= (dy + dy_fee * self.admin_fee / FEE_DENOMINATOR)
     self.token.burnFrom(msg.sender, _token_amount)
