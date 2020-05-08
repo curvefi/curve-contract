@@ -311,7 +311,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 1293724
+  "gas": 1138429
  },
  {
   "name": "calc_token_amount",
@@ -334,7 +334,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 2572095
+  "gas": 2261505
  },
  {
   "name": "add_liquidity",
@@ -352,7 +352,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 4047481
+  "gas": 3581596
  },
  {
   "name": "get_dy",
@@ -379,7 +379,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 2986092
+  "gas": 2675502
  },
  {
   "name": "exchange",
@@ -405,7 +405,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 6111292
+  "gas": 5490112
  },
  {
   "name": "remove_liquidity",
@@ -441,7 +441,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 4046856
+  "gas": 3580971
  },
  {
   "name": "calc_withdraw_one_coin",
@@ -486,7 +486,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 4333994
+  "gas": 4023404
  },
  {
   "name": "ramp_A",
