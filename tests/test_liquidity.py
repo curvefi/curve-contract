@@ -323,7 +323,7 @@ def test_withdraw_one_coin_nogain(tester, w3, coins, swap, pool_token):
     swap.functions.apply_new_fee().transact({'from': deployer})
 
     for _run in range(25):
-        amounts = [randrange(100000 * u, 1000000 * u) for u in UU]
+        amounts = [randrange(u // 100, 1000 * u) for u in UU]
 
         # First, deposit, measure amounts and withdraw everything
         for c in coins:
@@ -335,17 +335,32 @@ def test_withdraw_one_coin_nogain(tester, w3, coins, swap, pool_token):
         amount_before = coins[i].caller.balanceOf(sam)
         token_before = pool_token.caller.balanceOf(sam)
         to_deposit = int(10 ** (random() * math.log10(amount_before)))  # Can go very high
+
+        in_contract_before = amounts[i]
         amounts = [0] * N_COINS
         amounts[i] = to_deposit
+        try:
+            swap.functions.add_liquidity(amounts, 0).transact(from_sam)
 
-        swap.functions.add_liquidity(amounts, 0).transact(from_sam)
-        token_amount = pool_token.caller.balanceOf(sam) - token_before
-        swap.functions.remove_liquidity_one_coin(token_amount, 0, 0).transact(from_sam)
-        amount_after = coins[i].caller.balanceOf(sam)
-        token_after = pool_token.caller.balanceOf(sam)
+            token_amount = pool_token.caller.balanceOf(sam) - token_before
+            swap.functions.remove_liquidity_one_coin(token_amount, 0, 0).transact(from_sam)
+            amount_after = coins[i].caller.balanceOf(sam)
+            token_after = pool_token.caller.balanceOf(sam)
 
-        assert token_before == token_after
-        assert amount_after <= amount_before, "Sam hacked it again!"
+            assert token_before == token_after
+            assert amount_after <= amount_before, "Sam hacked it again!"
+
+        except TransactionFailed:
+            # The deposit is expected to fail if it is vastly imbalanced
+            # This means that the invariant should be zero and it is not
+            # And we should prevent that deposit from happening
+            # so / 0 does that for us
+            if to_deposit / in_contract_before > 10000:
+                pass
+            else:
+                # If deposit is not extremely large, however -
+                # maybe this error shuldn't be happening
+                raise Exception("A small'ish deposit borked the contract")
 
         # Withdraw all back
         pool_token.functions.transfer(
