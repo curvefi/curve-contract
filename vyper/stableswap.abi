@@ -393,7 +393,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 2713890
+  "gas": 2714057
  },
  {
   "name": "get_dy_underlying",
@@ -420,7 +420,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 2713703
+  "gas": 2713870
  },
  {
   "name": "exchange",
@@ -508,7 +508,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 6975275
+  "gas": 6975351
  },
  {
   "name": "ramp_A",
