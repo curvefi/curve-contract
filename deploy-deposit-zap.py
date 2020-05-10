@@ -5,8 +5,8 @@ from web3 import Web3
 from web3 import middleware
 from web3.gas_strategies.time_based import fast_gas_price_strategy
 from tests.deploy import deploy_contract
-from deploy_config_compound import (
-        SWAP_DEPLOY_ADDRESS, C_COINS, UNDERLYING_COINS, USE_LENDING, TETHERED,
+from deploy_config_pax import (
+        SWAP_DEPLOY_ADDRESS, Y_COINS, UNDERLYING_COINS, USE_LENDING, TETHERED,
         PRECISIONS, SWAP_ADDRESS, TOKEN_ADDERESS)
 import json
 
@@ -14,7 +14,7 @@ import json
 provider = Web3.IPCProvider('~/.ethereum/geth.ipc', timeout=10000, request_kwargs={'timeout': 10000})
 POA = False
 # DAI, USDC
-N_COINS = len(C_COINS)
+N_COINS = len(Y_COINS)
 GETH_PASSWORD = None
 
 w3 = Web3(provider)
@@ -34,7 +34,7 @@ def deploy_zap():
         w3.geth.personal.unlockAccount(w3.eth.accounts[0], GETH_PASSWORD)
     deposit_contract = deploy_contract(
             w3, ['deposit.vy', 'cERC20.vy'], SWAP_DEPLOY_ADDRESS,
-            C_COINS, UNDERLYING_COINS, SWAP_ADDRESS, TOKEN_ADDERESS,
+            Y_COINS, UNDERLYING_COINS, SWAP_ADDRESS, TOKEN_ADDERESS,
             replacements={
                 '___N_COINS___': str(N_COINS),
                 '___N_ZEROS___': '[' + ', '.join(['ZERO256'] * N_COINS) + ']',

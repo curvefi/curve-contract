@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 
 from vyper.signatures.interface import extract_external_interface
+from deploy_config_pax import (Y_COINS, PRECISIONS, USE_LENDING, TETHERED)
 
-N_COINS = 2
-PRECISIONS = [10 ** 18, 10 ** 6]
+N_COINS = len(Y_COINS)
 contract_file = 'vyper/stableswap.vy'
-interfaces = ['ERC20m', 'cERC20']
-USE_LENDING = [True, True]
-TETHERED = [False, False]
+interfaces = ['ERC20m', 'yERC20']
 replacements = {
                 '___N_COINS___': str(N_COINS),
                 '___N_ZEROS___': '[' + ', '.join(['ZERO256'] * N_COINS) + ']',
