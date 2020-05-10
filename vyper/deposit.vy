@@ -1,7 +1,7 @@
 # A "zap" to deposit/withdraw Curve contract without too many transactions
 # (c) Curve.Fi, 2020
 from vyper.interfaces import ERC20
-import cERC20 as cERC20
+import yERC20 as yERC20
 
 
 # Tether transfer-only ABI
@@ -68,10 +68,8 @@ def add_liquidity(uamounts: uint256[N_COINS], min_mint_amount: uint256):
             # Mint if needed
             if use_lending[i]:
                 ERC20(self.underlying_coins[i]).approve(self.coins[i], uamount)
-                ok: uint256 = cERC20(self.coins[i]).mint(uamount)
-                if ok > 0:
-                    raise "Could not mint coin"
-                amounts[i] = cERC20(self.coins[i]).balanceOf(self)
+                yERC20(self.coins[i]).deposit(uamount)
+                amounts[i] = yERC20(self.coins[i]).balanceOf(self)
                 ERC20(self.coins[i]).approve(self.curve, amounts[i])
             else:
                 amounts[i] = uamount
@@ -92,12 +90,10 @@ def _send_all(_addr: address, min_uamounts: uint256[N_COINS], one: int128):
         if (one < 0) or (i == one):
             if use_lending[i]:
                 _coin: address = self.coins[i]
-                _balance: uint256 = cERC20(_coin).balanceOf(self)
+                _balance: uint256 = yERC20(_coin).balanceOf(self)
                 if _balance == 0:  # Do nothing if there are 0 coins
                     continue
-                ok: uint256 = cERC20(_coin).redeem(_balance)
-                if ok > 0:
-                    raise "Could not redeem coin"
+                yERC20(_coin).withdraw(_balance)
 
             _ucoin: address = self.underlying_coins[i]
             _uamount: uint256 = ERC20(_ucoin).balanceOf(self)
@@ -135,7 +131,7 @@ def remove_liquidity_imbalance(uamounts: uint256[N_COINS], max_burn_amount: uint
     amounts: uint256[N_COINS] = uamounts
     for i in range(N_COINS):
         if use_lending[i] and amounts[i] > 0:
-            rate: uint256 = cERC20(self.coins[i]).exchangeRateCurrent()
+            rate: uint256 = yERC20(self.coins[i]).getPricePerFullShare()
             amounts[i] = amounts[i] * LENDING_PRECISION / rate
         # if not use_lending - all good already
 
@@ -293,7 +289,7 @@ def calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> uint256:
 
     for j in range(N_COINS):
         if use_lending[j]:
-            rates[j] = cERC20(self.coins[j]).exchangeRateStored()
+            rates[j] = yERC20(self.coins[j]).getPricePerFullShare()
         else:
             rates[j] = 10 ** 18
 
@@ -312,7 +308,7 @@ def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_uamount: ui
 
     for j in range(N_COINS):
         if use_lending[j]:
-            rates[j] = cERC20(self.coins[j]).exchangeRateCurrent()
+            rates[j] = yERC20(self.coins[j]).getPricePerFullShare()
         else:
             rates[j] = LENDING_PRECISION
 
