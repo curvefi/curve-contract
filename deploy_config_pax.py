@@ -5,10 +5,10 @@ UNDERLYING_COINS = [
         '0xdAC17F958D2ee523a2206206994597C13D831ec7',
         '0x8E870D67F660D95d5be530380D0eC0bd388289E1']
 Y_COINS = [
-        '',
-        '',
-        '',
-        '']
+        '0x76E1608200F133A31260F18e880228E4a1a13733',
+        '0x2e44FDbD799d53fB9Bbb6Ed17A63eaa05c04D73a',
+        '0xA0A88EfF61E311C7940c1C27EdAe2C9F1d8Fd36D',
+        '0x8E870D67F660D95d5be530380D0eC0bd388289E1']
 PRECISIONS = [10 ** 18, 10 ** 6, 10 ** 6, 10 ** 18]
 TETHERED = [False, False, True, False]
 USE_LENDING = [True, True, True, False]
