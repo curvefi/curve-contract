@@ -309,7 +309,7 @@ def test_withdraw_one_coin(w3, coins, cerc20s, swap, pool_token):
 
         calc_amount = swap.caller.calc_withdraw_one_coin(dtoken, ii)
         print(ii, amount, calc_amount)
-        raise
+        assert swap.caller.calc_withdraw_one_coin(0, 1) == 0  # XXX
 
         amount_before = cerc20s[ii].caller.balanceOf(sam)
         with pytest.raises(TransactionFailed):

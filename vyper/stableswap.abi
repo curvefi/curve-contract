@@ -513,7 +513,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 4043981
+  "gas": 4044510
  },
  {
   "name": "ramp_A",

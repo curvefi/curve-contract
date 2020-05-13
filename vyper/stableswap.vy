@@ -529,6 +529,8 @@ def _calc_withdraw_one_coin(_token_amount: uint256, i: int128, rates: uint256[N_
 
     new_y: uint256 = self.get_y_D(amp, i, xp, D1)
     dy_0: uint256 = (xp[i] - new_y) / precisions[i]  # w/o fees
+    if True:  # XXX
+        return _token_amount, 0  # <- Should return _token_amount!
 
     for j in range(N_COINS):
         dx_expected: uint256 = 0
@@ -547,6 +549,7 @@ def _calc_withdraw_one_coin(_token_amount: uint256, i: int128, rates: uint256[N_
 @public
 @constant
 def calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> uint256:
+    # rates: uint256[N_COINS] = self._rates()
     return self._calc_withdraw_one_coin(_token_amount, i, self._rates())[0]
 
 
@@ -558,7 +561,8 @@ def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_amount: uin
     """
     dy: uint256 = 0
     dy_fee: uint256 = 0
-    dy, dy_fee = self._calc_withdraw_one_coin(_token_amount, i, self._rates())
+    # dy, dy_fee = self._calc_withdraw_one_coin(_token_amount, i)
+    dy, dy_fee = self._calc_withdraw_one_coin(_token_amount, i, self._rates())  # XXX
     assert dy >= min_amount, "Not enough coins removed"
 
     self.balances[i] -= (dy + dy_fee * self.admin_fee / FEE_DENOMINATOR)
