@@ -1,9 +1,7 @@
 import pytest
 import random
 from eth_tester.exceptions import TransactionFailed
-from .conftest import UU, use_lending, MAX_UINT
-
-N_COINS = 3
+from .conftest import UU, use_lending, MAX_UINT, N_COINS
 
 
 def test_add_liquidity(w3, coins, cerc20s, swap):
