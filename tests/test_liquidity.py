@@ -280,7 +280,7 @@ def test_withdraw_one_coin(w3, coins, cerc20s, swap, pool_token):
             if l:
                 c.functions.approve(cc.address, a).transact(from_sam)
                 cc.functions.mint(a).transact(from_sam)
-                assert cc.caller.balanceOf(sam) == a  # price = 1.0
+                assert cc.caller.balanceOf(sam) >= a
             cc.functions.approve(swap.address, a).transact(from_sam)
         swap.functions.add_liquidity(amounts, 0).transact(from_sam)
 
@@ -308,13 +308,11 @@ def test_withdraw_one_coin(w3, coins, cerc20s, swap, pool_token):
         token_before = pool_token.caller.balanceOf(sam)
 
         calc_amount = swap.caller.calc_withdraw_one_coin(dtoken, ii)
-        print(ii, amount, calc_amount)
-        assert swap.caller.calc_withdraw_one_coin(0, 1) == 0  # XXX
 
         amount_before = cerc20s[ii].caller.balanceOf(sam)
         with pytest.raises(TransactionFailed):
             swap.functions.remove_liquidity_one_coin(dtoken, ii, int(1.001 * calc_amount)).transact(from_sam)
-        swap.functions.remove_liquidity_one_coin(dtoken, ii, int(0.997 * calc_amount)).transact(from_sam)
+        swap.functions.remove_liquidity_one_coin(dtoken, ii, int(0.998 * calc_amount)).transact(from_sam)
         amount_after = cerc20s[ii].caller.balanceOf(sam)
         token_after = pool_token.caller.balanceOf(sam)
 

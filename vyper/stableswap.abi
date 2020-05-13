@@ -491,7 +491,7 @@
   "constant": true,
   "payable": false,
   "type": "function",
-  "gas": 15285
+  "gas": 15405
  },
  {
   "name": "remove_liquidity_one_coin",
@@ -513,7 +513,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 4044510
+  "gas": 4044074
  },
  {
   "name": "ramp_A",
