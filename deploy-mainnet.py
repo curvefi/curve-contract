@@ -8,7 +8,7 @@ from web3.gas_strategies.time_based import medium_gas_price_strategy as gas_stra
 from tests.deploy import deploy_contract
 import json
 
-from deploy_config_pax import (
+from deploy_config_renbtc import (
         COINS, SWAP_DEPLOY_ADDRESS,
         PRECISIONS, USE_LENDING)
 
@@ -42,7 +42,7 @@ def deploy_swap(A, fee):
     pool_token = deploy_contract(
         w3, 'ERC20.vy', SWAP_DEPLOY_ADDRESS, b'Curve.fi DAI/USDC/USDT/PAX', b'ypaxCrv', 18, 0)
     swap_contract = deploy_contract(
-            w3, ['stableswap.vy', 'ERC20m.vy', 'yERC20.vy'], SWAP_DEPLOY_ADDRESS,
+            w3, ['stableswap.vy', 'ERC20m.vy', 'cERC20.vy'], SWAP_DEPLOY_ADDRESS,
             COINS, pool_token.address, A, fee,
             replacements={
                 '___N_COINS___': str(N_COINS),
