@@ -332,7 +332,7 @@ def test_withdraw_one_coin(w3, coins, cerc20s, swap, pool_token):
             c.functions.approve(swap.address, 0).transact(from_sam)
 
 
-def test_withdraw_one_coin_nogain(tester, w3, coins, swap, pool_token):
+def test_withdraw_one_coin_nogain(tester, w3, coins, cerc20s, swap, pool_token):
     # Try to attack withdraw_one_coin when there are no fees
     # Rounding errors shouldn't give an attacker any edge
     sam, deployer = w3.eth.accounts[:2]
@@ -344,17 +344,24 @@ def test_withdraw_one_coin_nogain(tester, w3, coins, swap, pool_token):
     tester.mine_block()
     swap.functions.apply_new_fee().transact({'from': deployer})
 
+    # Convert to c-tokens all what's in them
+    for c, cc, l in zip(coins, cerc20s, use_lending):
+        if l:
+            a = c.caller.balanceOf(sam)
+            c.functions.approve(cc.address, a).transact(from_sam)
+            cc.functions.mint(a).transact(from_sam)
+
     for _run in range(25):
         amounts = [randrange(u // 100, 1000 * u) for u in UU]
 
         # First, deposit, measure amounts and withdraw everything
-        for c in coins:
+        for c in cerc20s:
             a = c.caller.balanceOf(sam)
             c.functions.approve(swap.address, a).transact(from_sam)
         swap.functions.add_liquidity(amounts, 0).transact(from_sam)
 
         i = randrange(0, len(UU))
-        amount_before = coins[i].caller.balanceOf(sam)
+        amount_before = cerc20s[i].caller.balanceOf(sam)
         token_before = pool_token.caller.balanceOf(sam)
         to_deposit = int(10 ** (random() * math.log10(amount_before)))  # Can go very high
 
@@ -366,7 +373,7 @@ def test_withdraw_one_coin_nogain(tester, w3, coins, swap, pool_token):
 
             token_amount = pool_token.caller.balanceOf(sam) - token_before
             swap.functions.remove_liquidity_one_coin(token_amount, 0, 0).transact(from_sam)
-            amount_after = coins[i].caller.balanceOf(sam)
+            amount_after = cerc20s[i].caller.balanceOf(sam)
             token_after = pool_token.caller.balanceOf(sam)
 
             assert token_before == token_after
@@ -392,5 +399,5 @@ def test_withdraw_one_coin_nogain(tester, w3, coins, swap, pool_token):
         swap.functions.remove_liquidity(to_remove, [0] * N_COINS).transact(from_sam)
 
         # Reset approvals
-        for c in coins:
+        for c in cerc20s:
             c.functions.approve(swap.address, 0).transact(from_sam)
