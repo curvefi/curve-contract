@@ -1,22 +1,18 @@
 #!/usr/bin/env python3
 
 from vyper.signatures.interface import extract_external_interface
+from deploy_config_pax import (COINS, PRECISIONS, USE_LENDING)
 
-N_COINS = 2
-PRECISIONS = [10 ** 18, 10 ** 6]
+N_COINS = len(COINS)
 contract_file = 'vyper/stableswap.vy'
-interfaces = ['ERC20m', 'cERC20']
-USE_LENDING = [True, True]
-TETHERED = [False, False]
+interfaces = ['ERC20m', 'yERC20']
 replacements = {
                 '___N_COINS___': str(N_COINS),
                 '___N_ZEROS___': '[' + ', '.join(['ZERO256'] * N_COINS) + ']',
                 '___PRECISION_MUL___': '[' + ', '.join(
                     'convert(%s, uint256)' % (10 ** 18 // i) for i in PRECISIONS) + ']',
                 '___USE_LENDING___': '[' + ', '.join(
-                        str(i) for i in USE_LENDING) + ']',
-                '___TETHERED___': '[' + ', '.join(
-                        str(i) for i in TETHERED) + ']'}
+                        str(i) for i in USE_LENDING) + ']'}
 
 
 with open(contract_file, 'r') as f:
