@@ -618,7 +618,7 @@
   "constant": false,
   "payable": false,
   "type": "function",
-  "gas": 17751
+  "gas": 17565
  },
  {
   "name": "kill_me",

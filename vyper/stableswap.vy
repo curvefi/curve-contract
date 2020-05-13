@@ -675,8 +675,6 @@ def revert_transfer_ownership():
 @public
 def withdraw_admin_fees():
     assert msg.sender == self.owner
-    _precisions: uint256[N_COINS] = PRECISION_MUL
-    use_lending: bool[N_COINS] = USE_LENDING
 
     for i in range(N_COINS):
         c: address = self.coins[i]
