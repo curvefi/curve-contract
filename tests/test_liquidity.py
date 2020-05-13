@@ -1,7 +1,12 @@
 import pytest
-import random
+import math
+from random import random, randrange
 from eth_tester.exceptions import TransactionFailed
-from .conftest import UU, use_lending, MAX_UINT, N_COINS
+from .conftest import UU, use_lending, MAX_UINT, N_COINS, approx
+
+
+def block_timestamp(w3):
+    return w3.eth.getBlock(w3.eth.blockNumber)['timestamp']
 
 
 def test_add_liquidity(w3, coins, cerc20s, swap):
@@ -108,7 +113,7 @@ def test_ratio_preservation(w3, coins, cerc20s, swap, pool_token):
     old_virtual_price = swap.caller.get_virtual_price()
     for i in range(5):
         # Add liquidity from Alice
-        value = random.randrange(1, 100)  # for 1e6 coins, error is ~1e-8
+        value = randrange(1, 100)  # for 1e6 coins, error is ~1e-8
         min_mint = int(0.999 * swap.caller.calc_token_amount([value * d // 1000 for d in deposits], True))
         swap.functions.add_liquidity(
             [value * d // 1000 for d in deposits], min_mint
@@ -117,7 +122,7 @@ def test_ratio_preservation(w3, coins, cerc20s, swap, pool_token):
         diff = (swap.caller.get_virtual_price() / old_virtual_price) - 1
         assert diff >= 0 and diff < dust
         # Add liquidity from Bob
-        value = random.randrange(1, 100)
+        value = randrange(1, 100)
         min_mint = int(0.999 * swap.caller.calc_token_amount([value * d // 1000 for d in deposits], True))
         swap.functions.add_liquidity(
             [value * d // 1000 for d in deposits], min_mint
@@ -126,14 +131,14 @@ def test_ratio_preservation(w3, coins, cerc20s, swap, pool_token):
         diff = (swap.caller.get_virtual_price() / old_virtual_price) - 1
         assert diff >= 0 and diff < dust
         # Remove liquidity from Alice
-        value = random.randrange(10 * max(UU))
+        value = randrange(10 * max(UU))
         swap.functions.remove_liquidity(value, [0] * N_COINS).\
             transact({'from': alice})
         assert_all_equal(alice)
         diff = (swap.caller.get_virtual_price() / old_virtual_price) - 1
         assert diff >= 0 and diff < dust
         # Remove liquidity from Bob
-        value = random.randrange(10 * max(UU))
+        value = randrange(10 * max(UU))
         swap.functions.remove_liquidity(value, [0] * N_COINS).\
             transact({'from': bob})
         assert_all_equal(bob)
@@ -197,7 +202,7 @@ def test_remove_liquidity_imbalance(w3, coins, cerc20s, swap, pool_token):
     for i in range(10):
         # Now Bob withdraws and adds coins in the same proportion, losing his
         # fees to Alice
-        values = [max(int(b * random.random() * 0.3), 1000) for b in deposits]
+        values = [max(int(b * random() * 0.3), 1000) for b in deposits]
         for i in range(N_COINS):
             bob_volumes[i] += values[i]
         max_burn = swap.caller.calc_token_amount(values, False)
@@ -262,3 +267,132 @@ def test_remove_liquidity_imbalance(w3, coins, cerc20s, swap, pool_token):
     assert abs((v_after - v_before) / (max(UU) * 0.001) - 1) < 0.05
     for i in range(N_COINS):
         assert cerc20s[i].caller.balanceOf(swap.address) >= swap.caller.balances(i)
+
+
+def test_withdraw_one_coin(w3, coins, cerc20s, swap, pool_token):
+    for _run in range(25):
+        sam = w3.eth.accounts[0]  # Sam owns the bank
+        from_sam = {'from': sam}
+        amounts = [randrange(100000 * u, 1000000 * u) for u in UU]
+
+        # First, deposit, measure amounts and withdraw everything
+        for c, cc, a, l in zip(coins, cerc20s, amounts, use_lending):
+            if l:
+                c.functions.approve(cc.address, a).transact(from_sam)
+                cc.functions.mint(a).transact(from_sam)
+                assert cc.caller.balanceOf(sam) == a  # price = 1.0
+            cc.functions.approve(swap.address, a).transact(from_sam)
+        swap.functions.add_liquidity(amounts, 0).transact(from_sam)
+
+        ii = randrange(N_COINS)
+        amount = randrange(1, int(0.8 * amounts[ii])) if random() < 0.5\
+            else randrange(1, min(1000 * UU[ii], amounts[ii] // 2))
+        amounts_to_remove = [0] * N_COINS
+        amounts_to_remove[ii] = amount
+
+        token_before = pool_token.caller.balanceOf(sam)
+
+        swap.functions.remove_liquidity_imbalance(
+                amounts_to_remove, token_before
+                ).transact(from_sam)
+        token_after = pool_token.caller.balanceOf(sam)
+        dtoken = token_before - token_after
+
+        swap.functions.remove_liquidity(token_after, [0] * N_COINS).transact(from_sam)
+
+        # Now withdraw just one coin
+        # Deposit exactly the same amounts
+        for c, a in zip(cerc20s, amounts):
+            c.functions.approve(swap.address, a).transact(from_sam)
+        swap.functions.add_liquidity(amounts, 0).transact(from_sam)
+        token_before = pool_token.caller.balanceOf(sam)
+
+        calc_amount = swap.caller.calc_withdraw_one_coin(dtoken, ii)
+        print(ii, amount, calc_amount)
+        raise
+
+        amount_before = cerc20s[ii].caller.balanceOf(sam)
+        with pytest.raises(TransactionFailed):
+            swap.functions.remove_liquidity_one_coin(dtoken, ii, int(1.001 * calc_amount)).transact(from_sam)
+        swap.functions.remove_liquidity_one_coin(dtoken, ii, int(0.997 * calc_amount)).transact(from_sam)
+        amount_after = cerc20s[ii].caller.balanceOf(sam)
+        token_after = pool_token.caller.balanceOf(sam)
+
+        assert approx(amount_after - amount_before, amount, 5e-4)
+        assert token_before - token_after <= dtoken
+        assert approx(token_before - token_after, dtoken, 5e-4)
+
+        # Withdraw all back
+        pool_token.functions.transfer(
+            sam,
+            pool_token.caller.balanceOf(w3.eth.accounts[1])).transact({'from': w3.eth.accounts[1]})
+        to_remove = pool_token.caller.balanceOf(sam)
+        swap.functions.remove_liquidity(to_remove, [0] * N_COINS).transact(from_sam)
+
+        # Reset approvals
+        for c in cerc20s:
+            c.functions.approve(swap.address, 0).transact(from_sam)
+
+
+def test_withdraw_one_coin_nogain(tester, w3, coins, swap, pool_token):
+    # Try to attack withdraw_one_coin when there are no fees
+    # Rounding errors shouldn't give an attacker any edge
+    sam, deployer = w3.eth.accounts[:2]
+    from_sam = {'from': sam}
+
+    # Set fee to 0
+    swap.functions.commit_new_fee(0, 0).transact({'from': deployer})
+    tester.time_travel(block_timestamp(w3) + 4 * 86400)
+    tester.mine_block()
+    swap.functions.apply_new_fee().transact({'from': deployer})
+
+    for _run in range(25):
+        amounts = [randrange(u // 100, 1000 * u) for u in UU]
+
+        # First, deposit, measure amounts and withdraw everything
+        for c in coins:
+            a = c.caller.balanceOf(sam)
+            c.functions.approve(swap.address, a).transact(from_sam)
+        swap.functions.add_liquidity(amounts, 0).transact(from_sam)
+
+        i = randrange(0, len(UU))
+        amount_before = coins[i].caller.balanceOf(sam)
+        token_before = pool_token.caller.balanceOf(sam)
+        to_deposit = int(10 ** (random() * math.log10(amount_before)))  # Can go very high
+
+        in_contract_before = amounts[i]
+        amounts = [0] * N_COINS
+        amounts[i] = to_deposit
+        try:
+            swap.functions.add_liquidity(amounts, 0).transact(from_sam)
+
+            token_amount = pool_token.caller.balanceOf(sam) - token_before
+            swap.functions.remove_liquidity_one_coin(token_amount, 0, 0).transact(from_sam)
+            amount_after = coins[i].caller.balanceOf(sam)
+            token_after = pool_token.caller.balanceOf(sam)
+
+            assert token_before == token_after
+            assert amount_after <= amount_before, "Sam hacked it again!"
+
+        except TransactionFailed:
+            # The deposit is expected to fail if it is vastly imbalanced
+            # This means that the invariant should be zero and it is not
+            # And we should prevent that deposit from happening
+            # so / 0 does that for us
+            if to_deposit / in_contract_before > 10000:
+                pass
+            else:
+                # If deposit is not extremely large, however -
+                # maybe this error shuldn't be happening
+                raise Exception("A small'ish deposit borked the contract")
+
+        # Withdraw all back
+        pool_token.functions.transfer(
+            sam,
+            pool_token.caller.balanceOf(w3.eth.accounts[1])).transact({'from': w3.eth.accounts[1]})
+        to_remove = pool_token.caller.balanceOf(sam)
+        swap.functions.remove_liquidity(to_remove, [0] * N_COINS).transact(from_sam)
+
+        # Reset approvals
+        for c in coins:
+            c.functions.approve(swap.address, 0).transact(from_sam)

@@ -522,9 +522,6 @@ def _calc_withdraw_one_coin(_token_amount: uint256, i: int128, rates: uint256[N_
     total_supply: uint256 = self.token.totalSupply()
 
     xp: uint256[N_COINS] = self._xp(rates)
-    S: uint256 = 0
-    for j in range(N_COINS):
-        S += xp[j]
 
     D0: uint256 = self.get_D(xp, amp)
     D1: uint256 = D0 - _token_amount * D0 / total_supply
