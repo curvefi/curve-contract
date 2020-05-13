@@ -1,0 +1,6 @@
+SWAP_DEPLOY_ADDRESS = '0xC447FcAF1dEf19A583F97b3620627BF69c05b5fB'
+COINS = [
+        '',
+        '']
+PRECISIONS = [10 ** 8, 10 ** 8]
+USE_LENDING = [True, False]
