@@ -98,6 +98,7 @@ def exchangeRateStored() -> uint256:
     pass
 
 @public
+@constant
 def exchangeRateCurrent() -> uint256:
     """
      * @notice Accrue interest then return the up-to-date exchange rate

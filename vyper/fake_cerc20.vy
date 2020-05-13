@@ -200,7 +200,7 @@ def set_exchange_rate(rate: uint256):
 
 
 @public
+@constant
 def exchangeRateCurrent() -> uint256:
-    rate: uint256 = self.exchangeRateStored
-    self.exchangeRateStored = rate  # Simulate blockchain write
-    return rate
+    # Ren uses a read-only method here
+    return self.exchangeRateStored

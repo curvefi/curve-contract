@@ -7,11 +7,11 @@ from .deploy import deploy_contract
 
 CONTRACT_PATH = join(dirname(dirname(realpath(__file__))), 'vyper')
 N_COINS = 3
-UP = [18, 6, 6]
+UP = [8, 18, 8]  # Ren/h/w, for example - why not
 UU = [10 ** p for p in UP]
-c_rates = [5 * UU[0], UU[1], 20 * UU[2]]
-use_lending = [True, True, False]
-tethered = [False, False, True]
+c_rates = [10 ** 18] * 3
+use_lending = [True, False, False]
+tethered = [False, False, False]
 PRECISIONS = [10 ** 18 // u for u in UU]
 MAX_UINT = 2 ** 256 - 1
 
@@ -66,7 +66,7 @@ def cerc20s(w3, coins):
 def swap(w3, coins, cerc20s, pool_token):
     swap_contract = deploy_contract(
             w3, ['stableswap.vy', 'ERC20m.vy', 'cERC20.vy'], w3.eth.accounts[1],
-            [c.address for c in cerc20s], [c.address for c in coins],
+            [c.address for c in cerc20s],
             pool_token.address, 360 * 2, 10 ** 7,
             replacements={
                 '___N_COINS___': str(N_COINS),
@@ -88,7 +88,7 @@ def swap(w3, coins, cerc20s, pool_token):
 def deposit(w3, coins, cerc20s, pool_token, swap):
     deposit_contract = deploy_contract(
             w3, ['deposit.vy', 'cERC20.vy'], w3.eth.accounts[1],
-            [c.address for c in cerc20s], [c.address for c in coins],
+            [c.address for c in cerc20s],
             swap.address, pool_token.address,
             replacements={
                 '___N_COINS___': str(N_COINS),
