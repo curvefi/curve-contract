@@ -22,6 +22,7 @@ def test_few_trades(w3, coins, cerc20s, swap, pool_token):
             cc.functions.set_exchange_rate(rate).transact(from_sam)
             c.functions.approve(cc.address, 1000 * u).transact(from_sam)
             cc.functions.mint(1000 * u).transact(from_sam)
+            # Leave 90% of coins for trading - will trade compounded
             balance = cc.caller.balanceOf(sam)
         else:
             balance = 1000 * u
@@ -32,40 +33,33 @@ def test_few_trades(w3, coins, cerc20s, swap, pool_token):
     swap.functions.add_liquidity([b // 10 for b in deposits], 0).transact(from_sam)
 
     # Fund the customer with $100 of each coin
-    for c, u in zip(coins, UU):
+    for c, u in zip(cerc20s, UU):
         c.functions.transfer(bob, 100 * u).transact(from_sam)
 
     # Customer approves
-    coins[0].functions.approve(swap.address, 50 * UU[0]).transact(from_bob)
+    cerc20s[0].functions.approve(swap.address, 50 * UU[0]).transact(from_bob)
 
     # And trades
     with pytest.raises(TransactionFailed):
         # Cannot exchange to the same currency
-        swap.functions.exchange_underlying(0, 0, 1 * UU[0], 0).transact(from_bob)
+        swap.functions.exchange(0, 0, 1 * UU[0], 0).transact(from_bob)
 
-    test_amount = deposits[0] // 10
-    assert cerc20s[0].caller.balanceOf(sam) > test_amount
-    assert cerc20s[0].caller.allowance(sam, swap.address) > test_amount
-    with pytest.raises(TransactionFailed):
-        # Cannot exchange to the same here, too
-        swap.functions.exchange(0, 0, test_amount, 0).transact(from_sam)
-
-    swap.functions.exchange_underlying(
+    swap.functions.exchange(
         0, 1, 1 * UU[0], int(0.9 * UU[1])
     ).transact(from_bob)
 
-    assert coins[0].caller.balanceOf(bob) == 99 * UU[0]
-    assert coins[1].caller.balanceOf(bob) > int(100.9 * UU[1])
-    assert coins[1].caller.balanceOf(bob) < 101 * UU[1]
+    assert cerc20s[0].caller.balanceOf(bob) == 99 * UU[0]
+    assert cerc20s[1].caller.balanceOf(bob) > int(100.9 * UU[1])
+    assert cerc20s[1].caller.balanceOf(bob) < 101 * UU[1]
 
     # Why not more
-    swap.functions.exchange_underlying(
+    swap.functions.exchange(
         0, 1, 1 * UU[0], int(0.9 * UU[1])
     ).transact(from_bob)
 
-    assert coins[0].caller.balanceOf(bob) == 98 * UU[0]
-    assert coins[1].caller.balanceOf(bob) > int(101.9 * UU[1])
-    assert coins[1].caller.balanceOf(bob) < 102 * UU[1]
+    assert cerc20s[0].caller.balanceOf(bob) == 98 * UU[0]
+    assert cerc20s[1].caller.balanceOf(bob) > int(101.9 * UU[1])
+    assert cerc20s[1].caller.balanceOf(bob) < 102 * UU[1]
 
     # Oh no, a vulnerability detected! What do we do
     with pytest.raises(TransactionFailed):
@@ -76,7 +70,7 @@ def test_few_trades(w3, coins, cerc20s, swap, pool_token):
 
     # Cannot exchange now
     with pytest.raises(TransactionFailed):
-        swap.functions.exchange_underlying(0, 1, 1 * UU[0], 0).transact(from_bob)
+        swap.functions.exchange(0, 1, 1 * UU[0], 0).transact(from_bob)
 
     # But can withdraw
     value = pool_token.caller.balanceOf(sam)
