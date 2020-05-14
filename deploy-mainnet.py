@@ -40,7 +40,7 @@ def deploy_swap(A, fee):
         w3.geth.personal.unlockAccount(w3.eth.accounts[0], GETH_PASSWORD)
     fee = int(fee * 10 ** 10)
     pool_token = deploy_contract(
-        w3, 'ERC20.vy', SWAP_DEPLOY_ADDRESS, b'Curve.fi DAI/USDC/USDT/PAX', b'ypaxCrv', 18, 0)
+        w3, 'ERC20.vy', SWAP_DEPLOY_ADDRESS, b'Curve.fi renBTC/wBTC', b'crvRenWBTC', 18, 0)
     swap_contract = deploy_contract(
             w3, ['stableswap.vy', 'ERC20m.vy', 'cERC20.vy'], SWAP_DEPLOY_ADDRESS,
             COINS, pool_token.address, A, fee,
