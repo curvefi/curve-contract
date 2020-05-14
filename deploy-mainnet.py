@@ -3,8 +3,7 @@
 # from os.path import expanduser
 from web3 import Web3
 from web3 import middleware
-# from web3.gas_strategies.time_based import fast_gas_price_strategy
-from web3.gas_strategies.time_based import medium_gas_price_strategy as gas_strategy
+from web3.gas_strategies.time_based import fast_gas_price_strategy as gas_strategy
 from tests.deploy import deploy_contract
 import json
 
