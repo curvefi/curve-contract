@@ -1,3 +1,4 @@
+import time
 from os.path import realpath, dirname, join, splitext
 from vyper import compile_code
 
@@ -38,7 +39,13 @@ def deploy_contract(w3, filename, account, *args, replacements=None):
     deploy = w3.eth.contract(abi=code['abi'],
                              bytecode=code['bytecode'])
     tx_hash = deploy.constructor(*args).transact({'from': account, 'gas': 6 * 10**6})
-    tx_receipt = w3.eth.waitForTransactionReceipt(tx_hash, timeout=10000)
+    while True:
+        try:
+            tx_receipt = w3.eth.waitForTransactionReceipt(tx_hash, timeout=10000)
+        except ValueError as e:
+            print("Transaction failed", e)
+            time.sleep(5)
+        break
     return w3.eth.contract(
         address=tx_receipt.contractAddress,
         abi=deploy.abi)

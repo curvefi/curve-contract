@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 # from os.path import expanduser
+import time
 from web3 import Web3
 from web3 import middleware
 from web3.gas_strategies.time_based import fast_gas_price_strategy as gas_strategy
@@ -38,7 +39,7 @@ def deploy_swap(A, fee):
         w3.geth.personal.unlockAccount(w3.eth.accounts[0], GETH_PASSWORD)
     fee = int(fee * 10 ** 10)
     pool_token = deploy_contract(
-        w3, 'ERC20.vy', SWAP_DEPLOY_ADDRESS, b'Curve.fi renBTC/wBTC', b'crvRenWBTC', 18, 0)
+        w3, 'ERC20.vy', SWAP_DEPLOY_ADDRESS, b'Curve.fi TBTC/WBTC/HBTC', b'crvTWHBTC', 18, 0)
     swap_contract = deploy_contract(
             w3, ['stableswap.vy', 'ERC20m.vy'], SWAP_DEPLOY_ADDRESS,
             COINS, pool_token.address, A, fee,
@@ -50,7 +51,13 @@ def deploy_swap(A, fee):
             })
     txhash = pool_token.functions.set_minter(swap_contract.address).transact(
         {'from': SWAP_DEPLOY_ADDRESS})
-    w3.eth.waitForTransactionReceipt(txhash, timeout=1000)
+    while True:
+        try:
+            w3.eth.waitForTransactionReceipt(txhash, timeout=1000)
+        except ValueError as e:
+            print("Transaction failed", e)
+            time.sleep(5)
+        break
 
     abi = json.dumps(swap_contract.abi, indent=True)
     with open('swap.abi', 'w') as f:
