@@ -379,7 +379,7 @@ def _exchange(i: int128, j: int128, dx: uint256, rates: uint256[N_COINS]) -> uin
     x: uint256 = xp[i] + dx * rates[i] / PRECISION
     y: uint256 = self.get_y(i, j, x, xp)
 
-    dy: uint256 = xp[j] - y
+    dy: uint256 = xp[j] - y - 1  # -1 just in case there were some rounding errors
     dy_fee: uint256 = dy * self.fee / FEE_DENOMINATOR
     dy_admin_fee: uint256 = dy_fee * self.admin_fee / FEE_DENOMINATOR
 
