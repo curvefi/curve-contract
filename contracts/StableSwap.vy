@@ -1,8 +1,8 @@
 # (c) Curve.Fi, 2020
 # Pools for renBTC/wBTC. Ren can potentially change amount of underlying bitcoins
 
-import ERC20m as ERC20m
-import cERC20 as cERC20
+import interfaces.ERC20m as ERC20m
+import interfaces.cERC20 as cERC20
 from vyper.interfaces import ERC20
 
 
