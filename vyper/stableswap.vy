@@ -333,19 +333,26 @@ def _exchange(i: int128, j: int128, dx: uint256) -> uint256:
     assert not self.is_killed
     precisions: uint256[N_COINS] = PRECISION_MUL
 
-    xp: uint256[N_COINS] = self._xp()
+    old_balances: uint256[N_COINS] = self.balances
+    xp: uint256[N_COINS] = self._xp_mem(old_balances)
 
     x: uint256 = xp[i] + dx * precisions[i]
     y: uint256 = self.get_y(i, j, x, xp)
-    dy: uint256 = xp[j] - y
+
+    dy: uint256 = xp[j] - y - 1  # -1 just in case there were some rounding errors
     dy_fee: uint256 = dy * self.fee / FEE_DENOMINATOR
     dy_admin_fee: uint256 = dy_fee * self.admin_fee / FEE_DENOMINATOR
-    self.balances[i] = x / precisions[i]
-    self.balances[j] = (y + (dy_fee - dy_admin_fee)) / precisions[j]
 
-    _dy: uint256 = (dy - dy_fee - 1) / precisions[j]  # Sometimes return a bit less (for safety)
+    # Convert all to real units
+    dy = (dy - dy_fee) / precisions[j]
+    dy_admin_fee = dy_admin_fee / precisions[j]
 
-    return _dy
+    # Change balances exactly in same way as we change actual ERC20 coin amounts
+    self.balances[i] = old_balances[i] + dx
+    # When rounding errors happen, we undercharge admin fee in favor of LP
+    self.balances[j] = old_balances[j] - dy - dy_admin_fee
+
+    return dy
 
 
 @public

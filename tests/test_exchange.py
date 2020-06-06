@@ -130,6 +130,6 @@ def test_simulated_exchange(w3, coins, swap):
 
     # Let's see what we have left
     x = [swap.caller.balances(i) for i in range(N_COINS)]
-    assert tuple(round(a / b, 10) for a, b in zip(x, curve.x)) == (1.0,) * N_COINS
+    assert tuple(round(a / b, 6) for a, b in zip(x, curve.x)) == (1.0,) * N_COINS
 
     assert sum(x[i] * PRECISIONS[i] for i in range(N_COINS)) > 300 * max(UU)
