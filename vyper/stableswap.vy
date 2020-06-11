@@ -667,6 +667,7 @@ def revert_transfer_ownership():
 
 
 @public
+@nonreentrant('lock')
 def withdraw_admin_fees():
     assert msg.sender == self.owner
     _precisions: uint256[N_COINS] = PRECISION_MUL
