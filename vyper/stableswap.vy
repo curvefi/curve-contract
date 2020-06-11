@@ -94,19 +94,14 @@ def __init__(_coins: address[N_COINS], _underlying_coins: address[N_COINS],
     for i in range(N_COINS):
         assert _coins[i] != ZERO_ADDRESS
         assert _underlying_coins[i] != ZERO_ADDRESS
-        self.balances[i] = 0
     self.coins = _coins
     self.underlying_coins = _underlying_coins
     self.initial_A = _A
     self.future_A = _A
-    self.initial_A_time = 0
-    self.future_A_time = 0
     self.fee = _fee
-    self.admin_fee = 0
     self.owner = msg.sender
     self.airdropper = msg.sender
     self.kill_deadline = block.timestamp + kill_deadline_dt
-    self.is_killed = False
     self.token = ERC20m(_pool_token)
 
 
