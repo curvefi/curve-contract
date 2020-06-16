@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from vyper.signatures.interface import extract_external_interface
-from deploy_config_renbtc import (COINS, PRECISIONS, USE_LENDING)
+from deploy_config_renbtc_sbtc import (COINS, PRECISIONS, USE_LENDING)
 
 N_COINS = len(COINS)
 contract_file = 'vyper/stableswap.vy'
