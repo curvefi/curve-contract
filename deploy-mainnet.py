@@ -7,7 +7,7 @@ from web3.gas_strategies.time_based import fast_gas_price_strategy as gas_strate
 from tests.deploy import deploy_contract
 import json
 
-from deploy_config_renbtc import (
+from deploy_config_renbtc_sbtc import (
         COINS, SWAP_DEPLOY_ADDRESS,
         PRECISIONS, USE_LENDING)
 
