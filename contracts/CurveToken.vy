@@ -1,3 +1,4 @@
+# @version 0.2.4
 # https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20.md
 
 from vyper.interfaces import ERC20
