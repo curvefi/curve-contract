@@ -1,12 +1,13 @@
 
 N_COINS = 2  # hBTC, wBTC
-PRECISIONS = [8, 8]
-USE_LENDING = [False, False]
+PRECISIONS = [18, 8]
+PRECISION_MUL = [10**18 // (10**i) for i in PRECISIONS]
+RATES = [i*10**18 for i in PRECISION_MUL]
 
 replacements = {
     '___N_COINS___': str(N_COINS),
-    '___PRECISION_MUL___': f"[{', '.join(str(10**18 // (10**i)) for i in PRECISIONS)}]",
-    '___USE_LENDING___': f"[{', '.join(str(i) for i in USE_LENDING)}]"
+    '___PRECISION_MUL___': str(PRECISION_MUL),
+    '___RATES___': str(RATES),
 }
 
 
