@@ -260,8 +260,7 @@ def calc_token_amount(amounts: uint256[N_COINS], deposit: bool) -> uint256:
 @external
 @nonreentrant('lock')
 def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256):
-    # Amounts is amounts of c-tokens
-    assert not self.is_killed
+    assert not self.is_killed  # dev: is killed
 
     fees: uint256[N_COINS] = empty(uint256[N_COINS])
     _fee: uint256 = self.fee * N_COINS / (4 * (N_COINS - 1))
@@ -278,7 +277,7 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256):
 
     for i in range(N_COINS):
         if token_supply == 0:
-            assert amounts[i] > 0
+            assert amounts[i] > 0  # dev: initial deposit requires all coins
         # balances store amounts of c-tokens
         new_balances[i] = old_balances[i] + amounts[i]
 
@@ -317,7 +316,7 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256):
     # Take coins from the sender
     for i in range(N_COINS):
         if amounts[i] > 0:
-            assert ERC20(self.coins[i]).transferFrom(msg.sender, self, amounts[i])
+            assert ERC20(self.coins[i]).transferFrom(msg.sender, self, amounts[i])  # dev: failed transfer
 
     # Mint pool tokens
     self.token.mint(msg.sender, mint_amount)
@@ -330,7 +329,13 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256):
 def get_y(i: int128, j: int128, x: uint256, xp_: uint256[N_COINS]) -> uint256:
     # x in the input is converted to the same price/precision
 
-    assert (i != j) and (i >= 0) and (j >= 0) and (i < N_COINS) and (j < N_COINS)
+    assert i != j       # dev: same coin
+    assert j >= 0       # dev: j below zero
+    assert j < N_COINS  # dev: j above N_COINS
+
+    # should be unreachable, but good for safety
+    assert i >= 0
+    assert i < N_COINS
 
     amp: uint256 = self._A()
     D: uint256 = self.get_D(xp_, amp)
@@ -397,7 +402,7 @@ def get_dy_underlying(i: int128, j: int128, dx: uint256) -> uint256:
 @external
 @nonreentrant('lock')
 def exchange(i: int128, j: int128, dx: uint256, min_dy: uint256):
-    assert not self.is_killed
+    assert not self.is_killed  # dev: is killed
     rates: uint256[N_COINS] = RATES
 
     old_balances: uint256[N_COINS] = self.balances
@@ -441,7 +446,7 @@ def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS]):
         amounts[i] = value
         assert ERC20(self.coins[i]).transfer(msg.sender, value)
 
-    self.token.burnFrom(msg.sender, _amount)  # Will raise if not enough
+    self.token.burnFrom(msg.sender, _amount)  # dev: insufficient funds
 
     log RemoveLiquidity(msg.sender, amounts, fees, total_supply - _amount)
 
@@ -449,7 +454,7 @@ def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS]):
 @external
 @nonreentrant('lock')
 def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint256):
-    assert not self.is_killed
+    assert not self.is_killed  # dev: is killed
 
     token_supply: uint256 = self.token.totalSupply()
     assert token_supply > 0
@@ -482,7 +487,7 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint2
     for i in range(N_COINS):
         if amounts[i] > 0:
             assert ERC20(self.coins[i]).transfer(msg.sender, amounts[i])
-    self.token.burnFrom(msg.sender, token_amount)  # Will raise if not enough
+    self.token.burnFrom(msg.sender, token_amount)  # dev: insufficient funds
 
     log RemoveLiquidityImbalance(msg.sender, amounts, fees, D1, token_supply - token_amount)
 
@@ -501,7 +506,8 @@ def get_y_D(A_: uint256, i: int128, xp: uint256[N_COINS], D: uint256) -> uint256
     """
     # x in the input is converted to the same price/precision
 
-    assert (i >= 0) and (i < N_COINS)
+    assert i >= 0  # dev: i below zero
+    assert i < N_COINS  # dev: i above N_COINS
 
     c: uint256 = D
     S_: uint256 = 0
@@ -578,13 +584,15 @@ def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_amount: uin
     """
     Remove _amount of liquidity all in a form of coin i
     """
+    assert not self.is_killed  # dev: is killed
+
     dy: uint256 = 0
     dy_fee: uint256 = 0
     dy, dy_fee = self._calc_withdraw_one_coin(_token_amount, i)
     assert dy >= min_amount, "Not enough coins removed"
 
     self.balances[i] -= (dy + dy_fee * self.admin_fee / FEE_DENOMINATOR)
-    self.token.burnFrom(msg.sender, _token_amount)
+    self.token.burnFrom(msg.sender, _token_amount)  # dev: insufficient funds
     assert ERC20(self.coins[i]).transfer(msg.sender, dy)
 
     log RemoveLiquidityOne(msg.sender, _token_amount, dy)
@@ -593,9 +601,9 @@ def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_amount: uin
 ### Admin functions ###
 @external
 def ramp_A(_future_A: uint256, _future_time: uint256):
-    assert msg.sender == self.owner
+    assert msg.sender == self.owner  # dev: only owner
     assert block.timestamp >= self.initial_A_time + min_ramp_time
-    assert _future_time >= block.timestamp + min_ramp_time
+    assert _future_time >= block.timestamp + min_ramp_time  # dev: insufficient time
 
     _initial_A: uint256 = self._A()
     assert (_future_A > 0) and (_future_A < max_A)
@@ -611,7 +619,7 @@ def ramp_A(_future_A: uint256, _future_time: uint256):
 
 @external
 def stop_ramp_A():
-    assert msg.sender == self.owner
+    assert msg.sender == self.owner  # dev: only owner
 
     current_A: uint256 = self._A()
     self.initial_A = current_A
@@ -625,10 +633,10 @@ def stop_ramp_A():
 
 @external
 def commit_new_fee(new_fee: uint256, new_admin_fee: uint256):
-    assert msg.sender == self.owner
-    assert self.admin_actions_deadline == 0
-    assert new_admin_fee <= max_admin_fee
-    assert new_fee <= max_fee
+    assert msg.sender == self.owner  # dev: only owner
+    assert self.admin_actions_deadline == 0  # dev: active action
+    assert new_fee <= max_fee  # dev: fee exceeds maximum
+    assert new_admin_fee <= max_admin_fee  # dev: admin fee exceeds maximum
 
     _deadline: uint256 = block.timestamp + admin_actions_delay
     self.admin_actions_deadline = _deadline
@@ -640,9 +648,9 @@ def commit_new_fee(new_fee: uint256, new_admin_fee: uint256):
 
 @external
 def apply_new_fee():
-    assert msg.sender == self.owner
-    assert self.admin_actions_deadline <= block.timestamp\
-        and self.admin_actions_deadline > 0
+    assert msg.sender == self.owner  # dev: only owner
+    assert block.timestamp >= self.admin_actions_deadline  # dev: insufficient time
+    assert self.admin_actions_deadline != 0  # dev: no active action
 
     self.admin_actions_deadline = 0
     _fee: uint256 = self.future_fee
@@ -655,15 +663,15 @@ def apply_new_fee():
 
 @external
 def revert_new_parameters():
-    assert msg.sender == self.owner
+    assert msg.sender == self.owner  # dev: only owner
 
     self.admin_actions_deadline = 0
 
 
 @external
 def commit_transfer_ownership(_owner: address):
-    assert msg.sender == self.owner
-    assert self.transfer_ownership_deadline == 0
+    assert msg.sender == self.owner  # dev: only owner
+    assert self.transfer_ownership_deadline == 0  # dev: active transfer
 
     _deadline: uint256 = block.timestamp + admin_actions_delay
     self.transfer_ownership_deadline = _deadline
@@ -674,9 +682,9 @@ def commit_transfer_ownership(_owner: address):
 
 @external
 def apply_transfer_ownership():
-    assert msg.sender == self.owner
-    assert block.timestamp >= self.transfer_ownership_deadline\
-        and self.transfer_ownership_deadline > 0
+    assert msg.sender == self.owner  # dev: only owner
+    assert block.timestamp >= self.transfer_ownership_deadline  # dev: insufficient time
+    assert self.transfer_ownership_deadline != 0  # dev: no active transfer
 
     self.transfer_ownership_deadline = 0
     _owner: address = self.future_owner
@@ -687,14 +695,14 @@ def apply_transfer_ownership():
 
 @external
 def revert_transfer_ownership():
-    assert msg.sender == self.owner
+    assert msg.sender == self.owner  # dev: only owner
 
     self.transfer_ownership_deadline = 0
 
 
 @external
 def withdraw_admin_fees():
-    assert msg.sender == self.owner
+    assert msg.sender == self.owner  # dev: only owner
 
     for i in range(N_COINS):
         c: address = self.coins[i]
@@ -705,12 +713,12 @@ def withdraw_admin_fees():
 
 @external
 def kill_me():
-    assert msg.sender == self.owner
-    assert self.kill_deadline > block.timestamp
+    assert msg.sender == self.owner  # dev: only owner
+    assert self.kill_deadline > block.timestamp  # dev: deadline has passed
     self.is_killed = True
 
 
 @external
 def unkill_me():
-    assert msg.sender == self.owner
+    assert msg.sender == self.owner  # dev: only owner
     self.is_killed = False
