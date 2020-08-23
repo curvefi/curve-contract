@@ -164,8 +164,8 @@ def A() -> uint256:
     return self._A()
 
 
-@internal
 @view
+@internal
 def _xp() -> uint256[N_COINS]:
     result: uint256[N_COINS] = RATES
     for i in range(N_COINS):
@@ -210,14 +210,14 @@ def get_D(xp: uint256[N_COINS], amp: uint256) -> uint256:
     return D
 
 
-@internal
 @view
+@internal
 def get_D_mem(_balances: uint256[N_COINS], amp: uint256) -> uint256:
     return self.get_D(self._xp_mem(_balances), amp)
 
 
-@external
 @view
+@external
 def get_virtual_price() -> uint256:
     """
     Returns portfolio virtual price (for calculating profit)
@@ -230,8 +230,8 @@ def get_virtual_price() -> uint256:
     return D * PRECISION / token_supply
 
 
-@external
 @view
+@external
 def calc_token_amount(amounts: uint256[N_COINS], deposit: bool) -> uint256:
     """
     Simplified method to calculate addition or reduction in token supply at
@@ -324,8 +324,8 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256):
     log AddLiquidity(msg.sender, amounts, fees, D1, token_supply + mint_amount)
 
 
-@internal
 @view
+@internal
 def get_y(i: int128, j: int128, x: uint256, xp_: uint256[N_COINS]) -> uint256:
     # x in the input is converted to the same price/precision
 
@@ -370,8 +370,8 @@ def get_y(i: int128, j: int128, x: uint256, xp_: uint256[N_COINS]) -> uint256:
     return y
 
 
-@external
 @view
+@external
 def get_dy(i: int128, j: int128, dx: uint256) -> uint256:
     # dx and dy in c-units
     rates: uint256[N_COINS] = RATES
@@ -384,8 +384,8 @@ def get_dy(i: int128, j: int128, dx: uint256) -> uint256:
     return dy - _fee
 
 
-@external
 @view
+@external
 def get_dy_underlying(i: int128, j: int128, dx: uint256) -> uint256:
     # dx and dy in underlying units
     xp: uint256[N_COINS] = self._xp()
@@ -492,8 +492,8 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint2
     log RemoveLiquidityImbalance(msg.sender, amounts, fees, D1, token_supply - token_amount)
 
 
-@internal
 @view
+@internal
 def get_y_D(A_: uint256, i: int128, xp: uint256[N_COINS], D: uint256) -> uint256:
     """
     Calculate x[i] if one reduces D from being calculated for xp to D
@@ -538,8 +538,8 @@ def get_y_D(A_: uint256, i: int128, xp: uint256[N_COINS], D: uint256) -> uint256
     return y
 
 
-@internal
 @view
+@internal
 def _calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> (uint256, uint256):
     # First, need to calculate
     # * Get current D
@@ -572,8 +572,8 @@ def _calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> (uint256, uint
     return dy, dy_0 - dy
 
 
-@external
 @view
+@external
 def calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> uint256:
     return self._calc_withdraw_one_coin(_token_amount, i)[0]
 
