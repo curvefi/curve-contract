@@ -7,23 +7,6 @@ from vyper.interfaces import ERC20
 import CurveToken as CurveToken
 
 
-# This can (and needs to) be changed at compile time
-N_COINS: constant(int128) = ___N_COINS___  # <- change
-
-FEE_DENOMINATOR: constant(uint256) = 10 ** 10
-LENDING_PRECISION: constant(uint256) = 10 ** 18
-PRECISION: constant(uint256) = 10 ** 18  # The precision to convert to
-PRECISION_MUL: constant(uint256[N_COINS]) = ___PRECISION_MUL___
-RATES: constant(uint256[N_COINS]) = ___RATES___
-# PRECISION_MUL: constant(uint256[N_COINS]) = [
-#     PRECISION / convert(PRECISION, uint256),  # DAI
-#     PRECISION / convert(10 ** 6, uint256),   # USDC
-#     PRECISION / convert(10 ** 6, uint256)]   # USDT
-
-
-admin_actions_delay: constant(uint256) = 3 * 86400
-min_ramp_time: constant(uint256) = 86400
-
 # Events
 event TokenExchange:
     buyer: indexed(address)
@@ -86,15 +69,31 @@ event StopRampA:
     t: uint256
 
 
+# This can (and needs to) be changed at compile time
+N_COINS: constant(int128) = ___N_COINS___  # <- change
+
+FEE_DENOMINATOR: constant(uint256) = 10 ** 10
+LENDING_PRECISION: constant(uint256) = 10 ** 18
+PRECISION: constant(uint256) = 10 ** 18  # The precision to convert to
+PRECISION_MUL: constant(uint256[N_COINS]) = ___PRECISION_MUL___
+RATES: constant(uint256[N_COINS]) = ___RATES___
+# PRECISION_MUL: constant(uint256[N_COINS]) = [
+#     PRECISION / convert(PRECISION, uint256),  # DAI
+#     PRECISION / convert(10 ** 6, uint256),   # USDC
+#     PRECISION / convert(10 ** 6, uint256)]   # USDT
+
+MAX_ADMIN_FEE: constant(uint256) = 5 * 10 ** 9
+MAX_FEE: constant(uint256) = 5 * 10 ** 9
+MAX_A: constant(uint256) = 10 ** 6
+MAX_A_CHANGE: constant(uint256) = 10
+
+ADMIN_ACTIONS_DELAY: constant(uint256) = 3 * 86400
+MIN_RAMP_TIME: constant(uint256) = 86400
+
 coins: public(address[N_COINS])
 balances: public(uint256[N_COINS])
 fee: public(uint256)  # fee * 1e10
 admin_fee: public(uint256)  # admin_fee * 1e10
-
-max_admin_fee: constant(uint256) = 5 * 10 ** 9
-max_fee: constant(uint256) = 5 * 10 ** 9
-max_A: constant(uint256) = 10 ** 6
-max_A_change: constant(uint256) = 10
 
 owner: public(address)
 token: CurveToken
@@ -110,15 +109,13 @@ future_fee: public(uint256)
 future_admin_fee: public(uint256)
 future_owner: public(address)
 
-kill_deadline: uint256
-kill_deadline_dt: constant(uint256) = 2 * 30 * 86400
 is_killed: bool
+kill_deadline: uint256
+KILL_DEADLINE_DT: constant(uint256) = 2 * 30 * 86400
 
 
 @external
-def __init__(_coins: address[N_COINS],
-             _pool_token: address,
-             _A: uint256, _fee: uint256):
+def __init__(_coins: address[N_COINS], _pool_token: address, _A: uint256, _fee: uint256):
     """
     _coins: Addresses of ERC20 conracts of coins
     _pool_token: Address of the token representing LP share
@@ -132,8 +129,7 @@ def __init__(_coins: address[N_COINS],
     self.future_A = _A
     self.fee = _fee
     self.owner = msg.sender
-    self.kill_deadline = block.timestamp + kill_deadline_dt
-    self.is_killed = False
+    self.kill_deadline = block.timestamp + KILL_DEADLINE_DT
     self.token = CurveToken(_pool_token)
 
 
@@ -174,8 +170,8 @@ def _xp() -> uint256[N_COINS]:
     return result
 
 
-@internal
 @pure
+@internal
 def _xp_mem(_balances: uint256[N_COINS]) -> uint256[N_COINS]:
     result: uint256[N_COINS] = RATES
     for i in range(N_COINS):
@@ -183,8 +179,8 @@ def _xp_mem(_balances: uint256[N_COINS]) -> uint256[N_COINS]:
     return result
 
 
-@internal
 @pure
+@internal
 def get_D(xp: uint256[N_COINS], amp: uint256) -> uint256:
     S: uint256 = 0
     for _x in xp:
@@ -604,13 +600,13 @@ def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_amount: uin
 @external
 def ramp_A(_future_A: uint256, _future_time: uint256):
     assert msg.sender == self.owner  # dev: only owner
-    assert block.timestamp >= self.initial_A_time + min_ramp_time
-    assert _future_time >= block.timestamp + min_ramp_time  # dev: insufficient time
+    assert block.timestamp >= self.initial_A_time + MIN_RAMP_TIME
+    assert _future_time >= block.timestamp + MIN_RAMP_TIME  # dev: insufficient time
 
     _initial_A: uint256 = self._A()
-    assert (_future_A > 0) and (_future_A < max_A)
-    assert ((_future_A >= _initial_A) and (_future_A <= _initial_A * max_A_change)) or\
-           ((_future_A < _initial_A) and (_future_A * max_A_change >= _initial_A))
+    assert (_future_A > 0) and (_future_A < MAX_A)
+    assert ((_future_A >= _initial_A) and (_future_A <= _initial_A * MAX_A_CHANGE)) or\
+           ((_future_A < _initial_A) and (_future_A * MAX_A_CHANGE >= _initial_A))
     self.initial_A = _initial_A
     self.future_A = _future_A
     self.initial_A_time = block.timestamp
@@ -637,10 +633,10 @@ def stop_ramp_A():
 def commit_new_fee(new_fee: uint256, new_admin_fee: uint256):
     assert msg.sender == self.owner  # dev: only owner
     assert self.admin_actions_deadline == 0  # dev: active action
-    assert new_fee <= max_fee  # dev: fee exceeds maximum
-    assert new_admin_fee <= max_admin_fee  # dev: admin fee exceeds maximum
+    assert new_fee <= MAX_FEE  # dev: fee exceeds maximum
+    assert new_admin_fee <= MAX_ADMIN_FEE  # dev: admin fee exceeds maximum
 
-    _deadline: uint256 = block.timestamp + admin_actions_delay
+    _deadline: uint256 = block.timestamp + ADMIN_ACTIONS_DELAY
     self.admin_actions_deadline = _deadline
     self.future_fee = new_fee
     self.future_admin_fee = new_admin_fee
@@ -675,7 +671,7 @@ def commit_transfer_ownership(_owner: address):
     assert msg.sender == self.owner  # dev: only owner
     assert self.transfer_ownership_deadline == 0  # dev: active transfer
 
-    _deadline: uint256 = block.timestamp + admin_actions_delay
+    _deadline: uint256 = block.timestamp + ADMIN_ACTIONS_DELAY
     self.transfer_ownership_deadline = _deadline
     self.future_owner = _owner
 
