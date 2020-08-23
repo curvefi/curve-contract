@@ -1,87 +1,56 @@
 import pytest
-import json
-from eth_tester import EthereumTester, PyEVMBackend
-from web3 import Web3
-from os.path import realpath, dirname, join
-from .deploy import deploy_contract
 
-CONTRACT_PATH = join(dirname(dirname(realpath(__file__))), 'vyper')
-N_COINS = 3
-UP = [8, 18, 8]  # Ren/h/w, for example - why not
-UU = [10 ** p for p in UP]
-c_rates = [10 ** 18] * 3
-use_lending = [True, False, False]
-tethered = [False, False, False]
-PRECISIONS = [10 ** 18 // u for u in UU]
-MAX_UINT = 2 ** 256 - 1
+N_COINS = 2
+PRECISIONS = [18, 8]
+
+# isolation setup
+
+@pytest.fixture(autouse=True)
+def isolation_setup(fn_isolation):
+    pass
 
 
-@pytest.fixture
-def tester():
-    genesis_params = PyEVMBackend._generate_genesis_params(overrides={'gas_limit': 7 * 10 ** 6})
-    pyevm_backend = PyEVMBackend(genesis_parameters=genesis_params)
-    pyevm_backend.reset_to_genesis(genesis_params=genesis_params, num_accounts=10)
-    return EthereumTester(backend=pyevm_backend, auto_mine_transactions=True)
+# named accounts
+
+@pytest.fixture(scope="session")
+def alice(accounts):
+    yield accounts[0]
 
 
-@pytest.fixture
-def w3(tester):
-    w3 = Web3(Web3.EthereumTesterProvider(tester))
-    w3.eth.setGasPriceStrategy(lambda web3, params: 0)
-    w3.eth.defaultAccount = w3.eth.accounts[0]
-    return w3
+@pytest.fixture(scope="session")
+def bob(accounts):
+    yield accounts[1]
 
 
-@pytest.fixture
-def coins(w3):
-    return [deploy_contract(
-                w3, 'ERC20.vy', w3.eth.accounts[0],
-                b'Coin ' + str(i).encode(), str(i).encode(), UP[i], 10 ** 12)
-            for i in range(N_COINS)]
+@pytest.fixture(scope="session")
+def charlie(accounts):
+    yield accounts[2]
 
 
-@pytest.fixture
-def pool_token(w3):
-    return deploy_contract(w3, 'ERC20.vy', w3.eth.accounts[0],
-                           b'Stableswap', b'STBL', 18, 0)
+# contract deployments
+
+@pytest.fixture(scope="module")
+def coins(ERC20Mock, alice):
+    coins = []
+
+    for i in range(N_COINS):
+        coin = ERC20Mock.deploy(f"Coin {i}", f"C{i}", PRECISIONS[i], {'from': alice})
+        coins.append(coin)
+
+    yield coins
 
 
-@pytest.fixture
-def cerc20s(w3, coins):
-    ccoins = [deploy_contract(
-                w3, 'fake_cerc20.vy', w3.eth.accounts[0],
-                b'C-Coin ' + str(i).encode(), b'c' + str(i).encode(),
-                18, 0, coins[i].address, c_rates[i])
-              for i in range(N_COINS)]
-    for t, c, u in zip(coins, ccoins, UU):
-        t.functions.transfer(c.address, 10 ** 11 * u)\
-                .transact({'from': w3.eth.accounts[0]})
-    for i, l in enumerate(use_lending):
-        if not l:
-            ccoins[i] = coins[i]
-    return ccoins
+@pytest.fixture(scope="module")
+def pool_token(CurveToken, alice):
+    yield CurveToken.deploy(f"Stableswap", "STBL", 18, 0, {'from': alice})
 
 
-@pytest.fixture(scope='function')
-def swap(w3, coins, cerc20s, pool_token):
-    swap_contract = deploy_contract(
-            w3, ['stableswap.vy', 'ERC20m.vy', 'cERC20.vy'], w3.eth.accounts[1],
-            [c.address for c in cerc20s],
-            pool_token.address, 360 * 2, 10 ** 7,
-            replacements={
-                '___N_COINS___': str(N_COINS),
-                '___N_ZEROS___': '[' + ', '.join(['ZERO256'] * N_COINS) + ']',
-                '___PRECISION_MUL___': '[' + ', '.join(
-                    'convert(%s, uint256)' % i for i in PRECISIONS) + ']',
-                '___USE_LENDING___': '[' + ', '.join(
-                        str(i) for i in use_lending) + ']',
-                '___TETHERED___': '[' + ', '.join(
-                        str(i) for i in tethered) + ']',
-            })
-    pool_token.functions.set_minter(swap_contract.address).transact()
-    with open(join(CONTRACT_PATH, 'stableswap.abi'), 'w') as f:
-        json.dump(swap_contract.abi, f, indent=True)
-    return swap_contract
+@pytest.fixture(scope="module")
+def swap(StableSwap, alice, coins, pool_token):
+    contract = StableSwap.deploy(coins, pool_token, 360 * 2, 0, {'from': alice})
+    pool_token.set_minter(contract, {'from': alice})
+
+    yield contract
 
 
 def approx(a, b, precision=1e-10):
