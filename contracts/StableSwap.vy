@@ -700,6 +700,12 @@ def revert_transfer_ownership():
     self.transfer_ownership_deadline = 0
 
 
+@view
+@external
+def admin_balances(i: uint256) -> uint256:
+    return ERC20(self.coins[i]).balanceOf(self) - self.balances[i]
+
+
 @external
 def withdraw_admin_fees():
     assert msg.sender == self.owner  # dev: only owner
@@ -709,6 +715,13 @@ def withdraw_admin_fees():
         value: uint256 = ERC20(c).balanceOf(self) - self.balances[i]
         if value > 0:
             assert ERC20(c).transfer(msg.sender, value)
+
+
+@external
+def donate_admin_fees():
+    assert msg.sender == self.owner  # dev: only owner
+    for i in range(N_COINS):
+        self.balances[i] = ERC20(self.coins[i]).balanceOf(self)
 
 
 @external
