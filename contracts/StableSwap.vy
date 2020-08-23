@@ -457,7 +457,7 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint2
     assert not self.is_killed  # dev: is killed
 
     token_supply: uint256 = self.token.totalSupply()
-    assert token_supply > 0
+    assert token_supply != 0  # dev: zero total supply
     _fee: uint256 = self.fee * N_COINS / (4 * (N_COINS - 1))
     _admin_fee: uint256 = self.admin_fee
     amp: uint256 = self._A()
@@ -481,13 +481,14 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint2
         new_balances[i] -= fees[i]
     D2: uint256 = self.get_D_mem(new_balances, amp)
 
-    token_amount: uint256 = (D0 - D2) * token_supply / D0 + 1
+    token_amount: uint256 = (D0 - D2) * token_supply / D0
+    assert token_amount != 0  # dev: zero tokens burned
     assert token_amount <= max_burn_amount, "Slippage screwed you"
 
-    for i in range(N_COINS):
-        if amounts[i] > 0:
-            assert ERC20(self.coins[i]).transfer(msg.sender, amounts[i])
     self.token.burnFrom(msg.sender, token_amount)  # dev: insufficient funds
+    for i in range(N_COINS):
+        if amounts[i] != 0:
+            assert ERC20(self.coins[i]).transfer(msg.sender, amounts[i])
 
     log RemoveLiquidityImbalance(msg.sender, amounts, fees, D1, token_supply - token_amount)
 
