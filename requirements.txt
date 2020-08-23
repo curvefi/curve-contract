@@ -1,12 +1,2 @@
-vyper
-web3[tester]>=5.0.0b2
-py-evm
-eth-abi>=2.0.0b9
-eth-tester[py-evm]
-eth-typing
-eth-utils
-py-ecc<2.0.0
-pytest
-ipython
-pdbpp
-pytest-xdist
+eth-brownie>=1.10.6,<2.0.0
+vyper==0.2.4
