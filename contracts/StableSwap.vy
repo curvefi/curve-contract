@@ -115,7 +115,7 @@ KILL_DEADLINE_DT: constant(uint256) = 2 * 30 * 86400
 
 
 @external
-def __init__(_owner: address, _coins: address[N_COINS], _pool_token: address, _A: uint256, _fee: uint256):
+def __init__(_owner: address, _coins: address[N_COINS], _pool_token: address, _A: uint256, _fee: uint256, _admin_fee: uint256):
     """
     @notice Contract constructor
     @param _owner Contract owner address
@@ -130,6 +130,7 @@ def __init__(_owner: address, _coins: address[N_COINS], _pool_token: address, _A
     self.initial_A = _A
     self.future_A = _A
     self.fee = _fee
+    self.admin_fee = _admin_fee
     self.owner = _owner
     self.kill_deadline = block.timestamp + KILL_DEADLINE_DT
     self.token = CurveToken(_pool_token)
