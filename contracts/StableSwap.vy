@@ -115,12 +115,14 @@ KILL_DEADLINE_DT: constant(uint256) = 2 * 30 * 86400
 
 
 @external
-def __init__(_coins: address[N_COINS], _pool_token: address, _A: uint256, _fee: uint256):
+def __init__(_owner: address, _coins: address[N_COINS], _pool_token: address, _A: uint256, _fee: uint256):
     """
-    _coins: Addresses of ERC20 conracts of coins
-    _pool_token: Address of the token representing LP share
-    _A: Amplification coefficient multiplied by n * (n - 1)
-    _fee: Fee to charge for exchanges
+    @notice Contract constructor
+    @param _owner Contract owner address
+    @param _coins Addresses of ERC20 conracts of coins
+    @param _pool_token Address of the token representing LP share
+    @param _A Amplification coefficient multiplied by n * (n - 1)
+    @param _fee Fee to charge for exchanges
     """
     for i in range(N_COINS):
         assert _coins[i] != ZERO_ADDRESS
@@ -128,7 +130,7 @@ def __init__(_coins: address[N_COINS], _pool_token: address, _A: uint256, _fee: 
     self.initial_A = _A
     self.future_A = _A
     self.fee = _fee
-    self.owner = msg.sender
+    self.owner = _owner
     self.kill_deadline = block.timestamp + KILL_DEADLINE_DT
     self.token = CurveToken(_pool_token)
 

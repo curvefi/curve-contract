@@ -47,7 +47,7 @@ def pool_token(CurveToken, alice):
 
 @pytest.fixture(scope="module")
 def swap(StableSwap, alice, coins, pool_token):
-    contract = StableSwap.deploy(coins, pool_token, 360 * 2, 0, {'from': alice})
+    contract = StableSwap.deploy(alice, coins, pool_token, 360 * 2, 0, {'from': alice})
     pool_token.set_minter(contract, {'from': alice})
 
     yield contract
