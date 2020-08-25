@@ -82,7 +82,7 @@ RATES: constant(uint256[N_COINS]) = ___RATES___
 #     PRECISION / convert(10 ** 6, uint256),   # USDC
 #     PRECISION / convert(10 ** 6, uint256)]   # USDT
 
-MAX_ADMIN_FEE: constant(uint256) = 5 * 10 ** 9
+MAX_ADMIN_FEE: constant(uint256) = 10 * 10 ** 9
 MAX_FEE: constant(uint256) = 5 * 10 ** 9
 MAX_A: constant(uint256) = 10 ** 6
 MAX_A_CHANGE: constant(uint256) = 10
