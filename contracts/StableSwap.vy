@@ -1,6 +1,6 @@
 # @version 0.2.4
 # (c) Curve.Fi, 2020
-# Pools for renBTC/wBTC. Ren can potentially change amount of underlying bitcoins
+# Pool for hBTC/wBTC
 
 from vyper.interfaces import ERC20
 
@@ -115,7 +115,14 @@ KILL_DEADLINE_DT: constant(uint256) = 2 * 30 * 86400
 
 
 @external
-def __init__(_owner: address, _coins: address[N_COINS], _pool_token: address, _A: uint256, _fee: uint256, _admin_fee: uint256):
+def __init__(
+    _owner: address,
+    _coins: address[N_COINS],
+    _pool_token: address,
+    _A: uint256,
+    _fee: uint256,
+    _admin_fee: uint256
+):
     """
     @notice Contract constructor
     @param _owner Contract owner address
@@ -123,6 +130,7 @@ def __init__(_owner: address, _coins: address[N_COINS], _pool_token: address, _A
     @param _pool_token Address of the token representing LP share
     @param _A Amplification coefficient multiplied by n * (n - 1)
     @param _fee Fee to charge for exchanges
+    @param _admin_fee Admin fee
     """
     for i in range(N_COINS):
         assert _coins[i] != ZERO_ADDRESS
