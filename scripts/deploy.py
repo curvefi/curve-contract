@@ -2,10 +2,11 @@ import json
 from web3 import middleware
 from web3.gas_strategies.time_based import fast_gas_price_strategy as gas_strategy
 
-from brownie import CurveToken, StableSwap, accounts, web3
+from brownie import CurveToken, LiquidityGauge, StableSwap, accounts, web3
 
 
 POOL_OWNER = "0x6e8f6D1DA6232d5E40b0B8758A0145D6C5123eB7"  # PoolProxy
+MINTER = "0xd061D61a4d941c39E5453435B6345Dc261C2fcE0"
 HBTC = "0x0316EB71485b0Ab14103307bf65a021042c6d380"
 WBTC = "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599"
 
@@ -45,5 +46,7 @@ def main(confs=REQUIRED_CONFIRMATIONS, apply_strategies=True):
 
     with open('StableSwap.abi', 'w') as fp:
         json.dump(swap.abi, fp, indent=True)
+
+    LiquidityGauge.deploy(token, MINTER, {'from': deployer, 'required_confs': confs})
 
     token.set_minter(swap, {'from': deployer, 'required_confs': confs})
