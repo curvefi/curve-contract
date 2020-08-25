@@ -15,10 +15,10 @@ def setup(alice, coins, swap):
     swap.add_liquidity(INITIAL_AMOUNTS, 0, {'from': alice})
 
 
-@pytest.mark.parametrize("divisor", [1, 2, 10])
+@pytest.mark.parametrize("divisor", [2, 5, 10])
 def test_remove_liquidity_balanced(alice, swap, coins, pool_token, divisor):
     amounts = [i // divisor for i in INITIAL_AMOUNTS]
-    max_burn = (2 * 10**24) // divisor
+    max_burn = (2 * 10**24) // divisor + 1
     swap.remove_liquidity_imbalance(amounts, max_burn, {'from': alice})
 
     for i, coin in enumerate(coins):
@@ -59,7 +59,7 @@ def test_remove_one_coin(alice, swap, coins, pool_token, idx):
     swap.remove_liquidity_imbalance(amounts, 2*10**24, {'from': alice})
 
     assert coins[idx].balanceOf(alice) == expected
-    assert pool_token.balanceOf(alice) == burn_amount
+    assert abs(pool_token.balanceOf(alice) - burn_amount) <= 10 ** 10
 
 
 @pytest.mark.parametrize("divisor", [1, 2, 10])
@@ -76,7 +76,7 @@ def test_cannot_remove_zero(alice, swap):
         swap.remove_liquidity_imbalance([0, 0], 0, {'from': alice})
 
 
-def test_no_totalsupply(alice, swap):
-    swap.remove_liquidity_imbalance(INITIAL_AMOUNTS, 2**256-1, {'from': alice})
+def test_no_totalsupply(alice, swap, pool_token):
+    swap.remove_liquidity(pool_token.totalSupply(), [0] * len(INITIAL_AMOUNTS), {'from': alice})
     with brownie.reverts("dev: zero total supply"):
         swap.remove_liquidity_imbalance([0, 0], 0, {'from': alice})
