@@ -18,7 +18,8 @@ REQUIRED_CONFIRMATIONS = 1
 
 
 def main(confs=REQUIRED_CONFIRMATIONS, apply_strategies=True):
-    deployer = accounts.add()  # set me
+    from .config_admin import INITIAL_ADMIN_KEY
+    deployer = accounts.add(bytes.fromhex(INITIAL_ADMIN_KEY))
 
     if apply_strategies:
         web3.eth.setGasPriceStrategy(gas_strategy)
