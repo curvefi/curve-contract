@@ -2,7 +2,7 @@ import brownie
 import pytest
 
 COMMIT_WAIT = 86400 * 3
-MAX_ADMIN_FEE = 5 * 10 ** 9
+MAX_ADMIN_FEE = 10 * 10 ** 9
 MAX_FEE = 5 * 10 ** 9
 
 
