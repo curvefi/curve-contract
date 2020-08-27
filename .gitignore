@@ -2,3 +2,6 @@
 __pycache__
 build/
 reports/
+/.brownie
+/scripts/config_admin.py
+/old_configs
