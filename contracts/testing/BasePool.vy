@@ -4,7 +4,10 @@
 
 from vyper.interfaces import ERC20
 
-import CurveToken as CurveToken
+interface CurveToken:
+    def totalSupply() -> uint256: view
+    def mint(_to: address, _value: uint256) -> bool: nonpayable
+    def burnFrom(_to: address, _value: uint256) -> bool: nonpayable
 
 
 # Events
@@ -70,17 +73,13 @@ event StopRampA:
 
 
 # This can (and needs to) be changed at compile time
-N_COINS: constant(int128) = ___N_COINS___  # <- change
+N_COINS: constant(int128) = 3  # <- change
 
 FEE_DENOMINATOR: constant(uint256) = 10 ** 10
 LENDING_PRECISION: constant(uint256) = 10 ** 18
 PRECISION: constant(uint256) = 10 ** 18  # The precision to convert to
-PRECISION_MUL: constant(uint256[N_COINS]) = ___PRECISION_MUL___
-RATES: constant(uint256[N_COINS]) = ___RATES___
-# PRECISION_MUL: constant(uint256[N_COINS]) = [
-#     PRECISION / convert(PRECISION, uint256),  # DAI
-#     PRECISION / convert(10 ** 6, uint256),   # USDC
-#     PRECISION / convert(10 ** 6, uint256)]   # USDT
+PRECISION_MUL: constant(uint256[N_COINS]) = [10**18, 10**6, 10**6]
+RATES: constant(uint256[N_COINS]) = [10**36, 10**24, 10**24]  # 1e18 * precisions
 
 MAX_ADMIN_FEE: constant(uint256) = 10 * 10 ** 9
 MAX_FEE: constant(uint256) = 5 * 10 ** 9
