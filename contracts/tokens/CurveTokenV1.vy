@@ -1,4 +1,10 @@
-# https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20.md
+# @version 0.1.0b16
+
+# @title Curve LP Token
+# @author Curve.Fi
+# @notice Used in combination with all pools compiled by vyper 0.1.0-beta.x
+# @dev Follows the ERC-20 token standard as defined at
+#      https://eips.ethereum.org/EIPS/eip-20
 
 from vyper.interfaces import ERC20
 
@@ -117,7 +123,7 @@ def approve(_spender : address, _value : uint256) -> bool:
 @public
 def mint(_to: address, _value: uint256):
     """
-    @dev Mint an amount of the token and assigns it to an account. 
+    @dev Mint an amount of the token and assigns it to an account.
          This encapsulates the modification of balances such that the
          proper events are emitted.
     @param _to The account that will receive the created tokens.
