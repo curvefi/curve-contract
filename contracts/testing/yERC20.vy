@@ -1,4 +1,5 @@
-# Fake cERC20
+# @version 0.1.0b17
+# Fake yERC20
 #
 # We should transfer tokens to _token_addr before wrapping
 # in order to be able to get interest from somewhere
@@ -20,10 +21,8 @@ balanceOf: public(map(address, uint256))
 allowances: map(address, map(address, uint256))
 total_supply: uint256
 
-underlying_token: ERC20
-exchangeRateStored: public(uint256)  # cERC20 mock
-supplyRatePerBlock: public(uint256)  # cERC20 mock
-accrualBlockNumber: public(uint256)  # cERC20 mock
+token: ERC20
+getPricePerFullShare: public(uint256)  # yERC20 mock
 
 @public
 def __init__(_name: string[64], _symbol: string[32], _decimals: uint256, _supply: uint256,
@@ -34,10 +33,8 @@ def __init__(_name: string[64], _symbol: string[32], _decimals: uint256, _supply
     self.decimals = _decimals
     self.balanceOf[msg.sender] = init_supply
     self.total_supply = init_supply
-    self.underlying_token = ERC20(_token_addr)
-    self.exchangeRateStored = exchange_rate
-    self.accrualBlockNumber = block.number
-    self.supplyRatePerBlock = 0
+    self.token = ERC20(_token_addr)
+    self.getPricePerFullShare = exchange_rate
     log.Transfer(ZERO_ADDRESS, msg.sender, init_supply)
 
 
@@ -113,94 +110,40 @@ def approve(_spender : address, _value : uint256) -> bool:
     log.Approval(msg.sender, _spender, _value)
     return True
 
-
-@private
-def _burn(_to: address, _value: uint256):
-    """
-    @dev Internal function that burns an amount of the token of a given
-         account.
-    @param _to The account whose tokens will be burned.
-    @param _value The amount that will be burned.
-    """
-    assert _to != ZERO_ADDRESS
-    self.total_supply -= _value
-    self.balanceOf[_to] -= _value
-    log.Transfer(_to, ZERO_ADDRESS, _value)
-
-
+# yERC20-specific methods
 @public
-def burn(_value: uint256):
+def deposit(depositAmount: uint256):
     """
-    @dev Burn an amount of the token of msg.sender.
-    @param _value The amount that will be burned.
-    """
-    self._burn(msg.sender, _value)
-
-
-@public
-def burnFrom(_to: address, _value: uint256):
-    """
-    @dev Burn an amount of the token from a given account.
-    @param _to The account whose tokens will be burned.
-    @param _value The amount that will be burned.
-    """
-    self.allowances[_to][msg.sender] -= _value
-    self._burn(_to, _value)
-
-
-# cERC20-specific methods
-@public
-def mint(mintAmount: uint256) -> uint256:
-    """
-     @notice Sender supplies assets into the market and receives cTokens in exchange
+     @notice Sender supplies assets into the market and receives yTokens in exchange
      @dev Accrues interest whether or not the operation succeeds, unless reverted
-     @param mintAmount The amount of the underlying asset to supply
-     @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
+     @param depositAmount The amount of the underlying asset to supply
     """
-    self.underlying_token.transferFrom(msg.sender, self, mintAmount)
-    value: uint256 = mintAmount * 10 ** 18 / self.exchangeRateStored
+    self.token.transferFrom(msg.sender, self, depositAmount)
+    value: uint256 = depositAmount * 10 ** 18 / self.getPricePerFullShare
     self.total_supply += value
     self.balanceOf[msg.sender] += value
-    return 0
 
 
 @public
-def redeem(redeemTokens: uint256) -> uint256:
+def withdraw(withdrawTokens: uint256):
     """
-     @notice Sender redeems cTokens in exchange for the underlying asset
+     @notice Sender redeems yTokens in exchange for the underlying asset
      @dev Accrues interest whether or not the operation succeeds, unless reverted
-     @param redeemTokens The number of cTokens to redeem into underlying
-     @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
+     @param withdrawTokens The number of yTokens to redeem into underlying
     """
-    uvalue: uint256 = redeemTokens * self.exchangeRateStored / 10 ** 18
-    self.balanceOf[msg.sender] -= redeemTokens
-    self.total_supply -= redeemTokens
-    self.underlying_token.transfer(msg.sender, uvalue)
-    return 0
-
-
-@public
-def redeemUnderlying(redeemAmount: uint256) -> uint256:
-    """
-     @notice Sender redeems cTokens in exchange for a specified amount of underlying asset
-     @dev Accrues interest whether or not the operation succeeds, unless reverted
-     @param redeemAmount The amount of underlying to redeem
-     @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
-    """
-    value: uint256 = redeemAmount * 10 ** 18 / self.exchangeRateStored
-    self.balanceOf[msg.sender] -= value
-    self.total_supply -= value
-    self.underlying_token.transfer(msg.sender, redeemAmount)
-    return 0
+    uvalue: uint256 = withdrawTokens * self.getPricePerFullShare / 10 ** 18
+    self.balanceOf[msg.sender] -= withdrawTokens
+    self.total_supply -= withdrawTokens
+    self.token.transfer(msg.sender, uvalue)
 
 
 @public
 def set_exchange_rate(rate: uint256):
-    self.exchangeRateStored = rate
+    self.getPricePerFullShare = rate
 
 
 @public
-def exchangeRateCurrent() -> uint256:
-    rate: uint256 = self.exchangeRateStored
-    self.exchangeRateStored = rate  # Simulate blockchain write
-    return rate
+def _mint_for_testing(_target: address, _value: uint256):
+    self.total_supply += _value
+    self.balanceOf[_target] += _value
+    log.Transfer(ZERO_ADDRESS, _target, _value)
