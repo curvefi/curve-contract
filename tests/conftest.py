@@ -38,7 +38,7 @@ def base_coins(ERC20Mock, alice):
     coins = []
 
     for i in range(N_BASE_COINS):
-        coin = ERC20Mock.deploy(f"Base Coin {i}", f"B{i}", PRECISIONS[i], {'from': alice})
+        coin = ERC20Mock.deploy(f"Base Coin {i}", f"B{i}", BASE_PRECISIONS[i], {'from': alice})
         coins.append(coin)
 
     yield coins
@@ -68,16 +68,16 @@ def pool_token(CurveToken, alice):
 
 
 @pytest.fixture(scope="module")
-def base_swap(StableSwap, alice, base_coins, base_pool_token):
+def base_swap(BasePool, alice, base_coins, base_pool_token):
     # Deploy the pool
-    contract = StableSwap.deploy(alice, base_coins, base_pool_token, 100, 0, 0, {'from': alice})
+    contract = BasePool.deploy(alice, base_coins, base_pool_token, 100, 0, 0, {'from': alice})
     base_pool_token.set_minter(contract, {'from': alice})
 
     # Deposit $1M of every coin
     initial_amounts = [10 ** (j + 6) for j in BASE_PRECISIONS]
     for coin, amount in zip(base_coins, initial_amounts):
         coin._mint_for_testing(alice, amount, {'from': alice})
-    coin.approve(contract, 2**256-1, {'from': alice})
+        coin.approve(contract, 2**256-1, {'from': alice})
     contract.add_liquidity(initial_amounts, 0, {'from': alice})
 
     yield contract

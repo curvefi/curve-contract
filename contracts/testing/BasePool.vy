@@ -78,8 +78,8 @@ N_COINS: constant(int128) = 3  # <- change
 FEE_DENOMINATOR: constant(uint256) = 10 ** 10
 LENDING_PRECISION: constant(uint256) = 10 ** 18
 PRECISION: constant(uint256) = 10 ** 18  # The precision to convert to
-PRECISION_MUL: constant(uint256[N_COINS]) = [10**18, 10**6, 10**6]
-RATES: constant(uint256[N_COINS]) = [10**36, 10**24, 10**24]  # 1e18 * precisions
+PRECISION_MUL: constant(uint256[N_COINS]) = [1, 10**12, 10**12]
+RATES: constant(uint256[N_COINS]) = [10**18, 10**30, 10**30]  # 10**18 * PRECISION_MUL
 
 MAX_ADMIN_FEE: constant(uint256) = 10 * 10 ** 9
 MAX_FEE: constant(uint256) = 5 * 10 ** 9
