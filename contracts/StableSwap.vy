@@ -11,10 +11,14 @@ interface Pool:
     def get_virtual_price() -> uint256: view
 
 
-interface CurveToken
+interface CurveToken:
     def totalSupply() -> uint256: view
     def mint(_to: address, _value: uint256) -> bool: nonpayable
     def burnFrom(_to: address, _value: uint256) -> bool: nonpayable
+
+
+interface Curve:
+    def get_virtual_price() -> uint256: view
 
 
 # Events
@@ -208,7 +212,7 @@ def _xp(vp_rate: uint256) -> uint256[N_COINS]:
 @pure
 @internal
 def _xp_mem(vp_rate: uint256, _balances: uint256[N_COINS]) -> uint256[N_COINS]:
-    result: uint256[N_COINS] = rates
+    result: uint256[N_COINS] = RATES
     result[N_COINS-1] = vp_rate  # virtual price for the metacurrency
     for i in range(N_COINS):
         result[i] = result[i] * _balances[i] / PRECISION
