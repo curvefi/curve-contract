@@ -85,6 +85,7 @@ event StopRampA:
 
 # This can (and needs to) be changed at compile time
 N_COINS: constant(int128) = ___N_COINS___  # <- change
+MAX_COIN: constant(int128) = N_COINS - 1
 
 FEE_DENOMINATOR: constant(uint256) = 10 ** 10
 LENDING_PRECISION: constant(uint256) = 10 ** 18
@@ -203,7 +204,7 @@ def A() -> uint256:
 @internal
 def _xp(vp_rate: uint256) -> uint256[N_COINS]:
     result: uint256[N_COINS] = RATES
-    result[N_COINS-1] = vp_rate  # virtual price for the metacurrency
+    result[MAX_COIN] = vp_rate  # virtual price for the metacurrency
     for i in range(N_COINS):
         result[i] = result[i] * self.balances[i] / LENDING_PRECISION
     return result
@@ -213,7 +214,7 @@ def _xp(vp_rate: uint256) -> uint256[N_COINS]:
 @internal
 def _xp_mem(vp_rate: uint256, _balances: uint256[N_COINS]) -> uint256[N_COINS]:
     result: uint256[N_COINS] = RATES
-    result[N_COINS-1] = vp_rate  # virtual price for the metacurrency
+    result[MAX_COIN] = vp_rate  # virtual price for the metacurrency
     for i in range(N_COINS):
         result[i] = result[i] * _balances[i] / PRECISION
     return result
@@ -434,8 +435,8 @@ def get_y(i: int128, j: int128, x: uint256, xp_: uint256[N_COINS]) -> uint256:
 def get_dy(i: int128, j: int128, dx: uint256) -> uint256:
     # dx and dy in c-units
     rates: uint256[N_COINS] = RATES
-    rates[N_COINS-1] = self._vp_rate_ro()
-    xp: uint256[N_COINS] = self._xp(rates[N_COINS-1])
+    rates[MAX_COIN] = self._vp_rate_ro()
+    xp: uint256[N_COINS] = self._xp(rates[MAX_COIN])
 
     x: uint256 = xp[i] + (dx * rates[i] / PRECISION)
     y: uint256 = self.get_y(i, j, x, xp)
@@ -464,10 +465,10 @@ def get_dy_underlying(i: int128, j: int128, dx: uint256) -> uint256:
 def exchange(i: int128, j: int128, dx: uint256, min_dy: uint256):
     assert not self.is_killed  # dev: is killed
     rates: uint256[N_COINS] = RATES
-    rates[N_COINS-1] = self._vp_rate()
+    rates[MAX_COIN] = self._vp_rate()
 
     old_balances: uint256[N_COINS] = self.balances
-    xp: uint256[N_COINS] = self._xp_mem(rates[N_COINS-1], old_balances)
+    xp: uint256[N_COINS] = self._xp_mem(rates[MAX_COIN], old_balances)
 
     x: uint256 = xp[i] + dx * rates[i] / PRECISION
     y: uint256 = self.get_y(i, j, x, xp)
