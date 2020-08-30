@@ -1,6 +1,6 @@
 
-N_COINS = 2  # hBTC, wBTC
-PRECISIONS = [18, 8]
+N_COINS = 2  # ?USD, BASE
+PRECISIONS = [6, 18]
 PRECISION_MUL = [10**18 // (10**i) for i in PRECISIONS]
 RATES = [i*10**18 for i in PRECISION_MUL]
 
