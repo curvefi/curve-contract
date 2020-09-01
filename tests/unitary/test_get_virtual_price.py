@@ -8,9 +8,11 @@ MAX_FEE = 5 * 10**9
 
 @pytest.fixture(scope="module", autouse=True)
 def setup(chain, alice, coins, swap):
-    for coin, amount in zip(coins, INITIAL_AMOUNTS):
+    for coin, amount in zip(coins[:-1], INITIAL_AMOUNTS[:-1]):
         coin._mint_for_testing(alice, amount, {'from': alice})
         coin.approve(swap, 2**256-1, {'from': alice})
+
+    coins[-1].approve(swap, 2**256-1, {'from': alice})
 
     swap.add_liquidity(INITIAL_AMOUNTS, 0, {'from': alice})
 
@@ -27,7 +29,8 @@ def test_initial(swap):
 def test_add_imbalanced_liquidity(alice, swap, coins, idx):
     amounts = [0, 0]
     amounts[idx] = INITIAL_AMOUNTS[idx]
-    coins[idx]._mint_for_testing(alice, amounts[idx], {'from': alice})
+    if idx != len(INITIAL_AMOUNTS) - 1:
+        coins[idx]._mint_for_testing(alice, amounts[idx], {'from': alice})
     swap.add_liquidity(amounts, 0, {'from': alice})
 
     assert 1.04 < swap.get_virtual_price() / 10**18 < 1.05
