@@ -36,10 +36,11 @@ def test_unkill_only_owner(bob, swap):
 
 
 def test_remove_liquidity(alice, swap, coins):
-    amounts = [10**18, 10**8]
-    for coin, amount in zip(coins, amounts):
+    amounts = [10**6, 10**18]
+    for coin, amount in zip(coins[:-1], amounts[:-1]):
         coin._mint_for_testing(alice, amount, {'from': alice})
         coin.approve(swap, 2**256-1, {'from': alice})
+    coins[-1].approve(swap, 2**256-1, {'from': alice})
     swap.add_liquidity(amounts, 0, {'from': alice})
 
     swap.kill_me({'from': alice})
