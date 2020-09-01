@@ -84,7 +84,7 @@ event StopRampA:
 
 
 # This can (and needs to) be changed at compile time
-N_COINS: constant(int128) = ___N_COINS___  # <- change
+N_COINS: constant(int128) = ___N_COINS___
 MAX_COIN: constant(int128) = N_COINS - 1
 
 FEE_DENOMINATOR: constant(uint256) = 10 ** 10
@@ -92,10 +92,11 @@ LENDING_PRECISION: constant(uint256) = 10 ** 18
 PRECISION: constant(uint256) = 10 ** 18  # The precision to convert to
 PRECISION_MUL: constant(uint256[N_COINS]) = ___PRECISION_MUL___
 RATES: constant(uint256[N_COINS]) = ___RATES___
-# PRECISION_MUL: constant(uint256[N_COINS]) = [
-#     PRECISION / convert(PRECISION, uint256),  # DAI
-#     PRECISION / convert(10 ** 6, uint256),   # USDC
-#     PRECISION / convert(10 ** 6, uint256)]   # USDT
+
+BASE_N_COINS: constant(int128) = ___BASE_N_COINS___
+N_ALL_COINS: constant(int128) = N_COINS + BASE_N_COINS - 1
+BASE_PRECISION_MUL: constant(uint256[BASE_N_COINS]) = ___BASE_PRECISION_MUL___
+BASE_RATES: constant(uint256[BASE_N_COINS]) = ___BASE_RATES___
 
 MAX_ADMIN_FEE: constant(uint256) = 10 * 10 ** 9
 MAX_FEE: constant(uint256) = 5 * 10 ** 9
