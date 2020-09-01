@@ -7,10 +7,14 @@ INITIAL_AMOUNTS = [10**(i+6) for i in PRECISIONS]
 
 
 @pytest.fixture(scope="module", autouse=True)
-def setup(alice, coins, swap):
-    for coin, amount in zip(coins, INITIAL_AMOUNTS):
+def setup(alice, bank, coins, swap):
+    for coin, amount in zip(coins[:-1], INITIAL_AMOUNTS[:-1]):
         coin._mint_for_testing(alice, amount, {'from': alice})
         coin.approve(swap, 2**256-1, {'from': alice})
+    coins[-1].transfer(
+            bank, coins[-1].balanceOf(alice) - INITIAL_AMOUNTS[-1],
+            {'from': alice})
+    coins[-1].approve(swap, 2**256-1, {'from': alice})
 
     swap.add_liquidity(INITIAL_AMOUNTS, 0, {'from': alice})
 
@@ -59,7 +63,7 @@ def test_remove_one_coin(alice, swap, coins, pool_token, idx):
     swap.remove_liquidity_imbalance(amounts, 2*10**24, {'from': alice})
 
     assert coins[idx].balanceOf(alice) == expected
-    assert abs(pool_token.balanceOf(alice) - burn_amount) <= 10 ** 10
+    assert abs(pool_token.balanceOf(alice) - burn_amount) / burn_amount <= 1e-10
 
 
 @pytest.mark.parametrize("divisor", [1, 2, 10])
