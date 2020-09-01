@@ -70,7 +70,7 @@ def pool_token(CurveToken, alice):
 @pytest.fixture(scope="module")
 def base_swap(BasePool, alice, base_coins, base_pool_token):
     # Deploy the pool
-    contract = BasePool.deploy(alice, base_coins, base_pool_token, 100, 0, 0, {'from': alice})
+    contract = BasePool.deploy(alice, base_coins, base_pool_token, 1000, 0, 0, {'from': alice})
     base_pool_token.set_minter(contract, {'from': alice})
 
     # Deposit $1M of every coin
@@ -85,7 +85,7 @@ def base_swap(BasePool, alice, base_coins, base_pool_token):
 
 @pytest.fixture(scope="module")
 def swap(StableSwap, alice, coins, pool_token, base_swap):
-    contract = StableSwap.deploy(alice, coins, pool_token, base_swap, 100, 0, 0, {'from': alice})
+    contract = StableSwap.deploy(alice, coins, pool_token, base_swap, 1000, 0, 0, {'from': alice})
     pool_token.set_minter(contract, {'from': alice})
 
     yield contract
