@@ -27,6 +27,11 @@ def bob(accounts):
 
 
 @pytest.fixture(scope="session")
+def bank(accounts):
+    yield accounts[2]
+
+
+@pytest.fixture(scope="session")
 def charlie(accounts):
     yield accounts[2]
 
