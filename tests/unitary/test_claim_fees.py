@@ -11,11 +11,19 @@ MAX_FEE = 5 * 10**9
 
 @pytest.fixture(scope="module", autouse=True)
 def setup(chain, alice, bob, coins, swap):
-    for coin, amount in zip(coins, INITIAL_AMOUNTS):
-        coin._mint_for_testing(alice, amount, {'from': alice})
-        coin._mint_for_testing(bob, amount, {'from': bob})
-        coin.approve(swap, 2**256-1, {'from': alice})
-        coin.approve(swap, 2**256-1, {'from': bob})
+    for coin, amount in zip(coins[:-1], INITIAL_AMOUNTS[:-1]):
+        for acct in (alice, bob):
+            coin._mint_for_testing(acct, amount, {'from': acct})
+            coin.approve(swap, 2**256-1, {'from': acct})
+
+    # Give Bob 1 million of metacoins
+    coins[-1].transfer(bob, INITIAL_AMOUNTS[-1], {'from': alice})
+    # Leave Alice 1 million of metacoins
+    coins[-1].transfer(
+            coins[-1], coins[-1].balanceOf(alice) - INITIAL_AMOUNTS[-1],
+            {'from': alice})
+    coins[-1].approve(swap, 2**256-1, {'from': alice})
+    coins[-1].approve(swap, 2**256-1, {'from': bob})
 
     swap.add_liquidity(INITIAL_AMOUNTS, 0, {'from': alice})
 
