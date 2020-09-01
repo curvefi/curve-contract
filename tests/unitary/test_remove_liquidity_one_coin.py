@@ -7,13 +7,14 @@ INITIAL_AMOUNTS = [10**(i+6) for i in PRECISIONS]
 
 
 @pytest.fixture(scope="module", autouse=True)
-def setup(alice, coins, swap):
-    # mint (10**6 * precision) of each coin in the pool for alice and bob
-    # alice provides all of her balances as the initial liquidity
-
-    for coin, amount in zip(coins, INITIAL_AMOUNTS):
+def setup(alice, bank, coins, swap):
+    for coin, amount in zip(coins[:-1], INITIAL_AMOUNTS[:-1]):
         coin._mint_for_testing(alice, amount, {'from': alice})
         coin.approve(swap, 2**256-1, {'from': alice})
+    coins[-1].transfer(
+            bank, coins[-1].balanceOf(alice) - INITIAL_AMOUNTS[-1],
+            {'from': alice})
+    coins[-1].approve(swap, 2**256-1, {'from': alice})
 
     swap.add_liquidity(INITIAL_AMOUNTS, 0, {'from': alice})
 
