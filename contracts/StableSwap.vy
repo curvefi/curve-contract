@@ -452,6 +452,7 @@ def get_dy_underlying(i: int128, j: int128, dx: uint256) -> uint256:
     # dx and dy in underlying units
     xp: uint256[N_COINS] = self._xp(self._vp_rate_ro())
     precisions: uint256[N_COINS] = PRECISION_MUL
+    base_precisions: uint256[BASE_N_COINS] = BASE_PRECISION_MUL
 
     x: uint256 = xp[i] + dx * precisions[i]
     y: uint256 = self.get_y(i, j, x, xp)
