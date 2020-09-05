@@ -1,6 +1,6 @@
 # @version 0.2.4
 # (c) Curve.Fi, 2020
-# Pool for hBTC/wBTC
+# Pool for DAI/USDC/USDT
 
 from vyper.interfaces import ERC20
 
@@ -77,10 +77,7 @@ LENDING_PRECISION: constant(uint256) = 10 ** 18
 PRECISION: constant(uint256) = 10 ** 18  # The precision to convert to
 PRECISION_MUL: constant(uint256[N_COINS]) = ___PRECISION_MUL___
 RATES: constant(uint256[N_COINS]) = ___RATES___
-# PRECISION_MUL: constant(uint256[N_COINS]) = [
-#     PRECISION / convert(PRECISION, uint256),  # DAI
-#     PRECISION / convert(10 ** 6, uint256),   # USDC
-#     PRECISION / convert(10 ** 6, uint256)]   # USDT
+FEE_INDEX: constant(int128) = ___FEE_INDEX___  # Which coin may potentially have fees (USDT)
 
 MAX_ADMIN_FEE: constant(uint256) = 10 * 10 ** 9
 MAX_FEE: constant(uint256) = 5 * 10 ** 9
@@ -284,10 +281,22 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256):
     new_balances: uint256[N_COINS] = old_balances
 
     for i in range(N_COINS):
+        in_amount: uint256 = amounts[i]
+        in_coin: address = self.coins[i]
+
+        # Take coins from the sender
+        if in_amount > 0:
+            if i == FEE_INDEX:
+                in_amount = ERC20(in_coin).balanceOf(self)
+                assert ERC20(in_coin).transferFrom(msg.sender, self, amounts[i])  # dev: failed transfer
+                in_amount = ERC20(in_coin).balanceOf(self) - in_amount
+            else:
+                assert ERC20(in_coin).transferFrom(msg.sender, self, in_amount)  # dev: failed transfer
+
         if token_supply == 0:
-            assert amounts[i] > 0  # dev: initial deposit requires all coins
+            assert in_amount > 0  # dev: initial deposit requires all coins
         # balances store amounts of c-tokens
-        new_balances[i] = old_balances[i] + amounts[i]
+        new_balances[i] = old_balances[i] + in_amount
 
     # Invariant after change
     D1: uint256 = self.get_D_mem(new_balances, amp)
@@ -320,11 +329,6 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256):
         mint_amount = token_supply * (D2 - D0) / D0
 
     assert mint_amount >= min_mint_amount, "Slippage screwed you"
-
-    # Take coins from the sender
-    for i in range(N_COINS):
-        if amounts[i] > 0:
-            assert ERC20(self.coins[i]).transferFrom(msg.sender, self, amounts[i])  # dev: failed transfer
 
     # Mint pool tokens
     self.token.mint(msg.sender, mint_amount)
@@ -416,7 +420,17 @@ def exchange(i: int128, j: int128, dx: uint256, min_dy: uint256):
     old_balances: uint256[N_COINS] = self.balances
     xp: uint256[N_COINS] = self._xp_mem(old_balances)
 
-    x: uint256 = xp[i] + dx * rates[i] / PRECISION
+    # Handling an unexpected charge of a fee on transfer (USDT, PAXG)
+    dx_w_fee: uint256 = dx
+    input_coin: address = self.coins[i]
+    if i == FEE_INDEX:
+        dx_w_fee = ERC20(input_coin).balanceOf(self)
+        assert ERC20(input_coin).transferFrom(msg.sender, self, dx)
+        dx_w_fee = ERC20(input_coin).balanceOf(self) - dx_w_fee
+    else:
+        assert ERC20(input_coin).transferFrom(msg.sender, self, dx)
+
+    x: uint256 = xp[i] + dx_w_fee * rates[i] / PRECISION
     y: uint256 = self.get_y(i, j, x, xp)
 
     dy: uint256 = xp[j] - y - 1  # -1 just in case there were some rounding errors
@@ -430,11 +444,10 @@ def exchange(i: int128, j: int128, dx: uint256, min_dy: uint256):
     dy_admin_fee = dy_admin_fee * PRECISION / rates[j]
 
     # Change balances exactly in same way as we change actual ERC20 coin amounts
-    self.balances[i] = old_balances[i] + dx
+    self.balances[i] = old_balances[i] + dx_w_fee
     # When rounding errors happen, we undercharge admin fee in favor of LP
     self.balances[j] = old_balances[j] - dy - dy_admin_fee
 
-    assert ERC20(self.coins[i]).transferFrom(msg.sender, self, dx)
     assert ERC20(self.coins[j]).transfer(msg.sender, dy)
 
     log TokenExchange(msg.sender, i, dx, j, dy)
