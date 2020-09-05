@@ -1,7 +1,8 @@
 import pytest
 
-N_COINS = 2
-PRECISIONS = [18, 8]
+PRECISIONS = [18, 6, 6]
+N_COINS = len(PRECISIONS)
+
 
 # isolation setup
 
