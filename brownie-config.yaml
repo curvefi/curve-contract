@@ -1,0 +1,5 @@
+# exclude non-core contracts from coverage analysis
+reports:
+  exclude_paths:
+    - contracts/testing/*.*
+    - contracts/gauges/*.*
