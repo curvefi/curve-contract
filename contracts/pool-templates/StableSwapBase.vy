@@ -382,7 +382,6 @@ def get_y(i: int128, j: int128, x: uint256, xp_: uint256[N_COINS]) -> uint256:
 @view
 @external
 def get_dy(i: int128, j: int128, dx: uint256) -> uint256:
-    # dx and dy in c-units
     rates: uint256[N_COINS] = RATES
     xp: uint256[N_COINS] = self._xp()
 
@@ -391,21 +390,6 @@ def get_dy(i: int128, j: int128, dx: uint256) -> uint256:
     dy: uint256 = (xp[j] - y - 1) * PRECISION / rates[j]
     _fee: uint256 = self.fee * dy / FEE_DENOMINATOR
     return dy - _fee
-
-
-@view
-@external
-def get_dy_underlying(i: int128, j: int128, dx: uint256) -> uint256:
-    # dx and dy in underlying units
-    xp: uint256[N_COINS] = self._xp()
-    precisions: uint256[N_COINS] = PRECISION_MUL
-
-    x: uint256 = xp[i] + dx * precisions[i]
-    y: uint256 = self.get_y(i, j, x, xp)
-    dy: uint256 = (xp[j] - y - 1) / precisions[j]
-    _fee: uint256 = self.fee * dy / FEE_DENOMINATOR
-    return dy - _fee
-
 
 
 @external
