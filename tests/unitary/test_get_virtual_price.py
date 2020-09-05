@@ -1,6 +1,6 @@
 import pytest
 
-from tests.conftest import PRECISIONS
+from tests.conftest import PRECISIONS, N_COINS
 
 INITIAL_AMOUNTS = [10**(i+6) for i in PRECISIONS]
 MAX_FEE = 5 * 10**9
@@ -25,9 +25,9 @@ def test_initial(swap):
 
 @pytest.mark.parametrize("idx", range(len(INITIAL_AMOUNTS)))
 def test_add_imbalanced_liquidity(alice, swap, coins, idx):
-    amounts = [0, 0]
+    amounts = [0] * N_COINS
     amounts[idx] = INITIAL_AMOUNTS[idx]
     coins[idx]._mint_for_testing(alice, amounts[idx], {'from': alice})
     swap.add_liquidity(amounts, 0, {'from': alice})
 
-    assert 1.04 < swap.get_virtual_price() / 10**18 < 1.05
+    assert 1.03 < swap.get_virtual_price() / 10**18 < 1.04

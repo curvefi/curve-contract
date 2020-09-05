@@ -1,7 +1,7 @@
 import brownie
 import pytest
 
-from tests.conftest import PRECISIONS
+from tests.conftest import PRECISIONS, N_COINS
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -20,8 +20,8 @@ def test_add_initial_liquidity(alice, swap, coins, pool_token, min_amount):
         assert coin.balanceOf(alice) == 10**24 - amount
         assert coin.balanceOf(swap) == amount
 
-    assert pool_token.balanceOf(alice) == 2 * 10**18
-    assert pool_token.totalSupply() == 2 * 10**18
+    assert pool_token.balanceOf(alice) == N_COINS * 10**18
+    assert pool_token.totalSupply() == N_COINS * 10**18
 
 
 @pytest.mark.parametrize("idx", range(len(PRECISIONS)))

@@ -1,7 +1,7 @@
 import brownie
 import pytest
 
-from tests.conftest import PRECISIONS
+from tests.conftest import PRECISIONS, N_COINS
 
 INITIAL_AMOUNTS = [10**(i+6) for i in PRECISIONS]
 
@@ -26,8 +26,8 @@ def test_add_liquidity(bob, swap, coins, pool_token):
         assert coin.balanceOf(bob) == 0
         assert coin.balanceOf(swap) == amount * 2
 
-    assert pool_token.balanceOf(bob) == 2 * 10**24
-    assert pool_token.totalSupply() == 4 * 10**24
+    assert pool_token.balanceOf(bob) == N_COINS * 10**24
+    assert pool_token.totalSupply() == 2 * N_COINS * 10**24
 
 
 def test_add_liquidity_with_slippage(bob, swap, coins, pool_token):
@@ -36,12 +36,12 @@ def test_add_liquidity_with_slippage(bob, swap, coins, pool_token):
     amounts[1] = int(amounts[1] * 1.01)
     swap.add_liquidity(amounts, 0, {'from': bob})
 
-    assert 0.999 < pool_token.balanceOf(bob) / (2 * 10**18) < 1
+    assert 0.999 < pool_token.balanceOf(bob) / (N_COINS * 10**18) < 1
 
 
 @pytest.mark.parametrize("idx", range((len(PRECISIONS))))
 def test_add_liquidity_one_coin(bob, swap, coins, pool_token, idx):
-    amounts = [0, 0]
+    amounts = [0] * N_COINS
     amounts[idx] = INITIAL_AMOUNTS[idx]
     swap.add_liquidity(amounts, 0, {'from': bob})
 
@@ -59,10 +59,10 @@ def test_insufficient_balance(charlie, swap, coins, pool_token):
 
 
 @pytest.mark.parametrize("min_amount", [3 * 10**18 + 1, 2**256-1])
-def test_min_amount_too_high(alice, swap, coins, pool_token, min_amount):
+def test_min_amount_too_high(bob, swap, coins, pool_token, min_amount):
     amounts = [10**i for i in PRECISIONS]
     with brownie.reverts("Slippage screwed you"):
-        swap.add_liquidity(amounts, min_amount, {'from': alice})
+        swap.add_liquidity(amounts, min_amount, {'from': bob})
 
 
 def test_min_amount_with_slippage(bob, swap, coins, pool_token):

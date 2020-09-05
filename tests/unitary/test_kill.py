@@ -1,4 +1,5 @@
 import brownie
+from tests.conftest import N_COINS, PRECISIONS
 
 
 def test_kill(alice, swap):
@@ -36,21 +37,21 @@ def test_unkill_only_owner(bob, swap):
 
 
 def test_remove_liquidity(alice, swap, coins):
-    amounts = [10**18, 10**8]
+    amounts = [10**p for p in PRECISIONS]
     for coin, amount in zip(coins, amounts):
         coin._mint_for_testing(alice, amount, {'from': alice})
         coin.approve(swap, 2**256-1, {'from': alice})
     swap.add_liquidity(amounts, 0, {'from': alice})
 
     swap.kill_me({'from': alice})
-    swap.remove_liquidity(2 * 10**18, [0, 0], {'from': alice})
+    swap.remove_liquidity(N_COINS * 10**18, [0] * N_COINS, {'from': alice})
 
 
 def test_remove_liquidity_imbalance(alice, swap):
     swap.kill_me({'from': alice})
 
     with brownie.reverts("dev: is killed"):
-        swap.remove_liquidity_imbalance([0, 0], 0, {'from': alice})
+        swap.remove_liquidity_imbalance([0] * N_COINS, 0, {'from': alice})
 
 
 def test_remove_liquidity_one_coin(alice, swap):

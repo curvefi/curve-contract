@@ -3,7 +3,7 @@ import itertools
 import brownie
 import pytest
 
-from tests.conftest import PRECISIONS
+from tests.conftest import PRECISIONS, N_COINS
 
 INITIAL_AMOUNTS = [10**(i+6) for i in PRECISIONS]
 MAX_FEE = 5 * 10**9
@@ -49,10 +49,10 @@ def test_withdraw_one_coin(alice, bob, swap, coins, sending, receiving):
 
 
 def test_withdraw_all_coins(alice, bob, swap, coins):
-    for send, recv in [(0, 1), (1, 0)]:
-        swap.exchange(send, recv, INITIAL_AMOUNTS[send], 0, {'from': bob})
+    for send, recv in itertools.permutations(range(N_COINS), 2):
+        swap.exchange(send, recv, INITIAL_AMOUNTS[send] // 2, 0, {'from': bob})
 
-    admin_fees = [swap.admin_balances(i) for i in range(2)]
+    admin_fees = [swap.admin_balances(i) for i in range(N_COINS)]
 
     swap.withdraw_admin_fees({'from': alice})
     balances = [i.balanceOf(alice) for i in coins]
@@ -66,13 +66,13 @@ def test_withdraw_only_owner(bob, swap):
 
 
 def test_donate(alice, bob, swap, coins):
-    for send, recv in [(0, 1), (1, 0)]:
-        swap.exchange(send, recv, INITIAL_AMOUNTS[send], 0, {'from': bob})
+    for send, recv in itertools.permutations(range(N_COINS), 2):
+        swap.exchange(send, recv, INITIAL_AMOUNTS[send] // 2, 0, {'from': bob})
 
     swap.donate_admin_fees({'from': alice})
 
-    assert [swap.admin_balances(i) for i in range(2)] == [0, 0]
-    assert [i.balanceOf(alice) for i in coins] == [0, 0]
+    assert [swap.admin_balances(i) for i in range(N_COINS)] == [0] * N_COINS
+    assert [i.balanceOf(alice) for i in coins] == [0] * N_COINS
 
 
 def test_donate_only_owner(bob, swap):
