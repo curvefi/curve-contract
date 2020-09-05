@@ -1,7 +1,7 @@
 import brownie
 import pytest
 
-from tests.conftest import PRECISIONS
+from tests.conftest import PRECISIONS, N_COINS
 
 INITIAL_AMOUNTS = [10**(i+6) for i in PRECISIONS]
 
@@ -27,7 +27,7 @@ def test_remove_one_coin(alice, swap, coins, pool_token, idx, divisor):
     swap.remove_liquidity_one_coin(amount, idx, 0, {'from': alice})
 
     assert coins[idx].balanceOf(alice) == expected
-    assert pool_token.balanceOf(alice) == 2 * 10**24 - amount
+    assert pool_token.balanceOf(alice) == N_COINS * 10**24 - amount
 
 
 @pytest.mark.parametrize("idx", range(len(PRECISIONS)))
