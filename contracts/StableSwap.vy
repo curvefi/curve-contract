@@ -291,6 +291,7 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256):
             if i == FEE_INDEX:
                 in_amount = ERC20(in_coin).balanceOf(self)
 
+            # "safeTransferFrom" which works for ERC20s which return bool or not
             _response: Bytes[32] = raw_call(
                 in_coin,
                 concat(
@@ -438,6 +439,7 @@ def exchange(i: int128, j: int128, dx: uint256, min_dy: uint256):
     if i == FEE_INDEX:
         dx_w_fee = ERC20(input_coin).balanceOf(self)
 
+    # "safeTransferFrom" which works for ERC20s which return bool or not
     _response: Bytes[32] = raw_call(
         input_coin,
         concat(
