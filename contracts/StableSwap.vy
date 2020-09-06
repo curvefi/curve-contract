@@ -301,7 +301,7 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256):
                     convert(amounts[i], bytes32),
                 ),
                 max_outsize=32,
-            )
+            )  # dev: failed transfer
             if len(_response) > 0:
                 assert convert(_response, bool)  # dev: failed transfer
 
@@ -449,7 +449,7 @@ def exchange(i: int128, j: int128, dx: uint256, min_dy: uint256):
             convert(dx, bytes32),
         ),
         max_outsize=32,
-    )
+    )  # dev: failed transfer
     if len(_response) > 0:
         assert convert(_response, bool)  # dev: failed transfer
 
@@ -474,6 +474,7 @@ def exchange(i: int128, j: int128, dx: uint256, min_dy: uint256):
     # When rounding errors happen, we undercharge admin fee in favor of LP
     self.balances[j] = old_balances[j] - dy - dy_admin_fee
 
+    # "safeTransfer" which works for ERC20s which return bool or not
     _response = raw_call(
         self.coins[j],
         concat(
@@ -482,7 +483,7 @@ def exchange(i: int128, j: int128, dx: uint256, min_dy: uint256):
             convert(dy, bytes32),
         ),
         max_outsize=32,
-    )
+    )  # dev: failed transfer
     if len(_response) > 0:
         assert convert(_response, bool)  # dev: failed transfer
 
@@ -502,6 +503,7 @@ def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS]):
         self.balances[i] -= value
         amounts[i] = value
 
+        # "safeTransfer" which works for ERC20s which return bool or not
         _response: Bytes[32] = raw_call(
             self.coins[i],
             concat(
@@ -510,7 +512,7 @@ def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS]):
                 convert(value, bytes32),
             ),
             max_outsize=32,
-        )
+        )  # dev: failed transfer
         if len(_response) > 0:
             assert convert(_response, bool)  # dev: failed transfer
 
@@ -558,6 +560,7 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint2
     for i in range(N_COINS):
         if amounts[i] != 0:
 
+            # "safeTransfer" which works for ERC20s which return bool or not
             _response: Bytes[32] = raw_call(
                 self.coins[i],
                 concat(
@@ -566,7 +569,7 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint2
                     convert(amounts[i], bytes32),
                 ),
                 max_outsize=32,
-            )
+            )  # dev: failed transfer
             if len(_response) > 0:
                 assert convert(_response, bool)  # dev: failed transfer
 
@@ -675,6 +678,7 @@ def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_amount: uin
     self.balances[i] -= (dy + dy_fee * self.admin_fee / FEE_DENOMINATOR)
     self.token.burnFrom(msg.sender, _token_amount)  # dev: insufficient funds
 
+    # "safeTransfer" which works for ERC20s which return bool or not
     _response: Bytes[32] = raw_call(
         self.coins[i],
         concat(
@@ -683,7 +687,7 @@ def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_amount: uin
             convert(dy, bytes32),
         ),
         max_outsize=32,
-    )
+    )  # dev: failed transfer
     if len(_response) > 0:
         assert convert(_response, bool)  # dev: failed transfer
 
@@ -806,6 +810,7 @@ def withdraw_admin_fees():
         c: address = self.coins[i]
         value: uint256 = ERC20(c).balanceOf(self) - self.balances[i]
         if value > 0:
+            # "safeTransfer" which works for ERC20s which return bool or not
             _response: Bytes[32] = raw_call(
                 c,
                 concat(
@@ -814,7 +819,7 @@ def withdraw_admin_fees():
                     convert(value, bytes32),
                 ),
                 max_outsize=32,
-            )
+            )  # dev: failed transfer
             if len(_response) > 0:
                 assert convert(_response, bool)  # dev: failed transfer
 
