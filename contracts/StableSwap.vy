@@ -282,6 +282,8 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256):
 
     for i in range(N_COINS):
         in_amount: uint256 = amounts[i]
+        if token_supply == 0:
+            assert in_amount > 0  # dev: initial deposit requires all coins
         in_coin: address = self.coins[i]
 
         # Take coins from the sender
@@ -293,9 +295,6 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256):
             else:
                 assert ERC20(in_coin).transferFrom(msg.sender, self, in_amount)  # dev: failed transfer
 
-        if token_supply == 0:
-            assert in_amount > 0  # dev: initial deposit requires all coins
-        # balances store amounts of c-tokens
         new_balances[i] = old_balances[i] + in_amount
 
     # Invariant after change
