@@ -1,0 +1,22 @@
+Running 'home.michwill.Projects.stableswap.contract.scripts.deploy.main'...
+Transaction sent: 0xa7d90e460bed56181e41b74d143ec98fe097c8391700e4e0788f5282053694f8
+  Gas price: 120.427120878 gwei   Gas limit: 678343
+Required confirmations: 4/3    CurveToken.constructor confirmed - Block: 10809467   Gas used: 678343 (100.00%)
+  CurveToken deployed at: 0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490
+
+Transaction sent: 0x20793bbf260912aae189d5d261ff003c9b9166da8191d8f9d63ff1c7722f3ac6
+  Gas price: 120.202843721 gwei   Gas limit: 4812312
+Required confirmations: 3/3  
+  StableSwap.constructor confirmed - Block: 10809473   Gas used: 4812312 (100.00%)
+  StableSwap deployed at: 0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7
+
+Transaction sent: 0x5cfa6143bd8737373103b9532cb546c1f2db1583ea45d73c3a5fd93620763f8f
+  Gas price: 118.351378161 gwei   Gas limit: 1437983
+Required confirmations: 3/3  
+  LiquidityGauge.constructor confirmed - Block: 10809479   Gas used: 1437983 (100.00%)
+  LiquidityGauge deployed at: 0xbFcF63294aD7105dEa65aA58F8AE5BE2D9d0952A
+
+Transaction sent: 0x1cf0ab86da6426d42fc9e45eccf742d9215025c77b4c05b97b0c497f49bab898
+  Gas price: 118.289796819 gwei   Gas limit: 27444
+Required confirmations: 3/3  
+  CurveToken.set_minter confirmed - Block: 10809482   Gas used: 27444 (100.00%)
