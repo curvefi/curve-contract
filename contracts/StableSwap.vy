@@ -19,6 +19,9 @@ interface CurveToken:
 
 interface Curve:
     def get_virtual_price() -> uint256: view
+    def calc_token_amount(amounts: uint256[BASE_N_COINS], deposit: bool) -> uint256: view
+    def fee() -> uint256: view
+    def get_dy_underlying(i: int128, j: int128, dx: uint256) -> uint256: view
 
 
 # Events
@@ -117,7 +120,7 @@ token: CurveToken
 # Token corresponding to the pool is always the last one
 BASE_POOL_COINS: constant(int128) = 3
 BASE_CACHE_EXPIRES: constant(int128) = 10 * 60  # 10 min
-base_pool: address
+base_pool: public(address)
 base_virtual_price: public(uint256)
 base_cache_updated: public(uint256)
 
@@ -453,13 +456,52 @@ def get_dy_underlying(i: int128, j: int128, dx: uint256) -> uint256:
     xp: uint256[N_COINS] = self._xp(self._vp_rate_ro())
     precisions: uint256[N_COINS] = PRECISION_MUL
     base_precisions: uint256[BASE_N_COINS] = BASE_PRECISION_MUL
+    _base_pool: address = self.base_pool
 
-    x: uint256 = xp[i] + dx * precisions[i]
-    y: uint256 = self.get_y(i, j, x, xp)
-    dy: uint256 = (xp[j] - y - 1) / precisions[j]
-    _fee: uint256 = self.fee * dy / FEE_DENOMINATOR
-    return dy - _fee
+    # Use base_i or base_j if they are >= 0
+    base_i: int128 = i - MAX_COIN
+    base_j: int128 = j - MAX_COIN
+    meta_i: int128 = MAX_COIN
+    meta_j: int128 = MAX_COIN
+    if base_i < 0:
+        meta_i = i
+    if base_j < 0:
+        meta_j = j
 
+    x: uint256 = 0
+    if base_i < 0:
+        x = xp[i] + dx * precisions[i]
+    else:
+        if base_j < 0:
+            # i is from BasePool
+            # At first, get the amount of pool tokens
+            base_inputs: uint256[BASE_N_COINS] = empty(uint256[BASE_N_COINS])
+            base_inputs[base_i] = dx
+            x = Curve(_base_pool).calc_token_amount(base_inputs, True)
+            # Accounting for deposit/withdraw fees approximately
+            x -= x * Curve(_base_pool).fee() / (2 * 10 ** 10)
+            # Adding number of pool tokens
+            x = xp[MAX_COIN] + x
+        else:
+            # If both are from the base pool
+            return Curve(_base_pool).get_dy_underlying(base_i, base_j, dx)
+
+    # This pool is involved only when in-pool assets are used
+    y: uint256 = self.get_y(meta_i, meta_j, x, xp)
+    dy: uint256 = (xp[meta_j] - y - 1) / precisions[meta_j]
+    dy -= self.fee * dy / FEE_DENOMINATOR
+
+    # If output is going via the metapool
+    if base_j >= 0:
+        # j is from BasePool
+        # At first, get the amount of pool tokens
+        base_inputs: uint256[BASE_N_COINS] = empty(uint256[BASE_N_COINS])
+        base_inputs[base_i] = dy
+        dy = Curve(_base_pool).calc_token_amount(base_inputs, False)
+        # Accounting for deposit/withdraw fees approximately
+        dy -= dy * Curve(_base_pool).fee() / (2 * 10 ** 10)
+
+    return dy
 
 
 @external
