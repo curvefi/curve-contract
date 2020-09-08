@@ -27,7 +27,7 @@ def test_curve_in_contract(
             rate = int(10**18 * (1 + 0.1 * len(initial_liquidity)))
             wrapped.set_exchange_rate(rate, {'from': alice})
             underlying.approve(wrapped, amount, {'from': alice})
-            wrapped._mint(amount, {'from': alice})
+            wrapped.mint(amount, {'from': alice})
             amount = amount * 10 ** 18 // rate
 
         assert wrapped.balanceOf(alice) >= amount
@@ -41,7 +41,7 @@ def test_curve_in_contract(
     rates = []
     for (coin, data) in zip(wrapped_coins, pool_data['coins']):
         if data['wrapped']:
-            rate = coin._get_rate()
+            rate = coin.get_rate()
         else:
             rate = 10 ** 18
 
@@ -51,7 +51,7 @@ def test_curve_in_contract(
 
     # execute a series of swaps and compare the python model to the contract results
     rates = [
-        wrapped_coins[i]._get_rate() if coin_data[i]['wrapped']
+        wrapped_coins[i].get_rate() if coin_data[i]['wrapped']
         else 10 ** 18 for i in range(n_coins)
     ]
     exchange_pairs = deque(permutations(range(n_coins), 2))

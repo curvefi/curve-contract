@@ -3,8 +3,24 @@ import pytest
 from pathlib import Path
 import json
 
-ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
+# functions in wrapped methods are renamed to simplify common tests
+WRAPPED_COIN_METHODS = {
+    "cERC20": {
+        "get_rate": "exchangeRateStored",
+        "mint": "mint",
+    },
+    "renERC20": {
+        "get_rate": "exchangeRateCurrent",
+        "mint": "mint",
+    },
+    "yERC20": {
+        "get_rate": "getPricePerFullShare",
+        "mint": "deposit",
+    },
+}
 
+
+ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 _pooldata = {}
 
 
@@ -155,6 +171,7 @@ def wrapped_coins(project, alice, pool_data, underlying_coins):
     if not pool_data.get("wrapped_contract"):
         yield underlying_coins
     else:
+        fn_names = WRAPPED_COIN_METHODS[pool_data['wrapped_contract']]
         deployer = getattr(project, pool_data['wrapped_contract'])
         coins = []
         for i, coin_data in enumerate(pool_data['coins']):
@@ -166,6 +183,8 @@ def wrapped_coins(project, alice, pool_data, underlying_coins):
                 contract = deployer.deploy(
                     f"Coin {i}", f"C{i}", decimals, 0, underlying, 10**18, {'from': alice}
                 )
+                for target, attr in fn_names.items():
+                    setattr(contract, target, getattr(contract, attr))
                 coins.append(contract)
 
         yield coins
