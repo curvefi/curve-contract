@@ -9,7 +9,6 @@
 """
 
 from vyper.interfaces import ERC20
-from contracts.tokens import CurveTokenV2 as CurveToken
 
 # External Contracts
 interface yERC20:
@@ -18,6 +17,11 @@ interface yERC20:
     def deposit(depositAmount: uint256): nonpayable
     def withdraw(withdrawTokens: uint256): nonpayable
     def getPricePerFullShare() -> uint256: view
+
+
+interface CurveToken:
+    def mint(_to: address, _value: uint256) -> bool: nonpayable
+    def burnFrom(_to: address, _value: uint256) -> bool: nonpayable
 
 
 # Events
@@ -112,7 +116,7 @@ fee: public(uint256)  # fee * 1e10
 admin_fee: public(uint256)  # admin_fee * 1e10
 
 owner: public(address)
-token: CurveToken
+lp_token: address
 
 initial_A: public(uint256)
 future_A: public(uint256)
@@ -161,7 +165,7 @@ def __init__(
     self.admin_fee = _admin_fee
     self.owner = _owner
     self.kill_deadline = block.timestamp + KILL_DEADLINE_DT
-    self.token = CurveToken(_pool_token)
+    self.lp_token = _pool_token
 
 
 @view
@@ -263,7 +267,7 @@ def get_virtual_price() -> uint256:
     D: uint256 = self.get_D(self._xp(self._stored_rates()), self._A())
     # D is in the units similar to DAI (e.g. converted to precision 1e18)
     # When balanced, D = n * x_u - total virtual value of the portfolio
-    token_supply: uint256 = self.token.totalSupply()
+    token_supply: uint256 = ERC20(self.lp_token).totalSupply()
     return D * PRECISION / token_supply
 
 
@@ -285,7 +289,7 @@ def calc_token_amount(amounts: uint256[N_COINS], deposit: bool) -> uint256:
         else:
             _balances[i] -= amounts[i]
     D1: uint256 = self.get_D_mem(rates, _balances)
-    token_amount: uint256 = self.token.totalSupply()
+    token_amount: uint256 = ERC20(self.lp_token).totalSupply()
     diff: uint256 = 0
     if deposit:
         diff = D1 - D0
@@ -303,7 +307,7 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256):
     _fee: uint256 = self.fee * N_COINS / (4 * (N_COINS - 1))
     _admin_fee: uint256 = self.admin_fee
 
-    token_supply: uint256 = self.token.totalSupply()
+    token_supply: uint256 = ERC20(self.lp_token).totalSupply()
     rates: uint256[N_COINS] = self._stored_rates()
     # Initial invariant
     D0: uint256 = 0
@@ -356,7 +360,7 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256):
             assert yERC20(self.coins[i]).transferFrom(msg.sender, self, amounts[i])
 
     # Mint pool tokens
-    self.token.mint(msg.sender, mint_amount)
+    CurveToken(self.lp_token).mint(msg.sender, mint_amount)
 
     log AddLiquidity(msg.sender, amounts, fees, D1, token_supply + mint_amount)
 
@@ -560,7 +564,7 @@ def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256):
 @external
 @nonreentrant('lock')
 def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS]):
-    total_supply: uint256 = self.token.totalSupply()
+    total_supply: uint256 = ERC20(self.lp_token).totalSupply()
     amounts: uint256[N_COINS] = empty(uint256[N_COINS])
     fees: uint256[N_COINS] = empty(uint256[N_COINS])
 
@@ -571,7 +575,7 @@ def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS]):
         amounts[i] = value
         assert yERC20(self.coins[i]).transfer(msg.sender, value)
 
-    self.token.burnFrom(msg.sender, _amount)  # Will raise if not enough
+    CurveToken(self.lp_token).burnFrom(msg.sender, _amount)  # Will raise if not enough
 
     log RemoveLiquidity(msg.sender, amounts, fees, total_supply - _amount)
 
@@ -581,7 +585,7 @@ def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS]):
 def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint256):
     assert not self.is_killed
 
-    token_supply: uint256 = self.token.totalSupply()
+    token_supply: uint256 = ERC20(self.lp_token).totalSupply()
     assert token_supply != 0
     _fee: uint256 = self.fee * N_COINS / (4 * (N_COINS - 1))
     _admin_fee: uint256 = self.admin_fee
@@ -610,7 +614,7 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint2
     assert token_amount != 0
     assert token_amount <= max_burn_amount, "Slippage screwed you"
 
-    self.token.burnFrom(msg.sender, token_amount)  # dev: insufficient funds
+    CurveToken(self.lp_token).burnFrom(msg.sender, token_amount)  # dev: insufficient funds
     for i in range(N_COINS):
         if amounts[i] != 0:
             assert yERC20(self.coins[i]).transfer(msg.sender, amounts[i])
@@ -673,7 +677,7 @@ def _calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> (uint256, uint
     amp: uint256 = self._A()
     _fee: uint256 = self.fee * N_COINS / (4 * (N_COINS - 1))
     precisions: uint256[N_COINS] = PRECISION_MUL
-    total_supply: uint256 = self.token.totalSupply()
+    total_supply: uint256 = ERC20(self.lp_token).totalSupply()
 
     xp: uint256[N_COINS] = self._xp(self._stored_rates())
 
@@ -718,7 +722,7 @@ def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_amount: uin
     assert dy >= min_amount, "Not enough coins removed"
 
     self.balances[i] -= (dy + dy_fee * self.admin_fee / FEE_DENOMINATOR)
-    self.token.burnFrom(msg.sender, _token_amount)  # dev: insufficient funds
+    CurveToken(self.lp_token).burnFrom(msg.sender, _token_amount)  # dev: insufficient funds
     assert ERC20(self.coins[i]).transfer(msg.sender, dy)
 
     log RemoveLiquidityOne(msg.sender, _token_amount, dy)
