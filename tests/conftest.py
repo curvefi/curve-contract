@@ -214,3 +214,14 @@ def swap(project, alice, underlying_coins, wrapped_coins, pool_token, pool_data)
     pool_token.set_minter(contract, {'from': alice})
 
     yield contract
+
+
+# helper functions
+
+@pytest.fixture(scope="session")
+def approx():
+
+    def _approx(a, b, precision=1e-10):
+        return 2 * abs(a - b) / (a + b) <= precision
+
+    yield _approx
