@@ -74,8 +74,8 @@ def test_stop_ramp_A(chain, alice, swap):
 
     assert swap.initial_A() == current_A
     assert swap.future_A() == current_A
-    assert swap.initial_A_time() == tx.timestamp
-    assert swap.future_A_time() == tx.timestamp
+    assert abs(swap.initial_A_time() - tx.timestamp) <= 1
+    assert abs(swap.future_A_time() - tx.timestamp) <= 1
 
 
 def test_ramp_A_only_owner(chain, bob, swap):
