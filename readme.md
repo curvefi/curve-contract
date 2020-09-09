@@ -37,11 +37,12 @@ docker run -it <IMAGE_ID> /bin/bash
 pip install -r requirements.txt
 brownie console
 ```
+<br>
 
 ##   Deploy Curve DAO
 
 soon™
 
-
+<br>
 
 If you have questions or need help please drop into the Aragon [Discord](https://discord.com/invite/remTh8w) support channel!
