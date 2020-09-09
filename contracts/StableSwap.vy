@@ -574,8 +574,21 @@ def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256):
     else:
         output_coin = self.base_coins[base_j]
 
+    # "safeTransferFrom" which works for ERC20s which return bool or not
+    _response: Bytes[32] = raw_call(
+        input_coin,
+        concat(
+            method_id("transferFrom(address,address,uint256)"),
+            convert(msg.sender, bytes32),
+            convert(self, bytes32),
+            convert(dx, bytes32),
+        ),
+        max_outsize=32,
+    )  # dev: failed transfer
+    if len(_response) > 0:
+        assert convert(_response, bool)  # dev: failed transfer
+    # end "safeTransferFrom"
     # XXX TODO handle USDT
-    assert ERC20(input_coin).transferFrom(msg.sender, self, dx)
 
     if base_i < 0 or base_j < 0:
         old_balances: uint256[N_COINS] = self.balances
@@ -630,8 +643,19 @@ def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256):
         Curve(_base_pool).exchange(base_i, base_j, dx, min_dy)
         dy = ERC20(output_coin).balanceOf(self) - dy
 
-    # XXX handle USDT
-    assert ERC20(output_coin).transfer(msg.sender, dy)
+    # "safeTransfer" which works for ERC20s which return bool or not
+    _response = raw_call(
+        self.coins[j],
+        concat(
+            method_id("transfer(address,uint256)"),
+            convert(msg.sender, bytes32),
+            convert(dy, bytes32),
+        ),
+        max_outsize=32,
+    )  # dev: failed transfer
+    if len(_response) > 0:
+        assert convert(_response, bool)  # dev: failed transfer
+    # end "safeTransfer"
 
     log TokenExchange(msg.sender, i, dx, j, dy)
 
