@@ -1,0 +1,36 @@
+FROM pythonpete32/aragon-cli:1.2
+
+USER root
+
+RUN echo "node ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+ENV PATH="${PATH}:/home/node/.local/bin"
+
+USER node
+
+WORKDIR /home/node/
+
+RUN  wget https://www.python.org/ftp/python/3.7.3/Python-3.7.3.tar.xz && \
+ tar xf Python-3.7.3.tar.xz
+
+WORKDIR /home/node//Python-3.7.3
+
+RUN ./configure && \
+ make && \
+ sudo make install && \
+ sudo update-alternatives --install /usr/bin/python python /usr/local/bin/python3.7 10
+
+RUN python3 -m pip install --user pipx && \
+ python3 -m pipx ensurepath
+
+RUN python3 -m venv venv
+RUN sudo ln -s /usr/share/pyshared/lsb_release.py /usr/local/lib/python3.7/site-packages/lsb_release.py
+
+WORKDIR /home/node/curve-contracts/
+
+COPY . .
+RUN pipx install eth-brownie
+RUN npm install -g ganache-cli
+RUN pip install -r requirements.txt 
+
+CMD [ "brownie", "console" ] 
