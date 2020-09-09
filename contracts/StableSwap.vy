@@ -513,7 +513,6 @@ def get_dy_underlying(i: int128, j: int128, dx: uint256) -> uint256:
 @external
 @nonreentrant('lock')
 def exchange(i: int128, j: int128, dx: uint256, min_dy: uint256):
-    # XXX do we need rates for virtual tokens????
     assert not self.is_killed  # dev: is killed
     rates: uint256[N_COINS] = RATES
     rates[MAX_COIN] = self._vp_rate()
