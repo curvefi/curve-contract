@@ -103,6 +103,9 @@ N_ALL_COINS: constant(int128) = N_COINS + BASE_N_COINS - 1
 BASE_PRECISION_MUL: constant(uint256[BASE_N_COINS]) = ___BASE_PRECISION_MUL___
 BASE_RATES: constant(uint256[BASE_N_COINS]) = ___BASE_RATES___
 
+# An asset shich may have a transfer fee (USDT)
+FEE_ASSET: constant(address) = 0xdAC17F958D2ee523a2206206994597C13D831ec7
+
 MAX_ADMIN_FEE: constant(uint256) = 10 * 10 ** 9
 MAX_FEE: constant(uint256) = 5 * 10 ** 9
 MAX_A: constant(uint256) = 10 ** 6
@@ -510,6 +513,7 @@ def get_dy_underlying(i: int128, j: int128, dx: uint256) -> uint256:
 @external
 @nonreentrant('lock')
 def exchange(i: int128, j: int128, dx: uint256, min_dy: uint256):
+    # XXX do we need rates for virtual tokens????
     assert not self.is_killed  # dev: is killed
     rates: uint256[N_COINS] = RATES
     rates[MAX_COIN] = self._vp_rate()
@@ -574,6 +578,10 @@ def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256):
     else:
         output_coin = self.base_coins[base_j]
 
+    # Handle potential Tether fees
+    dx_w_fee: uint256 = dx
+    if input_coin == FEE_ASSET:
+        dx_w_fee = ERC20(FEE_ASSET).balanceOf(self)
     # "safeTransferFrom" which works for ERC20s which return bool or not
     _response: Bytes[32] = raw_call(
         input_coin,
@@ -588,7 +596,9 @@ def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256):
     if len(_response) > 0:
         assert convert(_response, bool)  # dev: failed transfer
     # end "safeTransferFrom"
-    # XXX TODO handle USDT
+    # Handle potential Tether fees
+    if input_coin == FEE_ASSET:
+        dx_w_fee = ERC20(FEE_ASSET).balanceOf(self) - dx_w_fee
 
     if base_i < 0 or base_j < 0:
         old_balances: uint256[N_COINS] = self.balances
@@ -596,18 +606,20 @@ def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256):
 
         x: uint256 = 0
         if base_i < 0:
-            x = xp[i] + dx * precisions[i]
+            x = xp[i] + dx_w_fee * precisions[i]
         else:
             # i is from BasePool
             # At first, get the amount of pool tokens
             base_inputs: uint256[BASE_N_COINS] = empty(uint256[BASE_N_COINS])
-            base_inputs[base_i] = dx
+            base_inputs[base_i] = dx_w_fee
             coin_i: address = self.coins[MAX_COIN]
             # Deposit and measure delta
             x = ERC20(coin_i).balanceOf(self)
             Curve(_base_pool).add_liquidity(base_inputs, 0)
             # Need to convert pool token to "virtual" units using rates
-            x = (ERC20(coin_i).balanceOf(self) - x) * rates[MAX_COIN] / PRECISION
+            # dx is also different now
+            dx_w_fee = ERC20(coin_i).balanceOf(self) - x
+            x = dx_w_fee * rates[MAX_COIN] / PRECISION
             # Adding number of pool tokens
             x += xp[MAX_COIN]
 
@@ -625,7 +637,7 @@ def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256):
         dy_admin_fee = dy_admin_fee * PRECISION / rates[meta_j]
 
         # Change balances exactly in same way as we change actual ERC20 coin amounts
-        self.balances[meta_i] = old_balances[meta_i] + dx
+        self.balances[meta_i] = old_balances[meta_i] + dx_w_fee
         # When rounding errors happen, we undercharge admin fee in favor of LP
         self.balances[meta_j] = old_balances[meta_j] - dy - dy_admin_fee
 
@@ -640,7 +652,7 @@ def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256):
     else:
         # If both are from the base pool
         dy = ERC20(output_coin).balanceOf(self)
-        Curve(_base_pool).exchange(base_i, base_j, dx, min_dy)
+        Curve(_base_pool).exchange(base_i, base_j, dx_w_fee, min_dy)
         dy = ERC20(output_coin).balanceOf(self) - dy
 
     # "safeTransfer" which works for ERC20s which return bool or not
