@@ -1,32 +1,47 @@
-# curve-xdai
+# curve-deploy
+Docker container for deploying and hacking on [curve.fi](curve.fi) DAO and contracts
 
-> documentation for curve-xdai deployment
+<br>
 
-0. setup python3
+##  ✅ Prerequisites
+[docker](https://docs.docker.com/get-docker/) 
+
+<br>
+
+##  🏁 Quick Start
+
+First pull the docker image
 
 ```
-sudo wget https://www.python.org/ftp/python/3.7.3/Python-3.7.3.tar.xz
-sudo tar xf Python-3.7.3.tar.xz 
- cd ./Python-3.7.3 && /
- sudo ./configure && /
- sudo make && /
- sudo make install && /
- sudo update-alternatives --install /usr/bin/python python /usr/local/bin/python3.7 10
+docker pull pythonpete32/curve-deploy:latest
 ```
 
-1. brownie & ganache 
+Find the `IMAGE ID` by running 
+
 ```
-python3 -m pip install --user pipx
-python3 -m pipx ensurepath
-source ~/.bashrc
-pipx install eth-brownie
-npm install -g ganache-cli
+docker images
 ```
 
-2. curve
+then run launch a docker container with an interactive terminal
+
 ```
-cd .. && git clone https://github.com/curvefi/curve-contract.git && cd curve-contract
-python3 -m venv venv
+docker run -it <IMAGE_ID> /bin/bash
+```
+
+<br>
+
+##  💻 Development console
+
+```
+. ./venv/bin/activate          
 pip install -r requirements.txt
+brownie console
 ```
 
+##   Deploy Curve DAO
+
+soon™
+
+
+
+If you have questions or need help please drop into the Aragon [Discord](https://discord.com/invite/remTh8w) support channel!
