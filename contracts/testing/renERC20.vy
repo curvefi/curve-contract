@@ -116,6 +116,52 @@ def approve(_spender : address, _value : uint256) -> bool:
     return True
 
 
+# cERC20-specific methods
+@public
+def mint(mintAmount: uint256) -> uint256:
+    """
+     @notice Sender supplies assets into the market and receives cTokens in exchange
+     @dev Accrues interest whether or not the operation succeeds, unless reverted
+     @param mintAmount The amount of the underlying asset to supply
+     @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
+    """
+    self.underlying_token.transferFrom(msg.sender, self, mintAmount)
+    value: uint256 = mintAmount * 10 ** 18 / self.exchangeRateStored
+    self.total_supply += value
+    self.balanceOf[msg.sender] += value
+    return 0
+
+
+@public
+def redeem(redeemTokens: uint256) -> uint256:
+    """
+     @notice Sender redeems cTokens in exchange for the underlying asset
+     @dev Accrues interest whether or not the operation succeeds, unless reverted
+     @param redeemTokens The number of cTokens to redeem into underlying
+     @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
+    """
+    uvalue: uint256 = redeemTokens * self.exchangeRateStored / 10 ** 18
+    self.balanceOf[msg.sender] -= redeemTokens
+    self.total_supply -= redeemTokens
+    self.underlying_token.transfer(msg.sender, uvalue)
+    return 0
+
+
+@public
+def redeemUnderlying(redeemAmount: uint256) -> uint256:
+    """
+     @notice Sender redeems cTokens in exchange for a specified amount of underlying asset
+     @dev Accrues interest whether or not the operation succeeds, unless reverted
+     @param redeemAmount The amount of underlying to redeem
+     @return uint 0=success, otherwise a failure (see ErrorReporter.sol for details)
+    """
+    value: uint256 = redeemAmount * 10 ** 18 / self.exchangeRateStored
+    self.balanceOf[msg.sender] -= value
+    self.total_supply -= value
+    self.underlying_token.transfer(msg.sender, redeemAmount)
+    return 0
+
+
 @public
 def set_exchange_rate(rate: uint256):
     self.exchangeRateStored = rate

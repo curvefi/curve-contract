@@ -41,4 +41,40 @@ jobs:
       run: pip install -r requirements.txt
 
     - name: Run Tests
-      run: pytest tests/common --pool ${{ matrix.pool }}
+      run: pytest tests/common/unitary --pool ${{ matrix.pool }}
+
+  integration:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        pool: [busd, compound, pax, ren, sbtc, susd, usdt, y]
+
+    steps:
+    - uses: actions/checkout@v1
+
+    - name: Cache Compiler Installations
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.solcx
+          ~/.vvm
+        key: compiler-cache
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v1
+
+    - name: Install Ganache
+      run: npm install -g ganache-cli@6.10.1
+
+    - name: Setup Python 3.8
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
+
+    - name: Install Requirements
+      run: pip install -r requirements.txt
+
+    - name: Run Tests
+      run: pytest tests/common/integration --pool ${{ matrix.pool }}
