@@ -1,9 +1,12 @@
-from brownie.project.main import get_loaded_projects
-import pytest
-from pathlib import Path
 import json
+import pytest
+
+from brownie.project.main import get_loaded_projects
+from pathlib import Path
+from scripts.utils import right_pad, pack_values
 
 # functions in wrapped methods are renamed to simplify common tests
+
 WRAPPED_COIN_METHODS = {
     "cERC20": {
         "get_rate": "exchangeRateStored",
@@ -19,8 +22,8 @@ WRAPPED_COIN_METHODS = {
     },
 }
 
-
 ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
+
 _pooldata = {}
 
 
@@ -233,6 +236,66 @@ def swap(project, alice, underlying_coins, wrapped_coins, pool_token, pool_data)
     pool_token.set_minter(contract, {'from': alice})
 
     yield contract
+
+
+@pytest.fixture(scope="module")
+def registry(
+    Registry,
+    alice,
+    gauge_controller,
+    swap,
+    pool_token,
+    n_coins,
+    wrapped_coins,
+    wrapped_decimals,
+    underlying_decimals,
+    pool_data,
+):
+    registry = Registry.deploy(gauge_controller, {'from': alice})
+
+    rate_sig = "0x00"
+    if next((i for i in wrapped_coins if hasattr(i, "get_rate")), False):
+        contract = next(i for i in wrapped_coins if hasattr(i, "get_rate"))
+        rate_sig = right_pad(contract.get_rate.signature)
+
+    if hasattr(swap, "underlying_coins"):
+        registry.add_pool(
+            swap,
+            n_coins,
+            pool_token,
+            ZERO_ADDRESS,
+            rate_sig,
+            pack_values(wrapped_decimals),
+            pack_values(underlying_decimals),
+            hasattr(swap, "initial_A"),
+            {'from': alice}
+        )
+    else:
+        registry.add_pool_without_underlying(
+            swap,
+            n_coins,
+            pool_token,
+            ZERO_ADDRESS,
+            rate_sig,
+            pack_values(underlying_decimals),
+            pack_values([True] + [False] * 7),
+            hasattr(swap, "initial_A"),
+            {'from': alice}
+        )
+
+    yield registry
+
+
+@pytest.fixture(scope="module")
+def gauge_controller(GaugeControllerMock, alice):
+    yield GaugeControllerMock.deploy({'from': alice})
+
+
+@pytest.fixture(scope="module")
+def gauge_compound(LiquidityGaugeMock, accounts, gauge_controller, pool_token):
+    gauge = LiquidityGaugeMock.deploy(pool_token, {'from': accounts[0]})
+    gauge_controller._set_gauge_type(gauge, 1, {'from': accounts[0]})
+    yield gauge
 
 
 # helper functions
