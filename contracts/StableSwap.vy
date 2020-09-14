@@ -656,7 +656,7 @@ def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256):
 
     # "safeTransfer" which works for ERC20s which return bool or not
     _response = raw_call(
-        self.coins[j],
+        output_coin,
         concat(
             method_id("transfer(address,uint256)"),
             convert(msg.sender, bytes32),
