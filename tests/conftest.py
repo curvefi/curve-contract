@@ -73,8 +73,11 @@ def pytest_generate_tests(metafunc):
 
 def pytest_collection_modifyitems(config, items):
     for item in items.copy():
-        params = item.callspec.params
-        data = _pooldata[params['pool_data']]
+        try:
+            params = item.callspec.params
+            data = _pooldata[params['pool_data']]
+        except Exception:
+            continue
 
         # remove excess `itercoins` parametrized tests
         if next(item.iter_markers(name="itercoins"), None):
