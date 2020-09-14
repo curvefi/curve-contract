@@ -3,7 +3,7 @@
 @title StableSwap
 @author Curve.Fi
 @license Copyright (c) Curve.Fi, 2020 - all rights reserved
-@notice Pool implementation with yearn-style lending
+@notice Pool implementation with Yearn-style lending
 @dev This contract is only a template, pool-specific constants
      must be set prior to compiling
 """
@@ -12,8 +12,6 @@ from vyper.interfaces import ERC20
 
 # External Contracts
 interface yERC20:
-    def transfer(_to: address, _value: uint256) -> bool: nonpayable
-    def transferFrom(_from: address, _to: address, _value: uint256) -> bool: nonpayable
     def deposit(depositAmount: uint256): nonpayable
     def withdraw(withdrawTokens: uint256): nonpayable
     def getPricePerFullShare() -> uint256: view
@@ -357,7 +355,7 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256):
     # Take coins from the sender
     for i in range(N_COINS):
         if amounts[i] != 0:
-            assert yERC20(self.coins[i]).transferFrom(msg.sender, self, amounts[i])
+            assert ERC20(self.coins[i]).transferFrom(msg.sender, self, amounts[i])
 
     # Mint pool tokens
     CurveToken(self.lp_token).mint(msg.sender, mint_amount)
@@ -495,8 +493,8 @@ def exchange(i: int128, j: int128, dx: uint256, min_dy: uint256):
     dy: uint256 = self._exchange(i, j, dx, rates)
     assert dy >= min_dy, "Exchange resulted in fewer coins than expected"
 
-    assert yERC20(self.coins[i]).transferFrom(msg.sender, self, dx)
-    assert yERC20(self.coins[j]).transfer(msg.sender, dy)
+    assert ERC20(self.coins[i]).transferFrom(msg.sender, self, dx)
+    assert ERC20(self.coins[j]).transfer(msg.sender, dy)
 
     log TokenExchange(msg.sender, i, dx, j, dy)
 
@@ -573,7 +571,7 @@ def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS]):
         assert value >= min_amounts[i], "Withdrawal resulted in fewer coins than expected"
         self.balances[i] -= value
         amounts[i] = value
-        assert yERC20(self.coins[i]).transfer(msg.sender, value)
+        assert ERC20(self.coins[i]).transfer(msg.sender, value)
 
     CurveToken(self.lp_token).burnFrom(msg.sender, _amount)  # Will raise if not enough
 
@@ -617,7 +615,7 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint2
     CurveToken(self.lp_token).burnFrom(msg.sender, token_amount)  # dev: insufficient funds
     for i in range(N_COINS):
         if amounts[i] != 0:
-            assert yERC20(self.coins[i]).transfer(msg.sender, amounts[i])
+            assert ERC20(self.coins[i]).transfer(msg.sender, amounts[i])
 
     log RemoveLiquidityImbalance(msg.sender, amounts, fees, D1, token_supply - token_amount)
 
