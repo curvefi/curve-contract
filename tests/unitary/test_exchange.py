@@ -57,12 +57,13 @@ def test_exchange(chain, alice, bob, bank, swap, coins, sending, receiving, fee,
     # e.g. 2x virtual price will do +0.2% or so
     if receiving == N_COINS - 1:
         assert 0.9999-fee < virtual_price * received / 10**PRECISIONS[receiving] < 1.002-fee
+        expected_admin_fee = 10**PRECISIONS[receiving] * fee * admin_fee / virtual_price
     else:
         assert 0.998-fee < received / virtual_price / 10**PRECISIONS[receiving] < 1-fee
+        expected_admin_fee = 10**PRECISIONS[receiving] * fee * admin_fee * virtual_price
 
-    expected_admin_fee = 10**PRECISIONS[receiving] * fee * admin_fee
     if expected_admin_fee:
-        assert (expected_admin_fee * 0.999) <= swap.admin_balances(receiving) <= expected_admin_fee
+        assert (expected_admin_fee * 0.998) <= swap.admin_balances(receiving) <= (1.02 * expected_admin_fee)
     else:
         assert swap.admin_balances(receiving) == 0
 
