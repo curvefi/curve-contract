@@ -23,7 +23,6 @@ event TokenExchange:
     bought_id: int128
     tokens_bought: uint256
 
-
 event AddLiquidity:
     provider: indexed(address)
     token_amounts: uint256[N_COINS]
@@ -55,7 +54,6 @@ event CommitNewAdmin:
 
 event NewAdmin:
     admin: indexed(address)
-
 
 event CommitNewFee:
     deadline: indexed(uint256)
