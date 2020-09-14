@@ -8,6 +8,7 @@ Each subdirectory holds contracts and other files specific to a single Curve poo
 
 * [`busd`](busd): [BUSD pool](https://www.curve.fi/busd), with lending on [yearn.finance](https://yearn.finance/)
 * [`compound`](compound): [Compound pool](https://www.curve.fi/compound), with lending on [Compound](https://compound.finance/)
+* [`hbtc`](hbtc): [hBTC pool](https://www.curve.fi/hbtc)
 * [`pax`](pax): [PAX pool](https://www.curve.fi/pax), with lending on [yearn.finance](https://yearn.finance/)
 * [`ren`](ren): [RenBTC pool](https://www.curve.fi/ren)
 * [`sbtc`](sbtc): [sBTC pool](https://www.curve.fi/sbtc)
