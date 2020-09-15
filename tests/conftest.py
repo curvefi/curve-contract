@@ -38,6 +38,7 @@ def pytest_configure(config):
     # add custom markers
     config.addinivalue_line("markers", "target_pool: run test against one or more specific pool")
     config.addinivalue_line("markers", "skip_pool: exclude one or more pools in this test")
+    config.addinivalue_line("markers", "lending: only run test against pools that involve lending")
     config.addinivalue_line(
         "markers",
         "itercoins: parametrize a test with one or more ranges, equal to the length "
@@ -97,6 +98,7 @@ def pytest_generate_tests(metafunc):
 
 
 def pytest_collection_modifyitems(config, items):
+    project = get_loaded_projects()[0]
     for item in items.copy():
         try:
             params = item.callspec.params
@@ -120,6 +122,13 @@ def pytest_collection_modifyitems(config, items):
         # apply `target_pool` marker
         for marker in item.iter_markers(name="target_pool"):
             if params["pool_data"] not in marker.args:
+                items.remove(item)
+                continue
+
+        # apply `lending` marker
+        for marker in item.iter_markers(name="lending"):
+            deployer = getattr(project, data['swap_contract'])
+            if "exchange_underlying" not in deployer.signatures:
                 items.remove(item)
                 continue
 
