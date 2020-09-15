@@ -10,7 +10,6 @@
 
 from vyper.interfaces import ERC20
 
-
 # External Contracts
 interface yERC20:
     def deposit(depositAmount: uint256): nonpayable
@@ -51,6 +50,34 @@ def __init__(
     _curve: address,
     _token: address
 ):
+    for i in range(N_COINS):
+        assert _coins[i] != ZERO_ADDRESS
+        assert _underlying_coins[i] != ZERO_ADDRESS
+
+        # approve underlying and wrapped coins for infinite transfers
+        _response: Bytes[32] = raw_call(
+            _underlying_coins[i],
+            concat(
+                method_id("approve(address,uint256)"),
+                convert(_coins[i], bytes32),
+                convert(MAX_UINT256, bytes32),
+            ),
+            max_outsize=32,
+        )
+        if len(_response) > 0:
+            assert convert(_response, bool)
+        _response = raw_call(
+            _coins[i],
+            concat(
+                method_id("approve(address,uint256)"),
+                convert(_curve, bytes32),
+                convert(MAX_UINT256, bytes32),
+            ),
+            max_outsize=32,
+        )
+        if len(_response) > 0:
+            assert convert(_response, bool)
+
     self.coins = _coins
     self.underlying_coins = _underlying_coins
     self.curve = _curve
@@ -68,7 +95,6 @@ def add_liquidity(uamounts: uint256[N_COINS], min_mint_amount: uint256):
 
         if uamount != 0:
             # Transfer the underlying coin from owner
-
             _response: Bytes[32] = raw_call(
                 self.underlying_coins[i],
                 concat(
@@ -84,13 +110,10 @@ def add_liquidity(uamounts: uint256[N_COINS], min_mint_amount: uint256):
 
             # Mint if needed
             if use_lending[i]:
-                ERC20(self.underlying_coins[i]).approve(self.coins[i], uamount)
                 yERC20(self.coins[i]).deposit(uamount)
                 amounts[i] = ERC20(self.coins[i]).balanceOf(self)
-                ERC20(self.coins[i]).approve(self.curve, amounts[i])
             else:
                 amounts[i] = uamount
-                ERC20(self.underlying_coins[i]).approve(self.curve, uamount)
 
     Curve(self.curve).add_liquidity(amounts, min_mint_amount)
 

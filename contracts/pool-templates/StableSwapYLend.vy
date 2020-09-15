@@ -155,6 +155,20 @@ def __init__(
     for i in range(N_COINS):
         assert _coins[i] != ZERO_ADDRESS
         assert _underlying_coins[i] != ZERO_ADDRESS
+
+        # approve underlying coins for infinite transfers
+        _response: Bytes[32] = raw_call(
+            _underlying_coins[i],
+            concat(
+                method_id("approve(address,uint256)"),
+                convert(_coins[i], bytes32),
+                convert(MAX_UINT256, bytes32),
+            ),
+            max_outsize=32,
+        )
+        if len(_response) > 0:
+            assert convert(_response, bool)
+
     self.coins = _coins
     self.underlying_coins = _underlying_coins
     self.initial_A = _A
@@ -518,18 +532,6 @@ def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256):
             method_id("transferFrom(address,address,uint256)"),
             convert(msg.sender, bytes32),
             convert(self, bytes32),
-            convert(dx, bytes32),
-        ),
-        max_outsize=32,
-    )
-    if len(_response) > 0:
-        assert convert(_response, bool)
-
-    _response = raw_call(
-        self.underlying_coins[i],
-        concat(
-            method_id("approve(address,uint256)"),
-            convert(self.coins[i], bytes32),
             convert(dx, bytes32),
         ),
         max_outsize=32,
