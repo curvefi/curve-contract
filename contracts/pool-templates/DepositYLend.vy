@@ -196,8 +196,8 @@ def remove_liquidity_imbalance(uamounts: uint256[N_COINS], max_burn_amount: uint
     self._send_all(msg.sender, empty(uint256[N_COINS]), -1)
 
 
+@pure
 @internal
-@view
 def _xp_mem(rates: uint256[N_COINS], _balances: uint256[N_COINS]) -> uint256[N_COINS]:
     result: uint256[N_COINS] = rates
     for i in range(N_COINS):
@@ -205,8 +205,8 @@ def _xp_mem(rates: uint256[N_COINS], _balances: uint256[N_COINS]) -> uint256[N_C
     return result
 
 
+@pure
 @internal
-@view
 def get_D(A: uint256, xp: uint256[N_COINS]) -> uint256:
     S: uint256 = 0
     for _x in xp:
@@ -233,8 +233,8 @@ def get_D(A: uint256, xp: uint256[N_COINS]) -> uint256:
     return D
 
 
+@pure
 @internal
-@view
 def get_y(A: uint256, i: int128, _xp: uint256[N_COINS], D: uint256) -> uint256:
     """
     Calculate x[i] if one reduces D from being calculated for _xp to D
@@ -279,8 +279,8 @@ def get_y(A: uint256, i: int128, _xp: uint256[N_COINS], D: uint256) -> uint256:
     return y
 
 
-@internal
 @view
+@internal
 def _calc_withdraw_one_coin(_token_amount: uint256, i: int128, rates: uint256[N_COINS]) -> uint256:
     # First, need to calculate
     # * Get current D
@@ -326,8 +326,8 @@ def _calc_withdraw_one_coin(_token_amount: uint256, i: int128, rates: uint256[N_
     return dy
 
 
-@external
 @view
+@external
 def calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> uint256:
     rates: uint256[N_COINS] = empty(uint256[N_COINS])
     use_lending: bool[N_COINS] = USE_LENDING
