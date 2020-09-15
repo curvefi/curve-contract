@@ -318,8 +318,9 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256):
     fees: uint256[N_COINS] = empty(uint256[N_COINS])
     _fee: uint256 = self.fee * N_COINS / (4 * (N_COINS - 1))
     _admin_fee: uint256 = self.admin_fee
+    _lp_token: address = self.lp_token
 
-    token_supply: uint256 = ERC20(self.lp_token).totalSupply()
+    token_supply: uint256 = ERC20(_lp_token).totalSupply()
     rates: uint256[N_COINS] = self._stored_rates()
     # Initial invariant
     D0: uint256 = 0
@@ -372,7 +373,7 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256):
             assert ERC20(self.coins[i]).transferFrom(msg.sender, self, amounts[i])
 
     # Mint pool tokens
-    CurveToken(self.lp_token).mint(msg.sender, mint_amount)
+    CurveToken(_lp_token).mint(msg.sender, mint_amount)
 
     log AddLiquidity(msg.sender, amounts, fees, D1, token_supply + mint_amount)
 
@@ -569,9 +570,10 @@ def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS]):
     fees: uint256[N_COINS] = empty(uint256[N_COINS])
 
     for i in range(N_COINS):
-        value: uint256 = self.balances[i] * _amount / total_supply
+        _balance: uint256 = self.balances[i]
+        value: uint256 = _balance * _amount / total_supply
         assert value >= min_amounts[i], "Withdrawal resulted in fewer coins than expected"
-        self.balances[i] -= value
+        self.balances[i] = _balance - value
         amounts[i] = value
         assert ERC20(self.coins[i]).transfer(msg.sender, value)
 
@@ -585,7 +587,8 @@ def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS]):
 def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint256):
     assert not self.is_killed
 
-    token_supply: uint256 = ERC20(self.lp_token).totalSupply()
+    _lp_token: address = self.lp_token
+    token_supply: uint256 = ERC20(_lp_token).totalSupply()
     assert token_supply != 0
     _fee: uint256 = self.fee * N_COINS / (4 * (N_COINS - 1))
     _admin_fee: uint256 = self.admin_fee
@@ -614,7 +617,7 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint2
     assert token_amount != 0
     assert token_amount <= max_burn_amount, "Slippage screwed you"
 
-    CurveToken(self.lp_token).burnFrom(msg.sender, token_amount)  # dev: insufficient funds
+    CurveToken(_lp_token).burnFrom(msg.sender, token_amount)  # dev: insufficient funds
     for i in range(N_COINS):
         if amounts[i] != 0:
             assert ERC20(self.coins[i]).transfer(msg.sender, amounts[i])
