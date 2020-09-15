@@ -292,6 +292,8 @@ def registry(
     if next((i for i in wrapped_coins if hasattr(i, "get_rate")), False):
         contract = next(i for i in wrapped_coins if hasattr(i, "get_rate"))
         rate_sig = right_pad(contract.get_rate.signature)
+    has_initial_A = hasattr(swap, "initial_A")
+    is_v1 = pool_data['lp_contract'] == "CurveTokenV1"
 
     if hasattr(swap, "underlying_coins"):
         registry.add_pool(
@@ -302,10 +304,12 @@ def registry(
             rate_sig,
             pack_values(wrapped_decimals),
             pack_values(underlying_decimals),
-            hasattr(swap, "initial_A"),
+            has_initial_A,
+            is_v1,
             {'from': alice}
         )
     else:
+        use_rates = [i['wrapped'] for i in pool_data['coins']] + [False] * (8 - n_coins)
         registry.add_pool_without_underlying(
             swap,
             n_coins,
@@ -313,8 +317,9 @@ def registry(
             ZERO_ADDRESS,
             rate_sig,
             pack_values(underlying_decimals),
-            pack_values([True] + [False] * 7),
-            hasattr(swap, "initial_A"),
+            pack_values(use_rates),
+            has_initial_A,
+            is_v1,
             {'from': alice}
         )
 

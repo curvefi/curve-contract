@@ -4,7 +4,7 @@ from hypothesis import settings
 from simulation import Curve
 
 # do not run this test on pools without lending
-pytestmark = pytest.mark.lending()
+pytestmark = pytest.mark.lending
 
 
 @given(

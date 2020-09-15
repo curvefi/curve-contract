@@ -29,7 +29,7 @@ def test_amount_dy(registry, swap, send, recv):
     assert registry.get_exchange_amount(swap, send_address, recv_address, 10**18) == dy
 
 
-@pytest.mark.skip_pool("ren", "sbtc")
+@pytest.mark.lending
 @pytest.mark.itercoins("send", "recv")
 def test_amount_dy_underlying(registry, swap, send, recv):
     dy = swap.get_dy_underlying(send, recv, 10**18)
@@ -38,6 +38,7 @@ def test_amount_dy_underlying(registry, swap, send, recv):
     assert registry.get_exchange_amount(swap, send_address, recv_address, 10**18) == dy
 
 
+@pytest.mark.lending
 @pytest.mark.itercoins("send", "recv")
 def test_exchange(alice, registry, wrapped_coins, swap, send, recv):
     send_token = wrapped_coins[send]
@@ -52,7 +53,7 @@ def test_exchange(alice, registry, wrapped_coins, swap, send, recv):
     assert recv_token.balanceOf(alice) / expected == pytest.approx(1)
 
 
-@pytest.mark.skip_pool("ren", "sbtc")
+@pytest.mark.lending
 @pytest.mark.itercoins("send", "recv")
 def test_exchange_underlying(alice, registry, underlying_coins, swap, send, recv):
     send_token = underlying_coins[send]
