@@ -110,15 +110,17 @@ def add_liquidity(uamounts: uint256[N_COINS], min_mint_amount: uint256):
 
             # Mint if needed
             if use_lending[i]:
-                yERC20(self.coins[i]).deposit(uamount)
-                amounts[i] = ERC20(self.coins[i]).balanceOf(self)
+                _coin: address = self.coins[i]
+                yERC20(_coin).deposit(uamount)
+                amounts[i] = ERC20(_coin).balanceOf(self)
             else:
                 amounts[i] = uamount
 
     Curve(self.curve).add_liquidity(amounts, min_mint_amount)
 
-    tokens: uint256 = ERC20(self.token).balanceOf(self)
-    assert ERC20(self.token).transfer(msg.sender, tokens)
+    _token: address = self.token
+    tokens: uint256 = ERC20(_token).balanceOf(self)
+    assert ERC20(_token).transfer(msg.sender, tokens)
 
 
 @internal
@@ -245,7 +247,8 @@ def get_y(A: uint256, i: int128, _xp: uint256[N_COINS], D: uint256) -> uint256:
     """
     # x in the input is converted to the same price/precision
 
-    assert (i >= 0) and (i < N_COINS)
+    assert i >= 0
+    assert i < N_COINS
 
     c: uint256 = D
     S_: uint256 = 0
