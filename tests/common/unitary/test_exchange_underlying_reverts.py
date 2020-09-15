@@ -1,7 +1,7 @@
 import brownie
 import pytest
 
-pytestmark = pytest.mark.skip_pool("hbtc", "ren", "sbtc")
+pytestmark = pytest.mark.lending()
 
 
 @pytest.fixture(scope="module", autouse=True)

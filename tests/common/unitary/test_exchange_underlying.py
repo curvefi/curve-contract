@@ -4,7 +4,7 @@ import pytest
 from pytest import approx
 
 
-pytestmark = pytest.mark.skip_pool("hbtc", "ren", "sbtc")
+pytestmark = pytest.mark.lending()
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -64,6 +64,6 @@ def test_min_dy_underlying(bob, swap, underlying_coins, sending, receiving, unde
     underlying_coins[sending]._mint_for_testing(bob, amount, {'from': bob})
 
     min_dy = swap.get_dy(sending, receiving, amount)
-    swap.exchange_underlying(sending, receiving, amount, min_dy, {'from': bob})
+    swap.exchange_underlying(sending, receiving, amount, min_dy - 1, {'from': bob})
 
     assert abs(underlying_coins[receiving].balanceOf(bob) - min_dy) <= 1

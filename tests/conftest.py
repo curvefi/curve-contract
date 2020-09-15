@@ -3,7 +3,10 @@ import pytest
 
 from brownie.project.main import get_loaded_projects
 from pathlib import Path
+
+from brownie_hooks import DECIMALS as hook_decimals
 from scripts.utils import right_pad, pack_values
+
 
 # functions in wrapped methods are renamed to simplify common tests
 
@@ -35,6 +38,7 @@ def pytest_configure(config):
     # add custom markers
     config.addinivalue_line("markers", "target_pool: run test against one or more specific pool")
     config.addinivalue_line("markers", "skip_pool: exclude one or more pools in this test")
+    config.addinivalue_line("markers", "lending: only run test against pools that involve lending")
     config.addinivalue_line(
         "markers",
         "itercoins: parametrize a test with one or more ranges, equal to the length "
@@ -48,7 +52,29 @@ def pytest_sessionstart():
     for path in [i for i in project._path.glob("contracts/pools/*") if i.is_dir()]:
         with path.joinpath('pooldata.json').open() as fp:
             _pooldata[path.name] = json.load(fp)
-            _pooldata[path.name]['name'] = path.name
+            _pooldata[path.name].update(
+                name=path.name,
+                swap_contract=next(i.stem for i in path.glob(f"StableSwap*"))
+            )
+
+    # create pooldata for templates
+    lp_contract = sorted(i._name for i in project if i._name.startswith("CurveToken"))[-1]
+    _pooldata['template-y'] = {
+        "name": "template-y",
+        "swap_contract": "StableSwapYLend",
+        "lp_contract": lp_contract,
+        "wrapped_contract": "yERC20",
+        "coins": [
+            {"decimals": i, "tethered": bool(i), "wrapped": True, "wrapped_decimals": i}
+            for i in hook_decimals
+        ]
+    }
+    _pooldata['template-base'] = {
+        "name": "template-base",
+        "swap_contract": "StableSwapBase",
+        "lp_contract": lp_contract,
+        "coins": [{"decimals": i, "tethered": bool(i), "wrapped": False} for i in hook_decimals]
+    }
 
 
 def pytest_generate_tests(metafunc):
@@ -72,6 +98,7 @@ def pytest_generate_tests(metafunc):
 
 
 def pytest_collection_modifyitems(config, items):
+    project = get_loaded_projects()[0]
     for item in items.copy():
         try:
             params = item.callspec.params
@@ -95,6 +122,13 @@ def pytest_collection_modifyitems(config, items):
         # apply `target_pool` marker
         for marker in item.iter_markers(name="target_pool"):
             if params["pool_data"] not in marker.args:
+                items.remove(item)
+                continue
+
+        # apply `lending` marker
+        for marker in item.iter_markers(name="lending"):
+            deployer = getattr(project, data['swap_contract'])
+            if "exchange_underlying" not in deployer.signatures:
                 items.remove(item)
                 continue
 
@@ -218,9 +252,7 @@ def pool_token(project, alice, pool_data):
 @pytest.fixture(scope="module")
 @pytest.mark.parametrize()
 def swap(project, alice, underlying_coins, wrapped_coins, pool_token, pool_data):
-    name = pool_data['name']
-    swap_name = next(i.stem for i in project._path.glob(f"contracts/pools/{name}/StableSwap*"))
-    deployer = getattr(project, swap_name)
+    deployer = getattr(project, pool_data['swap_contract'])
 
     abi = next(i['inputs'] for i in deployer.abi if i['type'] == "constructor")
     args = {
@@ -260,6 +292,8 @@ def registry(
     if next((i for i in wrapped_coins if hasattr(i, "get_rate")), False):
         contract = next(i for i in wrapped_coins if hasattr(i, "get_rate"))
         rate_sig = right_pad(contract.get_rate.signature)
+    has_initial_A = hasattr(swap, "initial_A")
+    is_v1 = pool_data['lp_contract'] == "CurveTokenV1"
 
     if hasattr(swap, "underlying_coins"):
         registry.add_pool(
@@ -270,10 +304,12 @@ def registry(
             rate_sig,
             pack_values(wrapped_decimals),
             pack_values(underlying_decimals),
-            hasattr(swap, "initial_A"),
+            has_initial_A,
+            is_v1,
             {'from': alice}
         )
     else:
+        use_rates = [i['wrapped'] for i in pool_data['coins']] + [False] * (8 - n_coins)
         registry.add_pool_without_underlying(
             swap,
             n_coins,
@@ -281,8 +317,9 @@ def registry(
             ZERO_ADDRESS,
             rate_sig,
             pack_values(underlying_decimals),
-            pack_values([True] + [False] * 7),
-            hasattr(swap, "initial_A"),
+            pack_values(use_rates),
+            has_initial_A,
+            is_v1,
             {'from': alice}
         )
 

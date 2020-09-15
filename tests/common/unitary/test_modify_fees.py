@@ -35,8 +35,7 @@ def test_commit_already_active(alice, swap):
         swap.commit_new_fee(23, 42, {'from': alice})
 
 
-@pytest.mark.skip_pool("hbtc")
-@pytest.mark.parametrize("fee", [MAX_ADMIN_FEE+1, 2**127, 2**256-1])
+@pytest.mark.parametrize("fee", [2**127, 2**256-1])
 def test_commit_admin_fee_too_high(alice, swap, fee):
     with brownie.reverts():
         swap.commit_new_fee(0, fee, {'from': alice})

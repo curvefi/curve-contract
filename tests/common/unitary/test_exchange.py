@@ -55,6 +55,6 @@ def test_min_dy(bob, swap, wrapped_coins, sending, receiving, wrapped_decimals):
     wrapped_coins[sending]._mint_for_testing(bob, amount, {'from': bob})
 
     min_dy = swap.get_dy(sending, receiving, amount)
-    swap.exchange(sending, receiving, amount, min_dy, {'from': bob})
+    swap.exchange(sending, receiving, amount, min_dy-1, {'from': bob})
 
     assert abs(wrapped_coins[receiving].balanceOf(bob) - min_dy) <= 1

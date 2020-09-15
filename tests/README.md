@@ -22,6 +22,8 @@ To run tests on a specific pool:
 pytest tests --pool <POOL NAME>
 ```
 
+To run against one of the templates, use `template-base` or `template-y`.
+
 You can optionally include the `--coverage` flag to view a coverage report upon completion of the tests.
 
 ## Fixtures
@@ -66,6 +68,16 @@ Only run the given test against one or more pools specified in the marker.
 ```python
 @pytest.mark.target_pool("ren", "sbtc")
 def test_btc_pools(swap):
+    ...
+```
+
+### `lending`
+
+Only run the given test against pools that involve lending.
+
+```python
+@pytest.mark.lending
+def test_underlying(swap):
     ...
 ```
 

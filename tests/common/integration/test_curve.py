@@ -64,7 +64,12 @@ def test_curve_in_contract(
         dx_c = dx * 10 ** 18 // rates[send]
 
         dy_1_c = swap.get_dy(send, recv, dx_c)
-        dy_1_u = swap.get_dy_underlying(send, recv, dx)
+
+        if hasattr(swap, "get_dy_underlying"):
+            dy_1_u = swap.get_dy_underlying(send, recv, dx)
+        else:
+            dy_1_u = dy_1_c
+
         dy_1 = dy_1_c * rates[recv] // 10 ** 18
 
         dy_2 = curve_model.dy(send, recv, dx * (10 ** (18 - coin_data[send]['decimals'])))
