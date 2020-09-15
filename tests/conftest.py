@@ -3,7 +3,10 @@ import pytest
 
 from brownie.project.main import get_loaded_projects
 from pathlib import Path
+
+from brownie_hooks import DECIMALS as hook_decimals
 from scripts.utils import right_pad, pack_values
+
 
 # functions in wrapped methods are renamed to simplify common tests
 
@@ -48,7 +51,29 @@ def pytest_sessionstart():
     for path in [i for i in project._path.glob("contracts/pools/*") if i.is_dir()]:
         with path.joinpath('pooldata.json').open() as fp:
             _pooldata[path.name] = json.load(fp)
-            _pooldata[path.name]['name'] = path.name
+            _pooldata[path.name].update(
+                name=path.name,
+                swap_contract=next(i.stem for i in path.glob(f"StableSwap*"))
+            )
+
+    # create pooldata for templates
+    lp_contract = sorted(i._name for i in project if i._name.startswith("CurveToken"))[-1]
+    _pooldata['template-y'] = {
+        "name": "template-y",
+        "swap_contract": "StableSwapYLend",
+        "lp_contract": lp_contract,
+        "wrapped_contract": "yERC20",
+        "coins": [
+            {"decimals": i, "tethered": bool(i), "wrapped": True, "wrapped_decimals": i}
+            for i in hook_decimals
+        ]
+    }
+    _pooldata['template-base'] = {
+        "name": "template-base",
+        "swap_contract": "StableSwapBase",
+        "lp_contract": lp_contract,
+        "coins": [{"decimals": i, "tethered": bool(i), "wrapped": False} for i in hook_decimals]
+    }
 
 
 def pytest_generate_tests(metafunc):
@@ -218,9 +243,7 @@ def pool_token(project, alice, pool_data):
 @pytest.fixture(scope="module")
 @pytest.mark.parametrize()
 def swap(project, alice, underlying_coins, wrapped_coins, pool_token, pool_data):
-    name = pool_data['name']
-    swap_name = next(i.stem for i in project._path.glob(f"contracts/pools/{name}/StableSwap*"))
-    deployer = getattr(project, swap_name)
+    deployer = getattr(project, pool_data['swap_contract'])
 
     abi = next(i['inputs'] for i in deployer.abi if i['type'] == "constructor")
     args = {
