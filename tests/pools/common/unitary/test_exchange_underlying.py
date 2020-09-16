@@ -3,24 +3,7 @@ from itertools import combinations_with_replacement
 import pytest
 from pytest import approx
 
-
-pytestmark = pytest.mark.lending()
-
-
-@pytest.fixture(scope="module", autouse=True)
-def setup(alice, bob, underlying_coins, wrapped_coins, swap, initial_amounts):
-    # mint (10**6 * precision) of each coin in the pool
-    for underlying, wrapped, amount in zip(underlying_coins, wrapped_coins, initial_amounts):
-        underlying._mint_for_testing(alice, amount, {'from': alice})
-        underlying.approve(wrapped, 2**256-1, {'from': alice})
-        wrapped.approve(swap, 2**256-1, {'from': alice})
-        if hasattr(wrapped, "mint"):
-            wrapped.mint(amount, {'from': alice})
-
-    for coin in underlying_coins:
-        coin.approve(swap, 2**256-1, {'from': bob})
-
-    swap.add_liquidity(initial_amounts, 0, {'from': alice})
+pytestmark = [pytest.mark.usefixtures("add_initial_liquidity", "approve_bob"), pytest.mark.lending]
 
 
 @pytest.mark.itercoins("sending", "receiving")

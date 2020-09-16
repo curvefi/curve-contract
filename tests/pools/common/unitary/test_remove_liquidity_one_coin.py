@@ -1,19 +1,11 @@
 import brownie
 import pytest
 
-pytestmark = pytest.mark.skip_pool("busd", "compound", "pax", "susd", "usdt", "y")
+pytestmark = [
+    pytest.mark.skip_pool("busd", "compound", "pax", "susd", "usdt", "y"),
+    pytest.mark.usefixtures("add_initial_liquidity"),
+]
 
-
-@pytest.fixture(scope="module", autouse=True)
-def setup(alice, wrapped_coins, swap, initial_amounts):
-    # mint (10**6 * precision) of each coin in the pool for alice and bob
-    # alice provides all of her balances as the initial liquidity
-
-    for coin, amount in zip(wrapped_coins, initial_amounts):
-        coin._mint_for_testing(alice, amount, {'from': alice})
-        coin.approve(swap, 2**256-1, {'from': alice})
-
-    swap.add_liquidity(initial_amounts, 0, {'from': alice})
 
 
 @pytest.mark.itercoins("idx")

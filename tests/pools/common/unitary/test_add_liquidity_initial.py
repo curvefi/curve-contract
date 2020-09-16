@@ -1,15 +1,16 @@
 import brownie
 import pytest
 
-pytestmark = pytest.mark.usefixtures("add_initial_liquidity", "mint_bob", "approve_bob")
+pytestmark = pytest.mark.usefixtures("mint_alice", "approve_alice")
+
 
 @pytest.mark.parametrize("min_amount", [0, 2 * 10**18])
-def test_initial(alice, swap, wrapped_coins, pool_token, min_amount, wrapped_decimals, n_coins):
+def test_initial(alice, swap, wrapped_coins, pool_token, min_amount, wrapped_decimals, n_coins, initial_amounts):
     amounts = [10**i for i in wrapped_decimals]
     swap.add_liquidity(amounts, min_amount, {'from': alice})
 
-    for coin, amount in zip(wrapped_coins, amounts):
-        assert coin.balanceOf(alice) == 10**24 - amount
+    for coin, amount, initial in zip(wrapped_coins, amounts, initial_amounts):
+        assert coin.balanceOf(alice) == initial - amount
         assert coin.balanceOf(swap) == amount
 
     assert pool_token.balanceOf(alice) == n_coins * 10**18

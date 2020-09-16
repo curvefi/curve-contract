@@ -1,14 +1,7 @@
 import brownie
 import pytest
 
-
-@pytest.fixture(scope="module", autouse=True)
-def setup(alice, wrapped_coins, swap, initial_amounts):
-    for coin, amount in zip(wrapped_coins, initial_amounts):
-        coin._mint_for_testing(alice, amount, {'from': alice})
-        coin.approve(swap, 2**256-1, {'from': alice})
-
-    swap.add_liquidity(initial_amounts, 0, {'from': alice})
+pytestmark = pytest.mark.usefixtures("add_initial_liquidity")
 
 
 @pytest.mark.parametrize("divisor", [2, 5, 10])

@@ -6,14 +6,7 @@ MAX_FEE = 5 * 10**9
 
 
 @pytest.fixture(scope="module", autouse=True)
-def setup(alice, bob, wrapped_coins, swap, initial_amounts, set_fees):
-    for coin, amount in zip(wrapped_coins, initial_amounts):
-        coin._mint_for_testing(alice, amount, {'from': alice})
-        coin._mint_for_testing(bob, amount, {'from': bob})
-        coin.approve(swap, 2**256-1, {'from': alice})
-        coin.approve(swap, 2**256-1, {'from': bob})
-
-    swap.add_liquidity(initial_amounts, 0, {'from': alice})
+def setup(alice, add_initial_liquidity, mint_bob, approve_bob, set_fees):
     set_fees(MAX_FEE, MAX_FEE)
 
 
