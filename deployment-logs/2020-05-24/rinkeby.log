@@ -1,0 +1,164 @@
+Brownie v1.8.7 - Python development framework for Ethereum
+
+CurveDaoContractsProject is the active project.
+
+Running 'scripts.deploy_testnet.main'...
+Transaction sent: 0x379964fdc1cdf49b429863d1f4a06f12315562e255de2d60cac6fc385abd4c4f
+  Gas price: 1.2 gwei   Gas limit: 492671
+Waiting for confirmation...
+  ERC20.constructor confirmed - Block: 6543643   Gas used: 492671 (100.00%)
+  ERC20 deployed at: 0xEBc7BfbE49A5e7E0fCdE2eeCD726E17F56eaa6D0
+
+Transaction sent: 0x1c746d33c6117f84fb94eee8af5b523c0866b2d811228de169fbc8254605d868
+  Gas price: 1.2 gwei   Gas limit: 65187
+Waiting for confirmation...
+  ERC20._mint_for_testing confirmed - Block: 6543644   Gas used: 65187 (100.00%)
+
+Transaction sent: 0xa317b676c27ce0e64d784732e45d1e875aa5da9c80bb68bd19caaf868753a768
+  Gas price: 1.2 gwei   Gas limit: 492671
+Waiting for confirmation...
+  ERC20.constructor confirmed - Block: 6543645   Gas used: 492671 (100.00%)
+  ERC20 deployed at: 0xF8753D4A3E7bA2dC126C22cB4C80245e5ab0468e
+
+Transaction sent: 0xc33a68fea30b3bbd1cfa5ef76ff3aabbf7a10c559c2c6ca7f1e0c4d408d1a63c
+  Gas price: 1.2 gwei   Gas limit: 65187
+Waiting for confirmation...
+  ERC20._mint_for_testing confirmed - Block: 6543646   Gas used: 65187 (100.00%)
+
+Transaction sent: 0x216313dbb906ac13240ae14dcd05c2d5a564ff0c58c4d68418cb6d79ed4447cf
+  Gas price: 1.2 gwei   Gas limit: 677473
+Waiting for confirmation...
+  ERC20LP.constructor confirmed - Block: 6543647   Gas used: 677473 (100.00%)
+  ERC20LP deployed at: 0x437E2FB6153b1a0BfCa5bC5007F647FfDc4EfB89
+
+Transaction sent: 0x2eeae24fa5b0c56b0c08d4b5ff581e89f73014c6589dd6efd6e1dd006e98f467
+  Gas price: 1.2 gwei   Gas limit: 4724652
+Waiting for confirmation...
+  CurvePool.constructor confirmed - Block: 6543648   Gas used: 4724652 (100.00%)
+  CurvePool deployed at: 0x797Aa8eCC4E51016DecD3B5664AAbb14f41F2620
+
+Transaction sent: 0xb00a5d1eea3edc5470acae2de83b106e81913a45fa4fffc51bf7aa730b4f55ca
+  Gas price: 1.2 gwei   Gas limit: 27444
+Waiting for confirmation...
+  ERC20LP.set_minter confirmed - Block: 6543649   Gas used: 27444 (100.00%)
+
+Transaction sent: 0x627103307158de80cb0d59d3d91494ec6a6dde9fe475f68653ef02dee206f4d0
+  Gas price: 1.2 gwei   Gas limit: 3209303
+Waiting for confirmation...
+  Registry.constructor confirmed - Block: 6543650   Gas used: 3209303 (100.00%)
+  Registry deployed at: 0x8A3c46A85593df01Dcaa4149e45E36f38410a84c
+
+Transaction sent: 0x3530bf172805eb3c657bcc387a1d401e1f2ffff699822a104a4a39e39f83fd88
+  Gas price: 1.2 gwei   Gas limit: 50556
+Waiting for confirmation...
+  ERC20.transfer confirmed - Block: 6543651   Gas used: 50556 (100.00%)
+
+Transaction sent: 0x6961176afd12dd748007acc35cdfafffc85a0078d0f8044c133d96ad275cc1b2
+  Gas price: 1.2 gwei   Gas limit: 50556
+Waiting for confirmation...
+  ERC20.transfer confirmed - Block: 6543652   Gas used: 50556 (100.00%)
+
+Transaction sent: 0xdd9bd7231dc6f3177d642194be2076ad91fc4a1471b43de6298425700e58e072
+  Gas price: 1.2 gwei   Gas limit: 50556
+Waiting for confirmation...
+  ERC20.transfer confirmed - Block: 6543653   Gas used: 50556 (100.00%)
+
+Transaction sent: 0x3ec18408021676a4a579715860d5b1464e8ab4b6022b243eb66162df32cec2d0
+  Gas price: 1.2 gwei   Gas limit: 50556
+Waiting for confirmation...
+  ERC20.transfer confirmed - Block: 6543654   Gas used: 50556 (100.00%)
+
+Transaction sent: 0x498f60f9ce99b2a9bc24dca427aafeec0d7df870412de46699412123f9159b3d
+  Gas price: 1.2 gwei   Gas limit: 65535
+Waiting for confirmation...
+  CurvePool.commit_transfer_ownership confirmed - Block: 6543655   Gas used: 65535 (100.00%)
+
+Transaction sent: 0x331503a144517f92a01a2c7d839ccdaaaf8ee59aca39ec9b2fdc7c7da42eba3a
+  Gas price: 1.2 gwei   Gas limit: 36342
+Waiting for confirmation...
+  CurvePool.apply_transfer_ownership confirmed - Block: 6543656   Gas used: 21342 (58.73%)
+
+Transaction sent: 0x8cd32b6a75232aeb8c23b6b15c90aadc1c8b19fdcd06acd9aac92bdfc97cc496
+  Gas price: 1.2 gwei   Gas limit: 65312
+Waiting for confirmation...
+  Registry.commit_transfer_ownership confirmed - Block: 6543657   Gas used: 65312 (100.00%)
+
+Transaction sent: 0x1934dc7d1618587b2811fac73cadb715d9f8aabc71e52b56fed70812a59fd892
+  Gas price: 1.2 gwei   Gas limit: 36184
+Waiting for confirmation...
+  Registry.apply_transfer_ownership confirmed - Block: 6543658   Gas used: 21184 (58.55%)
+
+Transaction sent: 0xeaf350133e8e99a6f2b33e7fab61638953a0082a37d31d79ccb47065654e2464
+  Gas price: 1.2 gwei   Gas limit: 1284741
+Waiting for confirmation...
+  ERC20CRV.constructor confirmed - Block: 6543659   Gas used: 1284741 (100.00%)
+  ERC20CRV deployed at: 0x39d66323AAD2551bbFe68922AAA139d9Dbae652f
+
+Transaction sent: 0x4ee9623319a9c6f130b7ff079318d1005b39d92f0189dfb7f4aa2320e68f9d5f
+  Gas price: 1.2 gwei   Gas limit: 2600442
+Waiting for confirmation...
+  VotingEscrow.constructor confirmed - Block: 6543660   Gas used: 2600442 (100.00%)
+  VotingEscrow deployed at: 0x52272C6092d54A036144221585D176D663D14c4f
+
+Transaction sent: 0x6dc13ced9d36093d76785c1920b353841339fcc942e20dc6552fe19ca9cdfcdb
+  Gas price: 1.2 gwei   Gas limit: 27932
+Waiting for confirmation...
+  VotingEscrow.changeController confirmed - Block: 6543661   Gas used: 27932 (100.00%)
+
+Transaction sent: 0x9eab84e9a26e8b1dc28f2d5c06a24b97bbb8a11b8d1b16fcc0adfe9dc0571330
+  Gas price: 1.2 gwei   Gas limit: 50799
+Waiting for confirmation...
+  ERC20CRV.transfer confirmed - Block: 6543663   Gas used: 50799 (100.00%)
+
+Transaction sent: 0x0cfb4d5b26ea7bac0b86b3e96771360c448dcfaab282e02455bc0574fc4ec2f0
+  Gas price: 1.2 gwei   Gas limit: 50799
+Waiting for confirmation...
+  ERC20CRV.transfer confirmed - Block: 6543664   Gas used: 50799 (100.00%)
+
+Transaction sent: 0xb8bfbdb3a760bfadd696f1562efc1e8b209e77d5c0a75998c2834564fdd99d72
+  Gas price: 1.2 gwei   Gas limit: 1684212
+Waiting for confirmation...
+  GaugeController.constructor confirmed - Block: 6543665   Gas used: 1684212 (100.00%)
+  GaugeController deployed at: 0x56cE6b719F6C2e55812f34F9DA7B9687aB9592d7
+
+Transaction sent: 0x91da5ac5c4631f367c5ba1d6c60e38271762c10b0b55acdbc299964d4696964c
+  Gas price: 1.2 gwei   Gas limit: 296301
+Waiting for confirmation...
+  Minter.constructor confirmed - Block: 6543666   Gas used: 296301 (100.00%)
+  Minter deployed at: 0xA79eCEEB9c746797DBf75998B8551C0DFD70193A
+
+Transaction sent: 0x85890d1663a8566911955a1cb2e36626a980872a4da7ea88daa37f320cf466bc
+  Gas price: 1.2 gwei   Gas limit: 900443
+Waiting for confirmation...
+  LiquidityGauge.constructor confirmed - Block: 6543667   Gas used: 900443 (100.00%)
+  LiquidityGauge deployed at: 0x674276b45e5bF4a32C8E561e2c9e0fC3c0b794a7
+
+Transaction sent: 0x0df61dd2c75bf496c3c31ae0d2fe55155622760878ed01dfd7e135ec009e4a03
+  Gas price: 1.2 gwei   Gas limit: 27600
+Waiting for confirmation...
+  ERC20CRV.set_minter confirmed - Block: 6543668   Gas used: 27600 (100.00%)
+
+Transaction sent: 0xf467ae838bc3d2fab92bd7851b95bf841f27bc0484031790f8fbf8fffbca5bbc
+  Gas price: 1.2 gwei   Gas limit: 84031
+Waiting for confirmation...
+  GaugeController.add_type confirmed - Block: 6543669   Gas used: 84031 (100.00%)
+
+Transaction sent: 0x4144690d175d56916e9426740d06526b1652c286d86b55b56f83d148dd701a27
+  Gas price: 1.2 gwei   Gas limit: 116301
+Waiting for confirmation...
+  GaugeController.change_type_weight confirmed - Block: 6543670   Gas used: 116301 (100.00%)
+
+Transaction sent: 0xc5c64625d2552f127fcc10452f2129600b2fbcebb3ae02d761470ea906e9c608
+  Gas price: 1.2 gwei   Gas limit: 208015
+Waiting for confirmation...
+  GaugeController.add_gauge confirmed - Block: 6543671   Gas used: 208015 (100.00%)
+
+Transaction sent: 0xe4b487cf82e03673106ded10df178681a91d01a27c8c169eb3ce9ab72a55291f
+  Gas price: 1.2 gwei   Gas limit: 27444
+Waiting for confirmation...
+  GaugeController.transfer_ownership confirmed - Block: 6543672   Gas used: 27444 (100.00%)
+
+Transaction sent: 0xfdd73b95b6fa80f3c3817ac6c415df293f0950b2a5f4db85f1b1748def085e35
+  Gas price: 1.2 gwei   Gas limit: 27444
+Waiting for confirmation...
+  VotingEscrow.transfer_ownership confirmed - Block: 6543673   Gas used: 27444 (100.00%)

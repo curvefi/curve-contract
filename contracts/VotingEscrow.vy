@@ -1,16 +1,7 @@
 # @version 0.2.4
-"""
-@title Voting Escrow
-@author Curve Finance
-@license MIT
-@notice Votes have a weight depending on time, so that users are
-        committed to the future of (whatever they are voting for)
-@dev Vote weight decays linearly over time. Lock time cannot be
-     more than `MAXTIME` (4 years).
-"""
 
 # Voting escrow to have time-weighted votes
-# Votes have a weight depending on time, so that users are committed
+# The idea: votes have a weight depending on time, so that users are committed
 # to the future of (whatever they are voting for).
 # The weight in this implementation is linear, and lock cannot be more than maxtime:
 # w ^
@@ -57,13 +48,6 @@ CREATE_LOCK_TYPE: constant(int128) = 1
 INCREASE_LOCK_AMOUNT: constant(int128) = 2
 INCREASE_UNLOCK_TIME: constant(int128) = 3
 
-
-event CommitOwnership:
-    admin: address
-
-event ApplyOwnership:
-    admin: address
-
 event Deposit:
     provider: indexed(address)
     value: uint256
@@ -76,13 +60,9 @@ event Withdraw:
     value: uint256
     ts: uint256
 
-event Supply:
-    prevSupply: uint256
-    supply: uint256
 
-
-WEEK: constant(uint256) = 7 * 86400  # all future times are rounded by week
-MAXTIME: constant(uint256) = 4 * 365 * 86400  # 4 years
+WEEK: constant(uint256) = 604800  # 7 * 86400 seconds - all future times are rounded by week
+MAXTIME: constant(uint256) = 126144000  # 4 * 365 * 86400 - 4 years
 MULTIPLIER: constant(uint256) = 10 ** 18
 
 token: public(address)
@@ -116,13 +96,6 @@ future_admin: public(address)
 
 @external
 def __init__(token_addr: address, _name: String[64], _symbol: String[32], _version: String[32]):
-    """
-    @notice Contract constructor
-    @param token_addr `ERC20CRV` token address
-    @param _name Token name
-    @param _symbol Token symbol
-    @param _version Contract version - required for Aragon compatibility
-    """
     self.admin = msg.sender
     self.token = token_addr
     self.point_history[0].blk = block.number
@@ -145,28 +118,25 @@ def commit_transfer_ownership(addr: address):
     @notice Transfer ownership of VotingEscrow contract to `addr`
     @param addr Address to have ownership transferred to
     """
-    assert msg.sender == self.admin  # dev: admin only
+    assert msg.sender == self.admin
     self.future_admin = addr
-    log CommitOwnership(addr)
 
 
 @external
 def apply_transfer_ownership():
     """
-    @notice Apply ownership transfer
+    @notice Apply ownershipt transfer
     """
-    assert msg.sender == self.admin  # dev: admin only
-    _admin: address = self.future_admin
-    assert _admin != ZERO_ADDRESS  # dev: admin not set
-    self.admin = _admin
-    log ApplyOwnership(_admin)
+    assert msg.sender == self.admin
+    self.admin = self.future_admin
 
 
 @external
 def commit_smart_wallet_checker(addr: address):
     """
-    @notice Set an external contract to check for approved smart contract wallets
-    @param addr Address of Smart contract checker
+    @notice Set an external contract to check whether a smart contract is
+            non-transferrable
+    @param addr Smart contract address for the checker
     """
     assert msg.sender == self.admin
     self.future_smart_wallet_checker = addr
@@ -175,7 +145,8 @@ def commit_smart_wallet_checker(addr: address):
 @external
 def apply_smart_wallet_checker():
     """
-    @notice Apply setting external contract to check approved smart contract wallets
+    @notice Apply setting the external contract to check for legitimate smart
+            contract wallets
     """
     assert msg.sender == self.admin
     self.smart_wallet_checker = self.future_smart_wallet_checker
@@ -184,8 +155,9 @@ def apply_smart_wallet_checker():
 @internal
 def assert_not_contract(addr: address):
     """
-    @notice Check if the call is from a whitelisted smart contract, revert if not
-    @param addr Address to be checked
+    @notice Check if the call is made by a non-whitelisted smart contract:
+            revert if it was
+    @param  addr  Address to be checked
     """
     if addr != tx.origin:
         checker: address = self.smart_wallet_checker
@@ -199,8 +171,8 @@ def assert_not_contract(addr: address):
 @view
 def get_last_user_slope(addr: address) -> int128:
     """
-    @notice Get the most recently recorded rate of voting power decrease for `addr`
-    @param addr Address of the user wallet
+    @notice Get the recent recorded rate of voting power decrease
+    @param  addr  Address of the user wallet
     @return Value of the slope
     """
     uepoch: uint256 = self.user_point_epoch[addr]
@@ -211,10 +183,10 @@ def get_last_user_slope(addr: address) -> int128:
 @view
 def user_point_history__ts(_addr: address, _idx: uint256) -> uint256:
     """
-    @notice Get the timestamp for checkpoint `_idx` for `_addr`
-    @param _addr User wallet address
-    @param _idx User epoch number
-    @return Epoch time of the checkpoint
+    @notice Get the timestamp for the last recorded user's checkpoint
+    @param  _addr  User wallet address
+    @param  _idx   User epoch number
+    @return  Timestamp of the checkpoint
     """
     return self.user_point_history[_addr][_idx].ts
 
@@ -223,9 +195,9 @@ def user_point_history__ts(_addr: address, _idx: uint256) -> uint256:
 @view
 def locked__end(_addr: address) -> uint256:
     """
-    @notice Get timestamp when `_addr`'s lock finishes
+    @notice Get timestamp when user's lock finishes
     @param _addr User wallet
-    @return Epoch time of the lock end
+    @return Timestamp of the lock end
     """
     return self.locked[_addr].end
 
@@ -357,9 +329,8 @@ def _deposit_for(_addr: address, _value: uint256, unlock_time: uint256, locked_b
     @param locked_balance Previous locked amount / timestamp
     """
     _locked: LockedBalance = locked_balance
-    supply_before: uint256 = self.supply
 
-    self.supply = supply_before + _value
+    self.supply += _value
     old_locked: LockedBalance = _locked
     # Adding to existing lock, or if a lock is expired - creating a new one
     _locked.amount += convert(_value, int128)
@@ -377,7 +348,6 @@ def _deposit_for(_addr: address, _value: uint256, unlock_time: uint256, locked_b
         assert ERC20(self.token).transferFrom(_addr, self, _value)
 
     log Deposit(_addr, _value, _locked.end, type, block.timestamp)
-    log Supply(supply_before, supply_before + _value)
 
 
 @external
@@ -392,9 +362,10 @@ def checkpoint():
 @nonreentrant('lock')
 def deposit_for(_addr: address, _value: uint256):
     """
-    @notice Deposit `_value` tokens for `_addr` and add to the lock
-    @dev Anyone (even a smart contract) can deposit for someone else, but
-         cannot extend their locktime and deposit for a brand new user
+    @notice Deposit tokens for someone else and add to the lock
+            Anyone (even a smart contract) can deposit for someone else,
+            but cannot extend their locktime and cannot do it for a brand
+            new user
     @param _addr User's wallet address
     @param _value Amount to add to user's lock
     """
@@ -411,9 +382,10 @@ def deposit_for(_addr: address, _value: uint256):
 @nonreentrant('lock')
 def create_lock(_value: uint256, _unlock_time: uint256):
     """
-    @notice Deposit `_value` tokens for `msg.sender` and lock until `_unlock_time`
-    @param _value Amount to deposit
-    @param _unlock_time Epoch time when tokens unlock, rounded down to whole weeks
+    @notice Deposit tokens for the sender
+    @param _value Amount deposited
+    @param _unlock_time Timestamp when the tokens will unlock. Rounded down
+                        to whole weeks
     """
     self.assert_not_contract(msg.sender)
     unlock_time: uint256 = (_unlock_time / WEEK) * WEEK  # Locktime is rounded down to weeks
@@ -431,8 +403,7 @@ def create_lock(_value: uint256, _unlock_time: uint256):
 @nonreentrant('lock')
 def increase_amount(_value: uint256):
     """
-    @notice Deposit `_value` additional tokens for `msg.sender`
-            without modifying the unlock time
+    @notice Deposit more tokens for the sender while keeping the unlock time unchanged
     @param _value Amount of tokens to deposit and add to the lock
     """
     self.assert_not_contract(msg.sender)
@@ -449,8 +420,8 @@ def increase_amount(_value: uint256):
 @nonreentrant('lock')
 def increase_unlock_time(_unlock_time: uint256):
     """
-    @notice Extend the unlock time for `msg.sender` to `_unlock_time`
-    @param _unlock_time New epoch time for unlocking
+    @notice Prolong the lock for the sender
+    @param _unlock_time New timestamp for unlocking
     """
     self.assert_not_contract(msg.sender)
     _locked: LockedBalance = self.locked[msg.sender]
@@ -468,8 +439,7 @@ def increase_unlock_time(_unlock_time: uint256):
 @nonreentrant('lock')
 def withdraw():
     """
-    @notice Withdraw all tokens for `msg.sender`
-    @dev Only possible if the lock has expired
+    @notice Withdraw all tokens if the lock has expired
     """
     _locked: LockedBalance = self.locked[msg.sender]
     assert block.timestamp >= _locked.end, "The lock didn't expire"
@@ -479,8 +449,7 @@ def withdraw():
     _locked.end = 0
     _locked.amount = 0
     self.locked[msg.sender] = _locked
-    supply_before: uint256 = self.supply
-    self.supply = supply_before - value
+    self.supply -= value
 
     # old_locked can have either expired <= timestamp or zero end
     # _locked has only 0 end
@@ -490,7 +459,6 @@ def withdraw():
     assert ERC20(self.token).transfer(msg.sender, value)
 
     log Withdraw(msg.sender, value, block.timestamp)
-    log Supply(supply_before, supply_before - value)
 
 
 # The following ERC20/minime-compatible methods are not real balanceOf and supply!
@@ -501,7 +469,7 @@ def withdraw():
 @view
 def find_block_epoch(_block: uint256, max_epoch: uint256) -> uint256:
     """
-    @notice Binary search to estimate timestamp for block number
+    @notice Binary search to estimate timetamp for block number
     @param _block Block to find
     @param max_epoch Don't go beyond this epoch
     @return Approximate timestamp for block
@@ -522,20 +490,18 @@ def find_block_epoch(_block: uint256, max_epoch: uint256) -> uint256:
 
 @external
 @view
-def balanceOf(addr: address, _t: uint256 = block.timestamp) -> uint256:
+def balanceOf(addr: address) -> uint256:
     """
-    @notice Get the current voting power for `msg.sender`
-    @dev Adheres to the ERC20 `balanceOf` interface for Aragon compatibility
-    @param addr User wallet address
-    @param _t Epoch time to return voting power at
-    @return User voting power
+    @notice Standard ERC20-compatible balanceOf which actually measures voting power
+    @param addr User's wallet address
+    @return User's voting power
     """
     _epoch: uint256 = self.user_point_epoch[addr]
     if _epoch == 0:
         return 0
     else:
         last_point: Point = self.user_point_history[addr][_epoch]
-        last_point.bias -= last_point.slope * convert(_t - last_point.ts, int128)
+        last_point.bias -= last_point.slope * convert(block.timestamp - last_point.ts, int128)
         if last_point.bias < 0:
             last_point.bias = 0
         return convert(last_point.bias, uint256)
@@ -545,8 +511,7 @@ def balanceOf(addr: address, _t: uint256 = block.timestamp) -> uint256:
 @view
 def balanceOfAt(addr: address, _block: uint256) -> uint256:
     """
-    @notice Measure voting power of `addr` at block height `_block`
-    @dev Adheres to MiniMe `balanceOfAt` interface: https://github.com/Giveth/minime
+    @notice Minime-compatible function to measure voting power at certain block in the past
     @param addr User's wallet address
     @param _block Block to calculate the voting power at
     @return Voting power
@@ -623,15 +588,14 @@ def supply_at(point: Point, t: uint256) -> uint256:
 
 @external
 @view
-def totalSupply(t: uint256 = block.timestamp) -> uint256:
+def totalSupply() -> uint256:
     """
-    @notice Calculate total voting power
-    @dev Adheres to the ERC20 `totalSupply` interface for Aragon compatibility
+    @notice Calculate current total voting power
     @return Total voting power
     """
     _epoch: uint256 = self.epoch
     last_point: Point = self.point_history[_epoch]
-    return self.supply_at(last_point, t)
+    return self.supply_at(last_point, block.timestamp)
 
 
 @external
@@ -640,7 +604,7 @@ def totalSupplyAt(_block: uint256) -> uint256:
     """
     @notice Calculate total voting power at some point in the past
     @param _block Block to calculate the total voting power at
-    @return Total voting power at `_block`
+    @return Total voting power at that block
     """
     assert _block <= block.number
     _epoch: uint256 = self.epoch
@@ -664,8 +628,5 @@ def totalSupplyAt(_block: uint256) -> uint256:
 
 @external
 def changeController(_newController: address):
-    """
-    @dev Dummy method required for Aragon compatibility
-    """
     assert msg.sender == self.controller
     self.controller = _newController

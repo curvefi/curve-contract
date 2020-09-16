@@ -10,30 +10,17 @@ jobs:
   unitary:
     runs-on: ubuntu-latest
 
-    strategy:
-      fail-fast: false
-      matrix:
-        pool: [busd, compound, pax, ren, sbtc, susd, usdt, y]
-
     steps:
     - uses: actions/checkout@v1
-
-    - name: Cache Compiler Installations
-      uses: actions/cache@v2
-      with:
-        path: |
-          ~/.solcx
-          ~/.vvm
-        key: compiler-cache
 
     - name: Setup Node.js
       uses: actions/setup-node@v1
 
     - name: Install Ganache
-      run: npm install -g ganache-cli@6.10.1
+      run: npm install -g ganache-cli@6.9.1
 
     - name: Setup Python 3.8
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v1
       with:
         python-version: 3.8
 
@@ -41,4 +28,50 @@ jobs:
       run: pip install -r requirements.txt
 
     - name: Run Tests
-      run: pytest tests/common --pool ${{ matrix.pool }}
+      run: brownie test tests/unitary -C -n auto
+
+  integration:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v1
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v1
+
+    - name: Install Ganache
+      run: npm install -g ganache-cli@6.9.1
+
+    - name: Setup Python 3.8
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.8
+
+    - name: Install Requirements
+      run: pip install -r requirements.txt
+
+    - name: Run Tests
+      run: brownie test tests/integration -n auto
+
+  gas:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v1
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v1
+
+    - name: Install Ganache
+      run: npm install -g ganache-cli@6.9.1
+
+    - name: Setup Python 3.8
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.8
+
+    - name: Install Requirements
+      run: pip install -r requirements.txt
+
+    - name: Run Tests
+      run: brownie test tests/test_scalability.py --gas

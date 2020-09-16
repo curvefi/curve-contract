@@ -2,9 +2,9 @@ import pytest
 
 
 YEAR = 365 * 86400
-INITIAL_RATE = 274_815_283
+INITIAL_RATE = 279636603
 YEAR_1_SUPPLY = INITIAL_RATE * 10 ** 18 // YEAR * YEAR
-INITIAL_SUPPLY = 1_303_030_303
+INITIAL_SUPPLY = 1_272_727_273
 
 
 def approx(a, b, precision=1e-10):
@@ -62,25 +62,8 @@ def pool_proxy(PoolProxy, accounts):
 
 
 @pytest.fixture(scope="module")
-def coin_reward(ERC20, accounts):
-    yield ERC20.deploy("YFIIIIII Funance", "YFIIIIII", 18, {'from': accounts[0]})
-
-
-@pytest.fixture(scope="module")
-def reward_contract(CurveRewards, mock_lp_token, accounts, coin_reward):
-    contract = CurveRewards.deploy(mock_lp_token, coin_reward, {'from': accounts[0]})
-    contract.setRewardDistribution(accounts[0], {'from': accounts[0]})
-    yield contract
-
-
-@pytest.fixture(scope="module")
 def liquidity_gauge(LiquidityGauge, accounts, mock_lp_token, minter):
     yield LiquidityGauge.deploy(mock_lp_token, minter, {'from': accounts[0]})
-
-
-@pytest.fixture(scope="module")
-def liquidity_gauge_reward(LiquidityGaugeReward, accounts, mock_lp_token, minter, reward_contract, coin_reward):
-    yield LiquidityGaugeReward.deploy(mock_lp_token, minter, reward_contract, coin_reward, {'from': accounts[0]})
 
 
 @pytest.fixture(scope="module")
@@ -91,46 +74,6 @@ def three_gauges(LiquidityGauge, accounts, mock_lp_token, minter):
     ]
 
     yield contracts
-
-
-# VestingEscrow fixtures
-
-@pytest.fixture(scope="module")
-def start_time(chain):
-    yield chain.time() + 1000 + 86400*365
-
-
-@pytest.fixture(scope="module")
-def end_time(start_time):
-    yield start_time + 100000000
-
-
-@pytest.fixture(scope="module")
-def vesting(VestingEscrow, accounts, coin_a, start_time, end_time):
-    contract = VestingEscrow.deploy(coin_a, start_time, end_time, True, accounts[1:5], {'from': accounts[0]})
-    coin_a._mint_for_testing(10**21, {'from': accounts[0]})
-    coin_a.approve(contract, 10**21, {'from': accounts[0]})
-    yield contract
-
-
-@pytest.fixture(scope="module")
-def vesting_target(VestingEscrowSimple, accounts):
-    yield VestingEscrowSimple.deploy({'from': accounts[0]})
-
-
-@pytest.fixture(scope="module")
-def vesting_factory(VestingEscrowFactory, accounts, vesting_target):
-    yield VestingEscrowFactory.deploy(vesting_target, accounts[0], {'from': accounts[0]})
-
-
-@pytest.fixture(scope="module")
-def vesting_simple(VestingEscrowSimple, accounts, vesting_factory, coin_a, start_time):
-    coin_a._mint_for_testing(10**21, {'from': accounts[0]})
-    coin_a.transfer(vesting_factory, 10**21, {'from': accounts[0]})
-    tx = vesting_factory.deploy_vesting_contract(
-        coin_a, accounts[1], 10**20, True, 100000000, start_time, {'from': accounts[0]}
-    )
-    yield VestingEscrowSimple.at(tx.new_contracts[0])
 
 
 # testing contracts

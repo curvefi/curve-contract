@@ -30,19 +30,19 @@ docker run -it <IMAGE_ID> /bin/bash
 
 <br>
 
-##  💻 Development console
+##  💻 Deploy
 
+edit the seed in the python script for the deployment 
 ```
-. ./venv/bin/activate          
-pip install -r requirements.txt
-brownie console
+vim ./scripts/deploy-xdai.py
+```
+
+then run the associated bash script
+```
+./scripts/deploy-xdai.sh
 ```
 <br>
 
-##   Deploy Curve DAO
 
-soon™
-
-<br>
 
 If you have questions or need help please drop into the Aragon [Discord](https://discord.com/invite/remTh8w) support channel!

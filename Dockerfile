@@ -29,8 +29,6 @@ ENV NPM_CONFIG_PREFIX=/home/hacker/.npm-global
 
 ENV PATH=$PATH:/home/hacker/.npm-global/bin:/home/hacker/.local/bin
 
-COPY . .
-
 
 ################################## Setup Node ##################################
 
@@ -60,15 +58,19 @@ RUN npm i -g @aragon/cli
 RUN ( echo "y" && cat) | aragon ipfs install
 
 RUN ipfs init
-    
-RUN python3 -m venv venv
 
 
 ################################## Setup Curve ##################################
 
+    
+RUN python3 -m venv venv
 
-# RUN . ./venv/bin/activate           # <-- CALL INSIDE CONTAINER
-# RUN pip install -r requirements.txt # <-- CALL INSIDE CONTAINER
+COPY . .
+
+RUN sudo chown -R hacker: /home/hacker
+
+RUN sudo chmod +x ./scripts/deploy-rinkeby.sh && \
+    sudo chmod +x ./scripts/deploy-xdai.sh
 
 CMD [ "bash" ] 
 

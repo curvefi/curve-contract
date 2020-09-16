@@ -1,8 +1,6 @@
+.vscode
+.venv
+venv
 __pycache__
-.history
-.hypothesis/
 build/
 reports/
-.venv/
-venv/
-.vscode/

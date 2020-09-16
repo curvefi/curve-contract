@@ -1,9 +1,0 @@
-{
-    "lp_contract": "CurveTokenV1",
-    "wrapped_contract": "cERC20",
-    "coins": [
-        {"decimals": 18, "tethered": false, "wrapped": true, "wrapped_decimals": 18},
-        {"decimals": 6, "tethered": false, "wrapped": true, "wrapped_decimals": 6},
-        {"decimals": 6, "tethered": true, "wrapped": false}
-    ]
-}

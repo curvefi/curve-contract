@@ -1,0 +1,14 @@
+Deploying with: 0xFD3DeCC0cF498bb9f54786cb65800599De505706 
+
+Transaction sent: 0x3bbd64f30f68d4232aee2ce847f6b66c6456f36e9df4d1eb2fd455f0d89aea9b
+  Gas price: 1.0 gwei   Gas limit: 1284741
+Waiting for confirmation...
+  ERC20CRV.constructor confirmed - Block: 6525910   Gas used: 1284741 (100.00%)
+  ERC20CRV deployed at: 0x1F268C7657e264884B56cbFd3e489d0526bF1BFF
+
+Transaction sent: 0x41a1e974c06db715b0a1b6d022b1642c12b8f09cde096e35311c1372d5651fa1
+  Gas price: 1.0 gwei   Gas limit: 2287883
+Waiting for confirmation...
+  VotingEscrow.constructor confirmed - Block: 6525911   Gas used: 2287883 (100.00%)
+  VotingEscrow deployed at: 0x61B3DdC8e0131707919Dad9BBC4fcc6420369ccC
+

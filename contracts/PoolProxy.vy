@@ -1,10 +1,5 @@
-# @version 0.2.4
-"""
-@title Curve StableSwap Proxy
-@author Curve Finance
-@license MIT
-"""
 
+# @version 0.2.4
 from vyper.interfaces import ERC20
 
 interface Burner:
@@ -81,9 +76,6 @@ def commit_set_admins(_o_admin: address, _p_admin: address, _e_admin: address):
 
 @external
 def apply_set_admins():
-    """
-    @notice Apply the effects of `commit_set_admins`
-    """
     assert msg.sender == self.ownership_admin, "Access denied"
 
     _o_admin: address = self.future_ownership_admin
@@ -154,7 +146,7 @@ def burn_coin(_coin: address):
 @nonreentrant('lock')
 def burn_eth():
     """
-    @notice Burn the full ETH balance of this contract
+    @notice Burn ETH 
     """
     Burner(self.burners[ZERO_ADDRESS]).burn_eth(value=self.balance)  # dev: should implement burn_eth()
 
@@ -163,8 +155,8 @@ def burn_eth():
 @nonreentrant('lock')
 def kill_me(_pool: address):
     """
-    @notice Pause the pool `_pool` - only remove_liquidity will be callable
-    @param _pool Pool address to pause
+    @notice Pause a `_pool` pool, remove_liquidity will be able to be called only
+    @param _pool Pool address
     """
     assert msg.sender == self.emergency_admin, "Access denied"
     Curve(_pool).kill_me()
@@ -174,8 +166,8 @@ def kill_me(_pool: address):
 @nonreentrant('lock')
 def unkill_me(_pool: address):
     """
-    @notice Unpause the pool `_pool`, re-enabling all functionality
-    @param _pool Pool address to unpause
+    @notice Unpause a `_pool` pool and enable back all functionality
+    @param _pool Pool address
     """
     assert msg.sender == self.emergency_admin or msg.sender == self.ownership_admin, "Access denied"
     Curve(_pool).unkill_me()
@@ -186,9 +178,9 @@ def unkill_me(_pool: address):
 def commit_transfer_ownership(_pool: address, new_owner: address):
     """
     @notice Transfer ownership for `_pool` pool to `new_owner` address
-    @param _pool Pool which ownership is to be transferred
+    @param _pool Pool which ownership is to be tranaferred
     @param new_owner New pool owner address
-    """
+    """ 
     assert msg.sender == self.ownership_admin, "Access denied"
     Curve(_pool).commit_transfer_ownership(new_owner)
 
