@@ -41,7 +41,7 @@ jobs:
       run: pip install -r requirements.txt
 
     - name: Run Tests
-      run: pytest tests/common/unitary --pool ${{ matrix.pool }}
+      run: pytest tests/pools/common/unitary --pool ${{ matrix.pool }}
 
   integration:
     runs-on: ubuntu-latest
@@ -77,7 +77,7 @@ jobs:
       run: pip install -r requirements.txt
 
     - name: Run Tests
-      run: pytest tests/common/integration --pool ${{ matrix.pool }}
+      run: pytest tests/pools/common/integration --pool ${{ matrix.pool }}
 
   token:
     runs-on: ubuntu-latest
