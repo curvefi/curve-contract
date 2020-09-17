@@ -73,7 +73,7 @@ def test_stop_ramp_A(chain, alice, swap):
     tx = swap.A.transact({'from': alice})
     current_A = tx.return_value
 
-    tx = swap.stop_ramp_A({'from': alice})
+    swap.stop_ramp_A({'from': alice})
 
     assert swap.initial_A() == current_A
     assert swap.future_A() == current_A
