@@ -1,18 +1,7 @@
 import brownie
 import pytest
 
-
-@pytest.fixture(scope="module", autouse=True)
-def setup(alice, bob, wrapped_coins, swap, initial_amounts):
-    # mint (10**6 * precision) of each coin in the pool for alice and bob
-    # alice provides all of her balances as the initial liquidity
-
-    for coin, amount in zip(wrapped_coins, initial_amounts):
-        for acct in (alice, bob):
-            coin._mint_for_testing(acct, amount, {'from': acct})
-            coin.approve(swap, 2**256-1, {'from': acct})
-
-    swap.add_liquidity(initial_amounts, 0, {'from': alice})
+pytestmark = pytest.mark.usefixtures("add_initial_liquidity", "mint_bob", "approve_bob")
 
 
 def test_add_liquidity(bob, swap, wrapped_coins, pool_token, initial_amounts, n_coins):

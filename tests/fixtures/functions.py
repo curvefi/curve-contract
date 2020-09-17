@@ -33,3 +33,12 @@ def set_fees(chain, alice, swap):
             swap.apply_new_parameters({'from': alice})
 
     yield _set_fees
+
+
+@pytest.fixture(scope="session")
+def approx():
+
+    def _approx(a, b, precision=1e-10):
+        return 2 * abs(a - b) / (a + b) <= precision
+
+    yield _approx
