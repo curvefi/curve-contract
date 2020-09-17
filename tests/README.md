@@ -2,9 +2,20 @@
 
 Test cases for Curve pools.
 
+## Subdirectories
+
+* [`fixtures`](fixtures): Pytest fixtures](https://docs.pytest.org/en/latest/fixture.html)
+* [`pools`](pools): Tests for [pool](../contracts/pools) contracts
+* [`token`](token): Tests for [LP token](../contracts/tokens) contracts
+
+## Files
+
+* [`conftest.py`](conftest.py): Base configuration file for the test suite.
+* [`simulation.py`](simulation.py): A python model of the math used within Curve's contracts. Used for testing expected outcomes with actual results.
+
 ## Organization
 
-* Tests are organized according to the specific pool, and then split between integration and unitary tests.
+* Tests are organized by general category, then split between unitary and integration tests.
 * Common tests for all pools are located in [`tests/common`](common).
 * Valid pool names are the names of the subdirectories within [`contracts/pools`](../contracts/pools).
 
@@ -28,25 +39,9 @@ You can optionally include the `--coverage` flag to view a coverage report upon 
 
 ## Fixtures
 
-[Fixtures](https://docs.pytest.org/en/stable/fixture.html) are [parametrized](https://docs.pytest.org/en/stable/parametrize.html) to work with every pool in [`contracts/pools`](../contracts/pools). To add a new pool to the test suite, create a `pooldata.json` in the same subdirectory. You can read about the structure of this JSON file [here](../contracts/pools/README.md).
+Test fixtures are located within the [`tests/fixtures`](fixtures) subdirectory. New fixtures should be added here instead of within the base [`conftest.py`](conftest.py).
 
-Some commonly used fixtures:
-
-### `swap`
-
-A deployed [`StableSwap`](../contracts/pool-templates) contract for the pool being tested.
-
-### `pool_token`
-
-A deployed [`CurveToken`](../contracts/tokens) contract representing the LP token for the active pool.
-
-### `wrapped_coins`
-
-A list of deployed ERC20 contracts representing the lent-out coins in the active pool. If the pool does not support lending, these will be the same as the underlying contracts.
-
-### `underlying_coins`
-
-A list of deployed ERC20 contracts representing the underlying coins in the active pool.
+All fixtures are [documented](fixtures/README.md) within the fixtures subdirectory readme.
 
 ## Markers
 
