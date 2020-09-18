@@ -88,11 +88,16 @@ def pytest_generate_tests(metafunc):
     if "pool_data" in metafunc.fixturenames:
         # parametrize `pool_data`
         test_path = Path(metafunc.definition.fspath).relative_to(project._path)
-        if test_path.parts[:3] == ("tests", "pools", "common"):
-            if metafunc.config.getoption("pool"):
-                params = metafunc.config.getoption("pool").split(',')
+        if test_path.parts[:2] == ("tests", "pools"):
+            if test_path.parts[2] == "common":
+                # run `tests/pools/common` tests against all pools
+                if metafunc.config.getoption("pool"):
+                    params = metafunc.config.getoption("pool").split(',')
+                else:
+                    params = list(_pooldata)
             else:
-                params = list(_pooldata)
+                # run `tests/pools/<POOL>` tests against only the specific pool
+                params = [test_path.parts[2]]
             metafunc.parametrize("pool_data", params, indirect=True, scope="session")
 
         # apply initial parametrization of `itercoins`
@@ -121,20 +126,17 @@ def pytest_collection_modifyitems(config, items):
         for marker in item.iter_markers(name="skip_pool"):
             if params["pool_data"] in marker.args:
                 items.remove(item)
-                continue
 
         # apply `target_pool` marker
         for marker in item.iter_markers(name="target_pool"):
             if params["pool_data"] not in marker.args:
                 items.remove(item)
-                continue
 
         # apply `lending` marker
         for marker in item.iter_markers(name="lending"):
             deployer = getattr(project, data['swap_contract'])
             if "exchange_underlying" not in deployer.signatures:
                 items.remove(item)
-                continue
 
     # hacky magic to ensure the correct number of tests is shown in collection report
     config.pluginmanager.get_plugin("terminalreporter")._numcollected = len(items)
