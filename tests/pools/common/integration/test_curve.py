@@ -6,7 +6,7 @@ from hypothesis import settings
 from itertools import permutations
 from simulation import Curve
 
-pytestmark = pytest.mark.skip_meta
+pytestmark = [pytest.mark.skip_meta, pytest.mark.skip_pool("eth", "template-meta")]
 
 
 @given(

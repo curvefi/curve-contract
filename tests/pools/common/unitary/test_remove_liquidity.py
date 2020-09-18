@@ -13,8 +13,12 @@ def test_remove_liquidity(alice, swap, wrapped_coins, pool_token, min_amount, in
     )
 
     for coin, amount in zip(wrapped_coins, initial_amounts):
-        assert coin.balanceOf(alice) == amount
-        assert coin.balanceOf(swap) == 0
+        if coin == "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE":
+            assert alice.balance() == amount
+            assert swap.balance() == 0
+        else:
+            assert coin.balanceOf(alice) == amount
+            assert coin.balanceOf(swap) == 0
 
     assert pool_token.balanceOf(alice) == 0
     assert pool_token.totalSupply() == 0
@@ -25,8 +29,12 @@ def test_remove_partial(alice, swap, wrapped_coins, pool_token, initial_amounts,
     swap.remove_liquidity(withdraw_amount, [0] * n_coins, {'from': alice})
 
     for coin, amount in zip(wrapped_coins, initial_amounts):
-        pool_balance = coin.balanceOf(swap)
-        alice_balance = coin.balanceOf(alice)
+        if coin == "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE":
+            pool_balance = swap.balance()
+            alice_balance = alice.balance()
+        else:
+            pool_balance = coin.balanceOf(swap)
+            alice_balance = coin.balanceOf(alice)
         assert alice_balance + pool_balance == amount
 
     assert pool_token.balanceOf(alice) == n_coins * 10**18 * base_amount - withdraw_amount

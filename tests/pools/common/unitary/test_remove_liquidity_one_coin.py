@@ -6,6 +6,7 @@ pytestmark = [
     pytest.mark.usefixtures("add_initial_liquidity"),
 ]
 
+ETH_ADDRESS = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
 
 @pytest.mark.itercoins("idx")
 @pytest.mark.parametrize("rate_mod", [0.9, 0.99, 1.01, 1.1])
@@ -42,7 +43,7 @@ def test_lp_token_balance(alice, swap, pool_token, idx, divisor, n_coins, base_a
 
 @pytest.mark.itercoins("idx")
 @pytest.mark.parametrize("rate_mod", [0.9, 1.1])
-def test_expected_vs_actual(chain, alice, swap, wrapped_coins, pool_token, idx, rate_mod):
+def test_expected_vs_actual(chain, alice, swap, wrapped_coins, pool_token, n_coins, idx, rate_mod):
     amount = pool_token.balanceOf(alice) // 10
     wrapped = wrapped_coins[idx]
 
@@ -55,7 +56,12 @@ def test_expected_vs_actual(chain, alice, swap, wrapped_coins, pool_token, idx, 
     expected = swap.calc_withdraw_one_coin(amount, idx)
     swap.remove_liquidity_one_coin(amount, idx, 0, {'from': alice})
 
-    assert wrapped_coins[idx].balanceOf(alice) == expected
+    if wrapped_coins[idx] == ETH_ADDRESS:
+        assert alice.balance() == expected
+    else:
+        assert wrapped_coins[idx].balanceOf(alice) == expected
+
+    assert pool_token.balanceOf(alice) == n_coins * 10**24 - amount
 
 
 @pytest.mark.itercoins("idx")

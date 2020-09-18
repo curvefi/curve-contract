@@ -1,6 +1,7 @@
 import pytest
 
 MAX_FEE = 5 * 10**9
+ETH_ADDRESS = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
 
 
 @pytest.fixture(scope="module", autouse=True, params=[1.1, 0.9])
@@ -23,13 +24,14 @@ def setup(
     chain.sleep(3600)
 
 
-def test_add_liquidity(bob, swap, initial_amounts, n_coins):
+def test_number_go_up(bob, swap, initial_amounts, wrapped_coins, n_coins):
     virtual_price = swap.get_virtual_price()
 
     for i, amount in enumerate(initial_amounts):
         amounts = [0] * n_coins
         amounts[i] = amount
-        swap.add_liquidity(amounts, 0, {'from': bob})
+        value = amount if wrapped_coins[i] == ETH_ADDRESS else 0
+        swap.add_liquidity(amounts, 0, {'from': bob, 'value': value})
 
         new_virtual_price = swap.get_virtual_price()
         assert new_virtual_price > virtual_price

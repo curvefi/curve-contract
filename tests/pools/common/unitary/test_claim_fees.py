@@ -1,8 +1,8 @@
 import brownie
 import pytest
 
-
 MAX_FEE = 5 * 10**9
+ETH_ADDRESS = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -13,12 +13,18 @@ def setup(alice, add_initial_liquidity, mint_bob, approve_bob, set_fees):
 @pytest.mark.itercoins("sending", "receiving")
 def test_admin_balances(alice, bob, swap, wrapped_coins, initial_amounts, sending, receiving):
     for send, recv in [(sending, receiving), (receiving, sending)]:
-        swap.exchange(send, recv, initial_amounts[send], 0, {'from': bob})
+        value = initial_amounts[send] if wrapped_coins[send] == ETH_ADDRESS else 0
+        swap.exchange(send, recv, initial_amounts[send], 0, {'from': bob, 'value': value})
 
     for i in (sending, receiving):
-        admin_fee = wrapped_coins[i].balanceOf(swap) - swap.balances(i)
+        if wrapped_coins[i] == ETH_ADDRESS:
+            admin_fee = swap.balance() - swap.balances(i)
+            assert admin_fee + swap.balances(i) == swap.balance()
+        else:
+            admin_fee = wrapped_coins[i].balanceOf(swap) - swap.balances(i)
+            assert admin_fee + swap.balances(i) == wrapped_coins[i].balanceOf(swap)
+
         assert admin_fee > 0
-        assert admin_fee + swap.balances(i) == wrapped_coins[i].balanceOf(swap)
 
 
 @pytest.mark.itercoins("sending", "receiving")
@@ -26,7 +32,11 @@ def test_withdraw_one_coin(
     alice, bob, swap, wrapped_coins, sending, receiving, initial_amounts, get_admin_balances
 ):
 
-    swap.exchange(sending, receiving, initial_amounts[sending], 0, {'from': bob})
+    value = 0
+    if wrapped_coins[sending] == ETH_ADDRESS:
+        value = initial_amounts[sending]
+
+    swap.exchange(sending, receiving, initial_amounts[sending], 0, {'from': bob, 'value': value})
 
     admin_balances = get_admin_balances()
 
@@ -34,21 +44,31 @@ def test_withdraw_one_coin(
     assert sum(admin_balances) == admin_balances[receiving]
 
     swap.withdraw_admin_fees({'from': alice})
-    assert wrapped_coins[receiving].balanceOf(alice) == admin_balances[receiving]
 
-    assert swap.balances(receiving) == wrapped_coins[receiving].balanceOf(swap)
+    if wrapped_coins[receiving] == ETH_ADDRESS:
+        assert alice.balance() == admin_balances[receiving]
+        assert swap.balances(receiving) == swap.balance()
+    else:
+        assert wrapped_coins[receiving].balanceOf(alice) == admin_balances[receiving]
+        assert swap.balances(receiving) == wrapped_coins[receiving].balanceOf(swap)
 
 
-def test_withdraw_all_coins(alice, bob, swap, wrapped_coins, initial_amounts, get_admin_balances):
-    for send, recv in [(0, 1), (1, 0)]:
-        swap.exchange(send, recv, initial_amounts[send], 0, {'from': bob})
+def test_withdraw_all_coins(
+    alice, bob, swap, wrapped_coins, initial_amounts, get_admin_balances, n_coins
+):
+    for send, recv in zip(range(n_coins), list(range(1, n_coins)) + [0]):
+        value = initial_amounts[send] if wrapped_coins[send] == ETH_ADDRESS else 0
+        swap.exchange(send, recv, initial_amounts[send], 0, {'from': bob, 'value': value})
 
     admin_balances = get_admin_balances()
 
     swap.withdraw_admin_fees({'from': alice})
-    balances = [i.balanceOf(alice) for i in wrapped_coins]
 
-    assert admin_balances == balances
+    for balance, coin in zip(admin_balances, wrapped_coins):
+        if coin == ETH_ADDRESS:
+            assert balance == alice.balance()
+        else:
+            assert coin.balanceOf(alice) == balance
 
 
 def test_withdraw_only_owner(bob, swap):
