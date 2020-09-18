@@ -30,7 +30,7 @@ def setup(alice, bob, bank, coins, base_coins, swap):
 @pytest.mark.parametrize(
     "fee,admin_fee", itertools.combinations_with_replacement([0, 0.04, 0.1337, 0.5], 2)
 )
-@pytest.mark.parametrize("base_volume", [0, 10**7])
+@pytest.mark.parametrize("base_volume", [0, 10**6])
 def test_exchange_underlying(chain, alice, bob, bank, swap, coins, sending, receiving, fee, admin_fee,
                              base_swap, base_coins, base_volume):
     underlying_coins = coins[:-1] + base_coins
@@ -43,8 +43,9 @@ def test_exchange_underlying(chain, alice, bob, bank, swap, coins, sending, rece
 
     if base_volume:
         base_coins[0]._mint_for_testing(alice, base_volume * 10**BASE_PRECISIONS[0], {'from': alice})
-        base_swap.exchange(0, 1, base_volume * 10**BASE_PRECISIONS[0], 0, {'from': alice})
         dump_amount = base_coins[1].balanceOf(alice)
+        base_swap.exchange(0, 1, base_volume * 10**BASE_PRECISIONS[0], 0, {'from': alice})
+        dump_amount = base_coins[1].balanceOf(alice) - dump_amount
         base_swap.exchange(1, 0, dump_amount, 0, {'from': alice})
         chain.sleep(3600)  # Making sure that the metapool will update virtual price
 
@@ -63,7 +64,7 @@ def test_exchange_underlying(chain, alice, bob, bank, swap, coins, sending, rece
     assert underlying_coins[sending].balanceOf(bob) == 0
 
     received = underlying_coins[receiving].balanceOf(bob)
-    assert (0.9999 - fee - base_fee) <= received / 10**underlying_precisions[receiving] <= (1.0001-fee-base_fee)  # XXX
+    assert (0.9999 - fee) * (1 - base_fee) <= received / 10**underlying_precisions[receiving] <= (1.0001 - fee) * (1 - base_fee)
 
     virtual_price = base_swap.get_virtual_price() / 1e18
     base_receiving = min(receiving, N_COINS-1)
