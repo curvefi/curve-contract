@@ -1,3 +1,9 @@
+# default balance of 1 million ether to simplify testing of ETH pools
+networks:
+  development:
+    cmd_settings:
+      default_balance: 10000
+
 # exclude non-core contracts from coverage analysis
 reports:
   exclude_paths:
