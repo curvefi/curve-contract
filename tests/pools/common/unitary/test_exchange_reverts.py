@@ -61,3 +61,15 @@ def test_j_below_zero(bob, swap, idx):
 def test_j_above_n_coins(bob, swap, idx):
     with brownie.reverts():
         swap.exchange(0, idx, 0, 0, {'from': bob})
+
+
+@pytest.mark.skip_pool("eth")
+def test_nonpayable(swap, bob):
+    with brownie.reverts("Cannot send ether to nonpayable function"):
+        swap.exchange(0, 1, 0, 0, {'from': bob, 'value': "1 ether"})
+
+
+@pytest.mark.target_pool("eth")
+def test_incorrect_eth_amount(swap, bob):
+    with brownie.reverts():
+        swap.exchange(1, 0, 0, 0, {'from': bob, 'value': "1 ether"})

@@ -85,3 +85,11 @@ def test_event(bob, swap, pool_token, initial_amounts):
     assert event["provider"] == bob
     assert event['token_amounts'] == initial_amounts
     assert event['token_supply'] == pool_token.totalSupply()
+
+
+def test_wrong_eth_amount(bob, swap, wrapped_coins, pool_token, initial_amounts, n_coins):
+    # for ETH pools, tests sending too much ETH
+    # for non-ETH pools, tests that function is nonpayable
+    value = initial_amounts[0] - 1 if ETH_ADDRESS in wrapped_coins else 1
+    with brownie.reverts():
+        swap.add_liquidity(initial_amounts, 0, {'from': bob, 'value': value})
