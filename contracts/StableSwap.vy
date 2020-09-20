@@ -20,6 +20,7 @@ interface Curve:
     def calc_token_amount(amounts: uint256[BASE_N_COINS], deposit: bool) -> uint256: view
     def calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> uint256: view
     def fee() -> uint256: view
+    def get_dy(i: int128, j: int128, dx: uint256) -> uint256: view
     def get_dy_underlying(i: int128, j: int128, dx: uint256) -> uint256: view
     def exchange(i: int128, j: int128, dx: uint256, min_dy: uint256): nonpayable
     def add_liquidity(amounts: uint256[BASE_N_COINS], min_mint_amount: uint256): nonpayable
@@ -494,7 +495,7 @@ def get_dy_underlying(i: int128, j: int128, dx: uint256) -> uint256:
             x += xp[MAX_COIN]
         else:
             # If both are from the base pool
-            return Curve(_base_pool).get_dy_underlying(base_i, base_j, dx)
+            return Curve(_base_pool).get_dy(base_i, base_j, dx)
 
     # This pool is involved only when in-pool assets are used
     y: uint256 = self.get_y(meta_i, meta_j, x, xp)

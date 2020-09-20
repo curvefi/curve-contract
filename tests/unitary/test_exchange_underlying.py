@@ -2,7 +2,7 @@ import itertools
 
 import pytest
 
-from tests.conftest import PRECISIONS, BASE_PRECISIONS, N_COINS
+from tests.conftest import PRECISIONS, BASE_PRECISIONS, N_COINS, approx
 
 INITIAL_AMOUNTS = [10**(i+6) for i in PRECISIONS]
 BASE_INITIAL_AMOUNTS = [10**(i+6) for i in BASE_PRECISIONS]
@@ -80,12 +80,14 @@ def test_exchange_underlying(chain, alice, bob, bank, swap, coins, sending, rece
         assert swap.admin_balances(base_receiving) == 0
 
 
-@pytest.mark.parametrize("sending,receiving", itertools.permutations(range(4), 2))
-def test_min_dy(bob, bank, swap, coins, sending, receiving):
-    amount = 10**PRECISIONS[sending]
-    coins[sending].transfer(bob, amount, {'from': bank})
+@pytest.mark.parametrize("sending,receiving", itertools.permutations(range(len(PRECISIONS) + len(BASE_PRECISIONS) - 1), 2))
+def test_min_dy_underlying(bob, bank, swap, coins, sending, receiving, base_coins, base_swap):
+    underlying_coins = coins[:-1] + base_coins
+    underlying_precisions = PRECISIONS[:-1] + BASE_PRECISIONS
+    amount = 10**underlying_precisions[sending]
+    underlying_coins[sending].transfer(bob, amount, {'from': bank})
 
-    min_dy = swap.get_dy(sending, receiving, amount)
-    swap.exchange(sending, receiving, amount, min_dy, {'from': bob})
+    min_dy = swap.get_dy_underlying(sending, receiving, amount) - 1  # Something different with get_dy rounding off and safety -1
+    swap.exchange_underlying(sending, receiving, amount, min_dy, {'from': bob})
 
-    assert coins[receiving].balanceOf(bob) == min_dy
+    approx(underlying_coins[receiving].balanceOf(bob), min_dy, 1e-5)
