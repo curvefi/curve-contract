@@ -457,7 +457,7 @@ def exchange(i: int128, j: int128, dx: uint256, min_dy: uint256):
 
     _coin = self.coins[j]
     if _coin == 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE:
-        send(msg.sender, dy)
+        raw_call(msg.sender, b"", value=dy)
     else:
         _response: Bytes[32] = raw_call(
             self.coins[j],
@@ -477,9 +477,12 @@ def exchange(i: int128, j: int128, dx: uint256, min_dy: uint256):
 @external
 @nonreentrant('lock')
 def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS]):
-    total_supply: uint256 = ERC20(self.lp_token).totalSupply()
+    _lp_token: address = self.lp_token
+    total_supply: uint256 = ERC20(_lp_token).totalSupply()
     amounts: uint256[N_COINS] = empty(uint256[N_COINS])
     fees: uint256[N_COINS] = empty(uint256[N_COINS])  # Fees are unused but we've got them historically in event
+
+    CurveToken(_lp_token).burnFrom(msg.sender, _amount)  # dev: insufficient funds
 
     for i in range(N_COINS):
         value: uint256 = self.balances[i] * _amount / total_supply
@@ -489,7 +492,7 @@ def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS]):
         amounts[i] = value
         _coin: address = self.coins[i]
         if _coin == 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE:
-            send(msg.sender, value)
+            raw_call(msg.sender, b"", value=value)
         else:
             _response: Bytes[32] = raw_call(
                 _coin,
@@ -502,8 +505,6 @@ def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS]):
             )  # dev: failed transfer
             if len(_response) > 0:
                 assert convert(_response, bool)
-
-    CurveToken(self.lp_token).burnFrom(msg.sender, _amount)  # dev: insufficient funds
 
     log RemoveLiquidity(msg.sender, amounts, fees, total_supply - _amount)
 
@@ -545,11 +546,12 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint2
     assert token_amount <= max_burn_amount, "Slippage screwed you"
 
     CurveToken(_lp_token).burnFrom(msg.sender, token_amount)  # dev: insufficient funds
+
     for i in range(N_COINS):
         if amounts[i] != 0:
             _coin: address = self.coins[i]
             if _coin == 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE:
-                send(msg.sender, amounts[i])
+                raw_call(msg.sender, b"", value=amounts[i])
             else:
                 _response: Bytes[32] = raw_call(
                     _coin,
@@ -670,7 +672,7 @@ def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_amount: uin
 
     _coin: address = self.coins[i]
     if _coin == 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE:
-        send(msg.sender, dy)
+        raw_call(msg.sender, b"", value=dy)
     else:
         _response: Bytes[32] = raw_call(
             _coin,
@@ -804,6 +806,7 @@ def admin_balances(i: uint256) -> uint256:
 
 
 @external
+@nonreentrant('lock')
 def withdraw_admin_fees():
     assert msg.sender == self.owner  # dev: only owner
 
@@ -812,7 +815,7 @@ def withdraw_admin_fees():
         if coin == 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE:
             value: uint256 = self.balance - self.balances[i]
             if value > 0:
-                send(msg.sender, value)
+                raw_call(msg.sender, b"", value=value)
         else:
             value: uint256 = ERC20(coin).balanceOf(self) - self.balances[i]
             if value > 0:
