@@ -455,9 +455,9 @@ def get_dy(i: int128, j: int128, dx: uint256) -> uint256:
 
     x: uint256 = xp[i] + (dx * rates[i] / PRECISION)
     y: uint256 = self.get_y(i, j, x, xp)
-    dy: uint256 = (xp[j] - y - 1) * PRECISION / rates[j]
+    dy: uint256 = xp[j] - y - 1
     _fee: uint256 = self.fee * dy / FEE_DENOMINATOR
-    return dy - _fee
+    return (dy - _fee) * PRECISION / rates[j]
 
 
 @view
@@ -499,8 +499,9 @@ def get_dy_underlying(i: int128, j: int128, dx: uint256) -> uint256:
 
     # This pool is involved only when in-pool assets are used
     y: uint256 = self.get_y(meta_i, meta_j, x, xp)
-    dy: uint256 = (xp[meta_j] - y - 1) / precisions[meta_j]
+    dy: uint256 = xp[meta_j] - y - 1
     dy -= self.fee * dy / FEE_DENOMINATOR
+    dy /= precisions[meta_j]
 
     # If output is going via the metapool
     if base_j >= 0:
