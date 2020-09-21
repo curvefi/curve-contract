@@ -404,9 +404,9 @@ def get_dy(i: int128, j: int128, dx: uint256) -> uint256:
 
     x: uint256 = xp[i] + (dx * rates[i] / PRECISION)
     y: uint256 = self.get_y(i, j, x, xp)
-    dy: uint256 = (xp[j] - y - 1) * PRECISION / rates[j]
+    dy: uint256 = xp[j] - y - 1
     _fee: uint256 = self.fee * dy / FEE_DENOMINATOR
-    return dy - _fee
+    return (dy - _fee) * PRECISION / rates[j]
 
 
 @payable
