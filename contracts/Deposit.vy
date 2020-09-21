@@ -38,7 +38,12 @@ def __init__(_pool: address, _token: address):
 @external
 @nonreentrant('lock')
 def add_liquidity(amounts: uint256[N_ALL_COINS], min_mint_amount: uint256):
-    pass
+    meta_amounts: uint256[N_COINS] = empty(uint256[N_COINS])  # Ben, Bryant, - wen slicing? :-D
+    for i in range(N_COINS-1):
+        meta_amounts[i] = amounts[i]
+    base_amounts: uint256[BASE_N_COINS] = empty(uint256[BASE_N_COINS])
+    for i in range(BASE_N_COINS):
+        base_amounts[i] = amounts[i + N_COINS-1]
 
 
 @external
