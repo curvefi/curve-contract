@@ -107,7 +107,6 @@ ADMIN_ACTIONS_DELAY: constant(uint256) = 3 * 86400
 MIN_RAMP_TIME: constant(uint256) = 86400
 
 coins: public(address[N_COINS])
-underlying_coins: public(address[N_COINS])
 balances: public(uint256[N_COINS])
 
 fee: public(uint256)  # fee * 1e10
@@ -136,7 +135,6 @@ KILL_DEADLINE_DT: constant(uint256) = 2 * 30 * 86400
 def __init__(
     _owner: address,
     _coins: address[N_COINS],
-    _underlying_coins: address[N_COINS],
     _pool_token: address,
     _A: uint256,
     _fee: uint256,
@@ -146,7 +144,6 @@ def __init__(
     @notice Contract constructor
     @param _owner Contract owner address
     @param _coins Addresses of ERC20 contracts of wrapped coins
-    @param _underlying_coins Addresses of ERC20 contracts of underlying coins
     @param _pool_token Address of the token representing LP share
     @param _A Amplification coefficient multiplied by n * (n - 1)
     @param _fee Fee to charge for exchanges
@@ -154,11 +151,10 @@ def __init__(
     """
     for i in range(N_COINS):
         assert _coins[i] != ZERO_ADDRESS
-        assert _underlying_coins[i] != ZERO_ADDRESS
 
         # approve underlying coins for infinite transfers
         _response: Bytes[32] = raw_call(
-            _underlying_coins[i],
+            _coins[i],
             concat(
                 method_id("approve(address,uint256)"),
                 convert(_coins[i], bytes32),
@@ -170,7 +166,6 @@ def __init__(
             assert convert(_response, bool)
 
     self.coins = _coins
-    self.underlying_coins = _underlying_coins
     self.initial_A = _A
     self.future_A = _A
     self.fee = _fee
@@ -212,7 +207,8 @@ def A() -> uint256:
 @internal
 def _stored_rates() -> uint256[N_COINS]:
     result: uint256[N_COINS] = PRECISION_MUL
-    for i in range(N_COINS):
+    result[4] *= 10**18
+    for i in range(4):
         result[i] *= yERC20(self.coins[i]).getPricePerFullShare()
     return result
 
@@ -439,19 +435,6 @@ def get_dy(i: int128, j: int128, dx: uint256) -> uint256:
 
 @view
 @external
-def get_dx(i: int128, j: int128, dy: uint256) -> uint256:
-    # dx and dy in c-units
-    rates: uint256[N_COINS] = self._stored_rates()
-    xp: uint256[N_COINS] = self._xp(rates)
-
-    y: uint256 = xp[j] - (dy * FEE_DENOMINATOR / (FEE_DENOMINATOR - self.fee)) * rates[j] / PRECISION
-    x: uint256 = self.get_y(j, i, y, xp)
-    dx: uint256 = (x - xp[i]) * PRECISION / rates[i]
-    return dx
-
-
-@view
-@external
 def get_dy_underlying(i: int128, j: int128, dx: uint256) -> uint256:
     # dx and dy in underlying units
     rates: uint256[N_COINS] = self._stored_rates()
@@ -460,29 +443,15 @@ def get_dy_underlying(i: int128, j: int128, dx: uint256) -> uint256:
 
     x: uint256 = xp[i] + dx * precisions[i]
     y: uint256 = self.get_y(i, j, x, xp)
-    dy: uint256 = (xp[j] - y - 1) / precisions[j]
+    dy: uint256 = xp[j] - y - 1
     _fee: uint256 = self.fee * dy / FEE_DENOMINATOR
-    return dy - _fee
+    return (dy - _fee) / precisions[j]
 
 
 @external
-@view
-def get_dx_underlying(i: int128, j: int128, dy: uint256) -> uint256:
-    # dx and dy in underlying units
+@nonreentrant('lock')
+def exchange(i: int128, j: int128, dx: uint256, min_dy: uint256):
     rates: uint256[N_COINS] = self._stored_rates()
-    xp: uint256[N_COINS] = self._xp(rates)
-    precisions: uint256[N_COINS] = PRECISION_MUL
-
-    y: uint256 = xp[j] - (dy * FEE_DENOMINATOR / (FEE_DENOMINATOR - self.fee)) * precisions[j]
-    x: uint256 = self.get_y(j, i, y, xp)
-    dx: uint256 = (x - xp[i]) / precisions[i]
-    return dx
-
-
-@internal
-def _exchange(i: int128, j: int128, dx: uint256, rates: uint256[N_COINS]) -> uint256:
-    assert not self.is_killed
-    # dx and dy are in c-tokens
 
     xp: uint256[N_COINS] = self._xp(rates)
 
@@ -495,70 +464,14 @@ def _exchange(i: int128, j: int128, dx: uint256, rates: uint256[N_COINS]) -> uin
     self.balances[i] = x * PRECISION / rates[i]
     self.balances[j] = (y + (dy_fee - dy_admin_fee)) * PRECISION / rates[j]
 
-    _dy: uint256 = (dy - dy_fee) * PRECISION / rates[j]
+    dy = (dy - dy_fee) * PRECISION / rates[j]
 
-    return _dy
-
-
-@external
-@nonreentrant('lock')
-def exchange(i: int128, j: int128, dx: uint256, min_dy: uint256):
-    rates: uint256[N_COINS] = self._stored_rates()
-    dy: uint256 = self._exchange(i, j, dx, rates)
     assert dy >= min_dy, "Exchange resulted in fewer coins than expected"
 
     assert ERC20(self.coins[i]).transferFrom(msg.sender, self, dx)
     assert ERC20(self.coins[j]).transfer(msg.sender, dy)
 
     log TokenExchange(msg.sender, i, dx, j, dy)
-
-
-@external
-@nonreentrant('lock')
-def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256):
-    rates: uint256[N_COINS] = self._stored_rates()
-    precisions: uint256[N_COINS] = PRECISION_MUL
-    rate_i: uint256 = rates[i] / precisions[i]
-    rate_j: uint256 = rates[j] / precisions[j]
-    dx_: uint256 = dx * PRECISION / rate_i
-
-    dy_: uint256 = self._exchange(i, j, dx_, rates)
-    dy: uint256 = dy_ * rate_j / PRECISION
-    assert dy >= min_dy, "Exchange resulted in fewer coins than expected"
-
-    _response: Bytes[32] = raw_call(
-        self.underlying_coins[i],
-        concat(
-            method_id("transferFrom(address,address,uint256)"),
-            convert(msg.sender, bytes32),
-            convert(self, bytes32),
-            convert(dx, bytes32),
-        ),
-        max_outsize=32,
-    )
-    if len(_response) > 0:
-        assert convert(_response, bool)
-
-    yERC20(self.coins[i]).deposit(dx)
-    yERC20(self.coins[j]).withdraw(dy_)
-
-    # y-tokens calculate imprecisely - use all available
-    dy = ERC20(self.underlying_coins[j]).balanceOf(self)
-    assert dy >= min_dy, "Exchange resulted in fewer coins than expected"
-
-    _response = raw_call(
-        self.underlying_coins[j],
-        concat(
-            method_id("transfer(address,uint256)"),
-            convert(msg.sender, bytes32),
-            convert(dy, bytes32),
-        ),
-        max_outsize=32,
-    )
-    if len(_response) > 0:
-        assert convert(_response, bool)
-
-    log TokenExchangeUnderlying(msg.sender, i, dx, j, dy)
 
 
 @external
