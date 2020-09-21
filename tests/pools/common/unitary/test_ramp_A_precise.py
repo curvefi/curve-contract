@@ -1,25 +1,25 @@
 import brownie
 import pytest
 
-pytestmark = pytest.mark.skip_pool("busd", "compound", "susd", "usdt", "y", "template-base")
+pytestmark = pytest.mark.target_pool("template-base")
 
 MIN_RAMP_TIME = 86400
 
 
 def test_ramp_A(chain, alice, swap):
-    initial_A = swap.initial_A()
+    initial_A = swap.initial_A() // 100
     future_time = chain.time() + MIN_RAMP_TIME+5
 
     tx = swap.ramp_A(initial_A * 2, future_time, {'from': alice})
 
-    assert swap.initial_A() == initial_A
-    assert swap.future_A() == initial_A * 2
+    assert swap.initial_A() // 100 == initial_A
+    assert swap.future_A() // 100 == initial_A * 2
     assert swap.initial_A_time() == tx.timestamp
     assert swap.future_A_time() == future_time
 
 
 def test_ramp_A_final(chain, alice, swap):
-    initial_A = swap.initial_A()
+    initial_A = swap.initial_A() // 100
     future_time = chain.time() + 1000000
 
     swap.ramp_A(initial_A * 2, future_time, {'from': alice})
@@ -31,7 +31,7 @@ def test_ramp_A_final(chain, alice, swap):
 
 
 def test_ramp_A_value_up(chain, alice, swap):
-    initial_A = swap.initial_A()
+    initial_A = swap.initial_A() // 100
     future_time = chain.time() + 1000000
     tx = swap.ramp_A(initial_A * 2, future_time, {'from': alice})
 
@@ -46,7 +46,7 @@ def test_ramp_A_value_up(chain, alice, swap):
 
 
 def test_ramp_A_value_down(chain, alice, swap):
-    initial_A = swap.initial_A()
+    initial_A = swap.initial_A() // 100
     future_time = chain.time() + 1000000
     tx = swap.ramp_A(initial_A // 10, future_time, {'from': alice})
 
@@ -60,11 +60,11 @@ def test_ramp_A_value_down(chain, alice, swap):
         if expected == 0:
             assert swap.A() == initial_A // 10
         else:
-            assert 0.999 < swap.A() / expected <= 1
+            assert abs(swap.A() - expected) <= 1
 
 
 def test_stop_ramp_A(chain, alice, swap):
-    initial_A = swap.initial_A()
+    initial_A = swap.initial_A() // 100
     future_time = chain.time() + 1000000
     swap.ramp_A(initial_A * 2, future_time, {'from': alice})
 
@@ -75,8 +75,8 @@ def test_stop_ramp_A(chain, alice, swap):
 
     tx = swap.stop_ramp_A({'from': alice})
 
-    assert swap.initial_A() == current_A
-    assert swap.future_A() == current_A
+    assert swap.initial_A() // 100 == current_A
+    assert swap.future_A() // 100 == current_A
     assert swap.initial_A_time() == tx.timestamp
     assert swap.future_A_time() == tx.timestamp
 
