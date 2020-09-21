@@ -24,6 +24,10 @@ def wrapped_coins(project, alice, pool_data, underlying_coins):
                 )
                 for target, attr in fn_names.items():
                     setattr(contract, target, getattr(contract, attr))
+
+                if coin_data.get("withdrawal_fee"):
+                    contract._set_withdrawal_fee(coin_data["withdrawal_fee"], {'from': alice})
+
                 coins.append(contract)
 
         yield coins
