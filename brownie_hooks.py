@@ -15,7 +15,7 @@ replacements = {
 
 
 def brownie_load_source(path, source):
-    if path.stem in ("StableSwap", "BasePool"):
+    if path.stem in ("StableSwap", "BasePool", "Deposit"):
         for k, v in replacements.items():
             source = source.replace(k, v)
 
