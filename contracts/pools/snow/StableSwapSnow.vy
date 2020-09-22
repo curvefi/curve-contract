@@ -130,6 +130,10 @@ is_killed: bool
 kill_deadline: uint256
 KILL_DEADLINE_DT: constant(uint256) = 2 * 30 * 86400
 
+coin_rates: uint256[N_COINS]
+coin_rates_update: uint256
+CACHE_TIME: constant(uint256) = 10 * 60
+
 
 @external
 def __init__(
@@ -174,6 +178,8 @@ def __init__(
     self.kill_deadline = block.timestamp + KILL_DEADLINE_DT
     self.lp_token = _pool_token
 
+    self.coin_rates[5] = PRECISION_MUL[5] * 10 ** 18
+
 
 @view
 @internal
@@ -205,12 +211,24 @@ def A() -> uint256:
 
 @view
 @internal
-def _stored_rates() -> uint256[N_COINS]:
-    result: uint256[N_COINS] = PRECISION_MUL
-    result[5] *= 10**18
+def _get_stored_rates(_force: bool = False) -> uint256[N_COINS]:
+    if not _force and self.coin_rates_update + CACHE_TIME > block.timestamp:
+        return self.coin_rates
+
+    precision_mul: uint256[N_COINS] = PRECISION_MUL
+    _coin_rates: uint256[N_COINS] = empty(uint256[N_COINS])
+    _coin_rates[5] = precision_mul[5] * 10 ** 18
     for i in range(5):
-        result[i] *= yERC20(self.coins[i]).getPricePerFullShare()
-    return result
+        _coin_rates[i] = precision_mul[i] * yERC20(self.coins[i]).getPricePerFullShare()
+
+    return _coin_rates
+
+
+@internal
+def _update_stored_rates():
+    if self.coin_rates_update + CACHE_TIME < block.timestamp:
+        self.coin_rates = self._get_stored_rates(True)
+        self.coin_rates_update = block.timestamp
 
 
 @view
@@ -272,7 +290,7 @@ def get_virtual_price() -> uint256:
     Returns portfolio virtual price (for calculating profit)
     scaled up by 1e18
     """
-    D: uint256 = self.get_D(self._xp(self._stored_rates()), self._A())
+    D: uint256 = self.get_D(self._xp(self._get_stored_rates()), self._A())
     # D is in the units similar to DAI (e.g. converted to precision 1e18)
     # When balanced, D = n * x_u - total virtual value of the portfolio
     token_supply: uint256 = ERC20(self.lp_token).totalSupply()
@@ -289,7 +307,7 @@ def calc_token_amount(amounts: uint256[N_COINS], deposit: bool) -> uint256:
     Needed to prevent front-running, not for precise calculations!
     """
     _balances: uint256[N_COINS] = self.balances
-    rates: uint256[N_COINS] = self._stored_rates()
+    rates: uint256[N_COINS] = self._get_stored_rates()
     D0: uint256 = self.get_D_mem(rates, _balances)
     for i in range(N_COINS):
         if deposit:
@@ -317,7 +335,8 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256):
     _lp_token: address = self.lp_token
 
     token_supply: uint256 = ERC20(_lp_token).totalSupply()
-    rates: uint256[N_COINS] = self._stored_rates()
+    self._update_stored_rates()
+    rates: uint256[N_COINS] = self.coin_rates
     # Initial invariant
     D0: uint256 = 0
     old_balances: uint256[N_COINS] = self.balances
@@ -423,7 +442,7 @@ def get_y(i: int128, j: int128, x: uint256, xp_: uint256[N_COINS]) -> uint256:
 @view
 @external
 def get_dy(i: int128, j: int128, dx: uint256) -> uint256:
-    rates: uint256[N_COINS] = self._stored_rates()
+    rates: uint256[N_COINS] = self._get_stored_rates()
     xp: uint256[N_COINS] = self._xp(rates)
 
     x: uint256 = xp[i] + dx * rates[i] / PRECISION
@@ -437,7 +456,7 @@ def get_dy(i: int128, j: int128, dx: uint256) -> uint256:
 @external
 def get_dy_underlying(i: int128, j: int128, dx: uint256) -> uint256:
     # dx and dy in underlying units
-    rates: uint256[N_COINS] = self._stored_rates()
+    rates: uint256[N_COINS] = self._get_stored_rates()
     xp: uint256[N_COINS] = self._xp(rates)
     precisions: uint256[N_COINS] = PRECISION_MUL
 
@@ -451,7 +470,8 @@ def get_dy_underlying(i: int128, j: int128, dx: uint256) -> uint256:
 @external
 @nonreentrant('lock')
 def exchange(i: int128, j: int128, dx: uint256, min_dy: uint256):
-    rates: uint256[N_COINS] = self._stored_rates()
+    self._update_stored_rates()
+    rates: uint256[N_COINS] = self.coin_rates
 
     xp: uint256[N_COINS] = self._xp(rates)
 
@@ -504,7 +524,9 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint2
     assert token_supply != 0
     _fee: uint256 = self.fee * N_COINS / (4 * (N_COINS - 1))
     _admin_fee: uint256 = self.admin_fee
-    rates: uint256[N_COINS] = self._stored_rates()
+
+    self._update_stored_rates()
+    rates: uint256[N_COINS] = self.coin_rates
 
     old_balances: uint256[N_COINS] = self.balances
     new_balances: uint256[N_COINS] = old_balances
@@ -594,7 +616,7 @@ def _calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> (uint256, uint
     precisions: uint256[N_COINS] = PRECISION_MUL
     total_supply: uint256 = ERC20(self.lp_token).totalSupply()
 
-    xp: uint256[N_COINS] = self._xp(self._stored_rates())
+    xp: uint256[N_COINS] = self._xp(self._get_stored_rates())
 
     D0: uint256 = self.get_D(xp, amp)
     D1: uint256 = D0 - _token_amount * D0 / total_supply
@@ -631,6 +653,7 @@ def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_amount: uin
     """
     assert not self.is_killed  # dev: is killed
 
+    self._update_stored_rates()
     dy: uint256 = 0
     dy_fee: uint256 = 0
     dy, dy_fee = self._calc_withdraw_one_coin(_token_amount, i)
