@@ -41,7 +41,7 @@ jobs:
       run: pip install -r requirements.txt
 
     - name: Run Tests
-      run: pytest tests/pools/common/unitary --pool ${{ matrix.pool }}
+      run: pytest tests/pools/common/unitary tests/zaps/common --pool ${{ matrix.pool }}
 
   integration:
     runs-on: ubuntu-latest
