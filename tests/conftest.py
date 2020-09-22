@@ -124,11 +124,14 @@ def pytest_collection_modifyitems(config, items):
             continue
 
         # remove excess `itercoins` parametrized tests
-        if next(item.iter_markers(name="itercoins"), None):
-            values = [i for i in params.values() if isinstance(i, int)]
+        for marker in item.iter_markers(name="itercoins"):
+            values = [params[i] for i in marker.args]
             if max(values) >= len(data['coins']) or len(set(values)) < len(values):
                 items.remove(item)
-                continue
+                break
+
+        if item not in items:
+            continue
 
         # apply `skip_pool` marker
         for marker in item.iter_markers(name="skip_pool"):
