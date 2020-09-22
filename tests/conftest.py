@@ -4,7 +4,8 @@ import pytest
 from brownie.project.main import get_loaded_projects
 from pathlib import Path
 
-from brownie_hooks import DECIMALS as hook_decimals
+from brownie_hooks import DECIMALS as hook_decimals, USE_LENDING as hook_lending
+
 
 # functions in wrapped methods are renamed to simplify common tests
 
@@ -73,8 +74,8 @@ def pytest_sessionstart():
         "lp_contract": lp_contract,
         "wrapped_contract": "yERC20",
         "coins": [
-            {"decimals": i, "tethered": bool(i), "wrapped": True, "wrapped_decimals": i}
-            for i in hook_decimals
+            {"decimals": d, "tethered": bool(d), "wrapped": w, "wrapped_decimals": d}
+            for d, w in zip(hook_decimals, hook_lending)
         ]
     }
     _pooldata['template-base'] = {
@@ -99,7 +100,7 @@ def pytest_generate_tests(metafunc):
                     params = metafunc.config.getoption("pool").split(',')
                 else:
                     params = list(_pooldata)
-                if test_path.parts[2] == "zaps":
+                if test_path.parts[1] == "zaps":
                     # for zap tests, filter by pools that have a Deposit contract
                     params = [i for i in params if _pooldata[i].get("zap_contract")]
             else:
