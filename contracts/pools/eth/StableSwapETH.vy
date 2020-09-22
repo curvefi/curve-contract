@@ -98,6 +98,7 @@ admin_fee: public(uint256)  # admin_fee * 1e10
 owner: public(address)
 lp_token: address
 
+A_PRECISION: constant(uint256) = 100
 initial_A: public(uint256)
 future_A: public(uint256)
 initial_A_time: public(uint256)
@@ -135,8 +136,8 @@ def __init__(
     for i in range(N_COINS):
         assert _coins[i] != ZERO_ADDRESS
     self.coins = _coins
-    self.initial_A = _A
-    self.future_A = _A
+    self.initial_A = _A * A_PRECISION
+    self.future_A = _A * A_PRECISION
     self.fee = _fee
     self.admin_fee = _admin_fee
     self.owner = _owner
@@ -169,6 +170,12 @@ def _A() -> uint256:
 @view
 @external
 def A() -> uint256:
+    return self._A() / A_PRECISION
+
+
+@view
+@external
+def A_precise() -> uint256:
     return self._A()
 
 
@@ -207,7 +214,7 @@ def get_D(xp: uint256[N_COINS], amp: uint256) -> uint256:
         for _x in xp:
             D_P = D_P * D / (_x * N_COINS)  # If division by 0, this will be borked: only withdrawal will work. And that is good
         Dprev = D
-        D = (Ann * S + D_P * N_COINS) * D / ((Ann - 1) * D + (N_COINS + 1) * D_P)
+        D = (Ann * S / A_PRECISION + D_P * N_COINS) * D / ((Ann - A_PRECISION) * D / A_PRECISION + (N_COINS + 1) * D_P)
         # Equality with the precision of 1
         if D > Dprev:
             if D - Dprev <= 1:
@@ -379,8 +386,8 @@ def get_y(i: int128, j: int128, x: uint256, xp_: uint256[N_COINS]) -> uint256:
             continue
         S_ += _x
         c = c * D / (_x * N_COINS)
-    c = c * D / (Ann * N_COINS)
-    b: uint256 = S_ + D / Ann  # - D
+    c = c * D * A_PRECISION / (Ann * N_COINS)
+    b: uint256 = S_ + D * A_PRECISION / Ann  # - D
     y_prev: uint256 = 0
     y: uint256 = D
     for _i in range(255):
@@ -597,8 +604,8 @@ def get_y_D(A_: uint256, i: int128, xp: uint256[N_COINS], D: uint256) -> uint256
             continue
         S_ += _x
         c = c * D / (_x * N_COINS)
-    c = c * D / (Ann * N_COINS)
-    b: uint256 = S_ + D / Ann
+    c = c * D * A_PRECISION / (Ann * N_COINS)
+    b: uint256 = S_ + D * A_PRECISION / Ann
     y_prev: uint256 = 0
     y: uint256 = D
     for _i in range(255):
@@ -697,19 +704,20 @@ def ramp_A(_future_A: uint256, _future_time: uint256):
     assert _future_time >= block.timestamp + MIN_RAMP_TIME  # dev: insufficient time
 
     _initial_A: uint256 = self._A()
+    _future_A_p: uint256 = _future_A * A_PRECISION
 
     assert _future_A > 0 and _future_A < MAX_A
-    if _future_A < _initial_A:
-        assert _future_A * MAX_A_CHANGE >= _initial_A
+    if _future_A_p < _initial_A:
+        assert _future_A_p * MAX_A_CHANGE >= _initial_A
     else:
-        assert _future_A <= _initial_A * MAX_A_CHANGE
+        assert _future_A_p <= _initial_A * MAX_A_CHANGE
 
     self.initial_A = _initial_A
-    self.future_A = _future_A
+    self.future_A = _future_A_p
     self.initial_A_time = block.timestamp
     self.future_A_time = _future_time
 
-    log RampA(_initial_A, _future_A, block.timestamp, _future_time)
+    log RampA(_initial_A, _future_A_p, block.timestamp, _future_time)
 
 
 @external
