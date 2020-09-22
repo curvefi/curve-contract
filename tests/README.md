@@ -4,9 +4,10 @@ Test cases for Curve pools.
 
 ## Subdirectories
 
-* [`fixtures`](fixtures): Pytest fixtures](https://docs.pytest.org/en/latest/fixture.html)
+* [`fixtures`](fixtures): [Pytest fixtures](https://docs.pytest.org/en/latest/fixture.html)
 * [`pools`](pools): Tests for [pool](../contracts/pools) contracts
 * [`token`](token): Tests for [LP token](../contracts/tokens) contracts
+* [`zaps`](zaps): Tests for deposit contracts
 
 ## Files
 
@@ -16,7 +17,7 @@ Test cases for Curve pools.
 ## Organization
 
 * Tests are organized by general category, then split between unitary and integration tests.
-* Common tests for all pools are located in [`tests/common`](common).
+* Common tests for all pools are located in [`tests/pools/common`](pools/common), for zaps in [`tests/zaps/common`](zaps/common).
 * Valid pool names are the names of the subdirectories within [`contracts/pools`](../contracts/pools).
 
 ## Running the tests
