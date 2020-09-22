@@ -125,44 +125,43 @@ def add_liquidity(uamounts: uint256[N_COINS], min_mint_amount: uint256):
 
 
 @internal
-def _send_all(_addr: address, min_uamounts: uint256[N_COINS], one: int128):
+def _unwrap_and_transfer(_addr: address, min_uamounts: uint256[N_COINS]):
     use_lending: bool[N_COINS] = USE_LENDING
 
     for i in range(N_COINS):
-        if (one < 0) or (i == one):
-            if use_lending[i]:
-                _coin: address = self.coins[i]
-                _balance: uint256 = ERC20(_coin).balanceOf(self)
-                if _balance == 0:  # Do nothing if there are 0 coins
-                    continue
-                yERC20(_coin).withdraw(_balance)
+        if use_lending[i]:
+            _coin: address = self.coins[i]
+            _balance: uint256 = ERC20(_coin).balanceOf(self)
+            if _balance == 0:  # Do nothing if there are 0 coins
+                continue
+            yERC20(_coin).withdraw(_balance)
 
-            _ucoin: address = self.underlying_coins[i]
-            _uamount: uint256 = ERC20(_ucoin).balanceOf(self)
-            assert _uamount >= min_uamounts[i], "Not enough coins withdrawn"
+        _ucoin: address = self.underlying_coins[i]
+        _uamount: uint256 = ERC20(_ucoin).balanceOf(self)
+        assert _uamount >= min_uamounts[i], "Not enough coins withdrawn"
 
-            # Send only if we have something to send
-            if _uamount != 0:
-                _response: Bytes[32] = raw_call(
-                    _ucoin,
-                    concat(
-                        method_id("transfer(address,uint256)"),
-                        convert(_addr, bytes32),
-                        convert(_uamount, bytes32)
-                    ),
-                    max_outsize=32
-                )
-                if len(_response) > 0:
-                    assert convert(_response, bool)
+        # Send only if we have something to send
+        if _uamount != 0:
+            _response: Bytes[32] = raw_call(
+                _ucoin,
+                concat(
+                    method_id("transfer(address,uint256)"),
+                    convert(_addr, bytes32),
+                    convert(_uamount, bytes32)
+                ),
+                max_outsize=32
+            )
+            if len(_response) > 0:
+                assert convert(_response, bool)
 
 
 @external
 @nonreentrant('lock')
-def remove_liquidity(_amount: uint256, min_uamounts: uint256[N_COINS]):
+def remove_liquidity(_amount: uint256, _min_underlying_amounts: uint256[N_COINS]):
     assert ERC20(self.token).transferFrom(msg.sender, self, _amount)
     Curve(self.curve).remove_liquidity(_amount, empty(uint256[N_COINS]))
 
-    self._send_all(msg.sender, min_uamounts, -1)
+    self._unwrap_and_transfer(msg.sender, _min_underlying_amounts)
 
 
 @external
@@ -181,20 +180,21 @@ def remove_liquidity_imbalance(uamounts: uint256[N_COINS], max_burn_amount: uint
             amounts[i] = amounts[i] * LENDING_PRECISION / rate
         # if not use_lending - all good already
 
-    # Transfrer max tokens in
-    _tokens: uint256 = ERC20(_token).balanceOf(msg.sender)
-    if _tokens > max_burn_amount:
-        _tokens = max_burn_amount
-    assert ERC20(_token).transferFrom(msg.sender, self, _tokens)
+    # Transfer max tokens in
+    _lp_amount: uint256 = ERC20(_token).balanceOf(msg.sender)
+    if _lp_amount > max_burn_amount:
+        _lp_amount = max_burn_amount
+    assert ERC20(_token).transferFrom(msg.sender, self, _lp_amount)
 
     Curve(self.curve).remove_liquidity_imbalance(amounts, max_burn_amount)
 
-    # Transfer unused tokens back
-    _tokens = ERC20(_token).balanceOf(self)
-    assert ERC20(_token).transfer(msg.sender, _tokens)
+    # Transfer unused LP tokens back
+    _lp_amount = ERC20(_token).balanceOf(self)
+    if _lp_amount != 0:
+        assert ERC20(_token).transfer(msg.sender, _lp_amount)
 
     # Unwrap and transfer all the coins we've got
-    self._send_all(msg.sender, empty(uint256[N_COINS]), -1)
+    self._unwrap_and_transfer(msg.sender, empty(uint256[N_COINS]))
 
 
 @external
