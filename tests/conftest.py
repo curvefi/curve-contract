@@ -60,12 +60,16 @@ def pytest_sessionstart():
                 name=path.name,
                 swap_contract=next(i.stem for i in path.glob(f"StableSwap*"))
             )
+            zap_contract = next((i.stem for i in path.glob(f"Deposit*")), None)
+            if zap_contract:
+                _pooldata[path.name]['zap_contract'] = zap_contract
 
     # create pooldata for templates
     lp_contract = sorted(i._name for i in project if i._name.startswith("CurveToken"))[-1]
     _pooldata['template-y'] = {
         "name": "template-y",
         "swap_contract": "StableSwapYLend",
+        "zap_contract": "DepositYLend",
         "lp_contract": lp_contract,
         "wrapped_contract": "yERC20",
         "coins": [
@@ -88,15 +92,18 @@ def pytest_generate_tests(metafunc):
     if "pool_data" in metafunc.fixturenames:
         # parametrize `pool_data`
         test_path = Path(metafunc.definition.fspath).relative_to(project._path)
-        if test_path.parts[:2] == ("tests", "pools"):
+        if test_path.parts[1] in ("pools", "zaps"):
+            # parametrize common pool/zap tests to run against all pools
             if test_path.parts[2] == "common":
-                # run `tests/pools/common` tests against all pools
                 if metafunc.config.getoption("pool"):
                     params = metafunc.config.getoption("pool").split(',')
                 else:
                     params = list(_pooldata)
+                if test_path.parts[2] == "zaps":
+                    # for zap tests, filter by pools that have a Deposit contract
+                    params = [i for i in params if _pooldata[i].get("zap_contract")]
             else:
-                # run `tests/pools/<POOL>` tests against only the specific pool
+                # run targetted pool/zap tests against only the specific pool
                 params = [test_path.parts[2]]
             metafunc.parametrize("pool_data", params, indirect=True, scope="session")
 
@@ -159,7 +166,7 @@ def pool_data(request):
         pool_name = request.param
     else:
         test_path = Path(request.fspath).relative_to(project._path)
-        # ("tests", "pools", pool_name, ...)
+        # ("tests", "pools" or "zaps", pool_name, ...)
         pool_name = test_path.parts[2]
     yield _pooldata[pool_name]
 
