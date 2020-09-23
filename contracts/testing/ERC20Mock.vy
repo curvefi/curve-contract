@@ -1,3 +1,4 @@
+# @version ^0.2.0
 """
 @notice Mock ERC20 for testing
 """
