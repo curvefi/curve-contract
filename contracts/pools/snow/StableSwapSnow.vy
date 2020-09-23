@@ -1,11 +1,10 @@
-# @version ^0.2.0
+# @version 0.2.4
 """
-@title StableSwap
+@title Curve Snow pool
 @author Curve.Fi
 @license Copyright (c) Curve.Fi, 2020 - all rights reserved
-@notice Pool implementation with Yearn-style lending
-@dev This contract is only a template, pool-specific constants
-     must be set prior to compiling
+@notice Pool for swapping between yVault tokens
+@dev Swaps between yvDAI / yvUSDC / yvUSDT / yvTUSD / yvyCRV / USDC
 """
 
 from vyper.interfaces import ERC20

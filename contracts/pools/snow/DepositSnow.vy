@@ -1,11 +1,8 @@
-# @version ^0.2.0
+# @version 0.2.4
 """
-@title "Zap" Depositer for Yearn-style lending tokens
+@title "Zap" Depositer for Curve Snow pool
 @author Curve.Fi
 @license Copyright (c) Curve.Fi, 2020 - all rights reserved
-@notice deposit/withdraw Curve contract without too many transactions
-@dev This contract is only a template, pool-specific constants
-     must be set prior to compiling
 """
 
 from vyper.interfaces import ERC20
