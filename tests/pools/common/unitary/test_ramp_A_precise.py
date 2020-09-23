@@ -1,7 +1,7 @@
 import brownie
 import pytest
 
-pytestmark = pytest.mark.target_pool("template-base", "template-y")
+pytestmark = pytest.mark.target_pool("snow", "template-base", "template-y")
 
 MIN_RAMP_TIME = 86400
 

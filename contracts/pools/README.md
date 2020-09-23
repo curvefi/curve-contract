@@ -12,6 +12,7 @@ Each subdirectory holds contracts and other files specific to a single Curve poo
 * [`pax`](pax): [PAX pool](https://www.curve.fi/pax), with lending on [yearn.finance](https://yearn.finance/)
 * [`ren`](ren): [RenBTC pool](https://www.curve.fi/ren)
 * [`sbtc`](sbtc): [sBTC pool](https://www.curve.fi/sbtc)
+* [`snow`](snow): [Snow pool](https://www.curve.fi/snow), for swaps between [yVault](https://feel-the-yearn.app/vaults) tokens
 * [`susd`](susd): [sUSD pool](https://www.curve.fi/susdv2)
 * [`usdt`](usdt): [USDT pool](https://www.curve.fi/usdt), with lending on [Compound](https://compound.finance/)
 * [`y`](y): [Y pool](https://www.curve.fi/y), with lending on [yearn.finance](https://yearn.finance/)

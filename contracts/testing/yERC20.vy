@@ -23,6 +23,7 @@ total_supply: uint256
 
 token: ERC20
 getPricePerFullShare: public(uint256)  # yERC20 mock
+withdrawal_fee: uint256
 
 @public
 def __init__(_name: string[64], _symbol: string[32], _decimals: uint256, _supply: uint256,
@@ -132,6 +133,11 @@ def withdraw(withdrawTokens: uint256):
      @param withdrawTokens The number of yTokens to redeem into underlying
     """
     uvalue: uint256 = withdrawTokens * self.getPricePerFullShare / 10 ** 18
+
+    fee: uint256 = self.withdrawal_fee
+    if fee > 0:
+        uvalue -= uvalue * fee / 10000
+
     self.balanceOf[msg.sender] -= withdrawTokens
     self.total_supply -= withdrawTokens
     self.token.transfer(msg.sender, uvalue)
@@ -140,6 +146,12 @@ def withdraw(withdrawTokens: uint256):
 @public
 def set_exchange_rate(rate: uint256):
     self.getPricePerFullShare = rate
+
+
+@public
+def _set_withdrawal_fee(pct: uint256):
+    # set a withdrawal fee, expressed as a percentage in bps
+    self.withdrawal_fee = pct
 
 
 @public
