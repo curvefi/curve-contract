@@ -7,6 +7,7 @@
         {"decimals": 6, "tethered": false, "wrapped": true, "wrapped_decimals": 6, "withdrawal_fee": 500},
         {"decimals": 6, "tethered": true, "wrapped": true, "wrapped_decimals": 6, "withdrawal_fee": 500},
         {"decimals": 18, "tethered": false, "wrapped": true, "wrapped_decimals": 18, "withdrawal_fee": 500},
+        {"decimals": 18, "tethered": false, "wrapped": true, "wrapped_decimals": 18, "withdrawal_fee": 500},
         {"decimals": 6, "tethered": false, "wrapped": false}
     ]
 }

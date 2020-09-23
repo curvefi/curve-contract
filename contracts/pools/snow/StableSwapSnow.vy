@@ -90,8 +90,8 @@ event StopRampA:
 
 
 # These constants must be set prior to compiling
-N_COINS: constant(int128) = ___N_COINS___
-PRECISION_MUL: constant(uint256[N_COINS]) = ___PRECISION_MUL___
+N_COINS: constant(int128) = 6
+PRECISION_MUL: constant(uint256[N_COINS]) = [1, 1000000000000, 1000000000000, 1, 1, 1000000000000]
 
 # fixed constants
 FEE_DENOMINATOR: constant(uint256) = 10 ** 10
@@ -207,8 +207,8 @@ def A() -> uint256:
 @internal
 def _stored_rates() -> uint256[N_COINS]:
     result: uint256[N_COINS] = PRECISION_MUL
-    result[4] *= 10**18
-    for i in range(4):
+    result[5] *= 10**18
+    for i in range(5):
         result[i] *= yERC20(self.coins[i]).getPricePerFullShare()
     return result
 
