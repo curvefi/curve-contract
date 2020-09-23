@@ -20,7 +20,7 @@ def wrapped_coins(project, alice, pool_data, underlying_coins):
             else:
                 decimals = coin_data['wrapped_decimals']
                 contract = deployer.deploy(
-                    f"Coin {i}", f"C{i}", decimals, 0, underlying, 10**18, {'from': alice}
+                    f"Coin {i}", f"C{i}", decimals, underlying, {'from': alice}
                 )
                 for target, attr in fn_names.items():
                     setattr(contract, target, getattr(contract, attr))
