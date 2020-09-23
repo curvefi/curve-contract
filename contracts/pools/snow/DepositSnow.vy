@@ -30,7 +30,6 @@ interface Curve:
 # These constants must be set prior to compiling
 N_COINS: constant(int128) = 6
 PRECISION_MUL: constant(uint256[N_COINS]) = [1, 1000000000000, 1000000000000, 1, 1, 1000000000000]
-USE_LENDING: constant(bool[N_COINS]) = [True, True, True, True, True, False]
 
 # Fixed constants
 LENDING_PRECISION: constant(uint256) = 10 ** 18
@@ -103,7 +102,6 @@ def add_liquidity(_underlying_amounts: uint256[N_COINS], _min_mint_amount: uint2
     @param _min_mint_amount Minimum amount of LP tokens to mint from the deposit
     @return Amount of LP tokens received by depositing
     """
-    use_lending: bool[N_COINS] = USE_LENDING
     _wrapped_amounts: uint256[N_COINS] = empty(uint256[N_COINS])
 
     for i in range(N_COINS):
@@ -125,7 +123,8 @@ def add_liquidity(_underlying_amounts: uint256[N_COINS], _min_mint_amount: uint2
                 assert convert(_response, bool)
 
             # Mint if needed
-            if use_lending[i]:
+            if i < 5:
+                # only self.coins[5] is not wrapped
                 _coin: address = self.coins[i]
                 yERC20(_coin).deposit(_amount)
                 _wrapped_amounts[i] = ERC20(_coin).balanceOf(self)
@@ -144,11 +143,11 @@ def add_liquidity(_underlying_amounts: uint256[N_COINS], _min_mint_amount: uint2
 @internal
 def _unwrap_and_transfer(_addr: address, _min_amounts: uint256[N_COINS]) -> uint256[N_COINS]:
     # unwrap coins and transfer them to the sender
-    use_lending: bool[N_COINS] = USE_LENDING
     _amounts: uint256[N_COINS] = empty(uint256[N_COINS])
 
     for i in range(N_COINS):
-        if use_lending[i]:
+        if i < 5:
+            # only self.coins[5] is not wrapped
             _coin: address = self.coins[i]
             _balance: uint256 = ERC20(_coin).balanceOf(self)
             if _balance == 0:  # Do nothing if there are 0 coins
@@ -209,15 +208,14 @@ def remove_liquidity_imbalance(
     @param _max_burn_amount Maximum amount of LP token to burn in the withdrawal
     @return List of amounts of underlying coins that were withdrawn
     """
-    use_lending: bool[N_COINS] = USE_LENDING
     _token: address = self.token
 
     amounts: uint256[N_COINS] = _underlying_amounts
     for i in range(N_COINS):
-        if use_lending[i] and amounts[i] > 0:
+        if i < 5 and amounts[i] > 0:
+            # only self.coins[5] is not wrapped
             rate: uint256 = yERC20(self.coins[i]).getPricePerFullShare()
             amounts[i] = amounts[i] * LENDING_PRECISION / rate
-        # if not use_lending - all good already
 
     # Transfer max tokens in
     _lp_amount: uint256 = ERC20(_token).balanceOf(msg.sender)
@@ -254,8 +252,8 @@ def remove_liquidity_one_coin(
 
     Curve(self.curve).remove_liquidity_one_coin(_amount, i, 0)
 
-    use_lending: bool[N_COINS] = USE_LENDING
-    if use_lending[i]:
+    if i < 5:
+        # only self.coins[5] is not wrapped
         _coin: address = self.coins[i]
         _balance: uint256 = ERC20(_coin).balanceOf(self)
         yERC20(_coin).withdraw(_balance)
