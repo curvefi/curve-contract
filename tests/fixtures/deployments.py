@@ -53,7 +53,7 @@ def pool_token(project, alice, pool_data):
 
 
 @pytest.fixture(scope="module")
-def swap(project, alice, underlying_coins, wrapped_coins, pool_token, pool_data):
+def swap(project, alice, underlying_coins, wrapped_coins, pool_token, pool_data, swap_mock):
     deployer = getattr(project, pool_data['swap_contract'])
 
     abi = next(i['inputs'] for i in deployer.abi if i['type'] == "constructor")
@@ -66,6 +66,7 @@ def swap(project, alice, underlying_coins, wrapped_coins, pool_token, pool_data)
         '_admin_fee': 0,
         '_offpeg_fee_multiplier': 0,
         '_owner': alice,
+        '_y_pool': swap_mock,
     }
     deployment_args = [args[i['name']] for i in abi] + [({'from': alice})]
 
@@ -137,3 +138,11 @@ def registry(
 @pytest.fixture(scope="module")
 def gauge_controller(GaugeControllerMock, alice):
     yield GaugeControllerMock.deploy({'from': alice})
+
+
+@pytest.fixture(scope="module")
+def swap_mock(SwapMock, pool_data, alice):
+    if pool_data['name'] == "snow":
+        yield SwapMock.deploy({'from': alice})
+    else:
+        yield False
