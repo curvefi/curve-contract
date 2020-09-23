@@ -134,7 +134,9 @@ def _unwrap_and_transfer(_addr: address, _min_amounts: uint256[N_COINS]) -> uint
     # unwrap coins and transfer them to the sender
     _amounts: uint256[N_COINS] = empty(uint256[N_COINS])
 
-    for i in range(N_COINS):
+    for x in range(N_COINS):
+        # we iterate backwards so that USDC is handled before unwrapping yvUSDC into USDC
+        i: int128 = N_COINS - 1 - x
         if i < 5:
             # only self.coins[5] is not wrapped
             _coin: address = self.coins[i]
@@ -163,6 +165,7 @@ def _unwrap_and_transfer(_addr: address, _min_amounts: uint256[N_COINS]) -> uint
             _amounts[i] = _uamount
 
     return _amounts
+
 
 @external
 @nonreentrant('lock')
