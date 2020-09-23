@@ -14,28 +14,17 @@ from vyper.interfaces import ERC20
 interface yERC20:
     def deposit(depositAmount: uint256): nonpayable
     def withdraw(withdrawTokens: uint256): nonpayable
-    def getPricePerFullShare() -> uint256: view
 
 interface Curve:
     def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256): nonpayable
     def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS]): nonpayable
     def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint256): nonpayable
     def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_amount: uint256): nonpayable
-    def balances(i: int128) -> uint256: view
-    def A() -> uint256: view
-    def fee() -> uint256: view
-    def owner() -> address: view
+    def get_coin_rates() -> uint256[N_COINS]: view
 
 
-# These constants must be set prior to compiling
 N_COINS: constant(int128) = 6
-PRECISION_MUL: constant(uint256[N_COINS]) = [1, 1000000000000, 1000000000000, 1, 1, 1000000000000]
-
-# Fixed constants
 LENDING_PRECISION: constant(uint256) = 10 ** 18
-PRECISION: constant(uint256) = 10 ** 18
-FEE_DENOMINATOR: constant(uint256) = 10 ** 10
-FEE_IMPRECISION: constant(uint256) = 25 * 10 ** 8  # % of the fee
 
 coins: public(address[N_COINS])
 underlying_coins: public(address[N_COINS])
@@ -209,13 +198,14 @@ def remove_liquidity_imbalance(
     @return List of amounts of underlying coins that were withdrawn
     """
     _token: address = self.token
+    _curve: address = self.curve
 
     amounts: uint256[N_COINS] = _underlying_amounts
+    _coin_rates: uint256[N_COINS] = Curve(_curve).get_coin_rates()
     for i in range(N_COINS):
         if i < 5 and amounts[i] > 0:
             # only self.coins[5] is not wrapped
-            rate: uint256 = yERC20(self.coins[i]).getPricePerFullShare()
-            amounts[i] = amounts[i] * LENDING_PRECISION / rate
+            amounts[i] = amounts[i] * LENDING_PRECISION / _coin_rates[i]
 
     # Transfer max tokens in
     _lp_amount: uint256 = ERC20(_token).balanceOf(msg.sender)
@@ -223,7 +213,7 @@ def remove_liquidity_imbalance(
         _lp_amount = _max_burn_amount
     assert ERC20(_token).transferFrom(msg.sender, self, _lp_amount)
 
-    Curve(self.curve).remove_liquidity_imbalance(amounts, _max_burn_amount)
+    Curve(_curve).remove_liquidity_imbalance(amounts, _max_burn_amount)
 
     # Transfer unused LP tokens back
     _lp_amount = ERC20(_token).balanceOf(self)

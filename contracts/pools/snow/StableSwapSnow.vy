@@ -16,10 +16,12 @@ interface yERC20:
     def withdraw(withdrawTokens: uint256): nonpayable
     def getPricePerFullShare() -> uint256: view
 
-
 interface CurveToken:
     def mint(_to: address, _value: uint256) -> bool: nonpayable
     def burnFrom(_to: address, _value: uint256) -> bool: nonpayable
+
+interface CurvePool:
+    def get_virtual_price() -> uint256: view
 
 
 # Events
@@ -133,6 +135,7 @@ KILL_DEADLINE_DT: constant(uint256) = 2 * 30 * 86400
 
 coin_rates: uint256[N_COINS]
 coin_rates_update: uint256
+y_pool: address
 CACHE_TIME: constant(uint256) = 10 * 60
 
 
@@ -140,6 +143,7 @@ CACHE_TIME: constant(uint256) = 10 * 60
 def __init__(
     _owner: address,
     _coins: address[N_COINS],
+    _y_pool: address,
     _pool_token: address,
     _A: uint256,
     _fee: uint256,
@@ -149,6 +153,7 @@ def __init__(
     @notice Contract constructor
     @param _owner Contract owner address
     @param _coins Addresses of ERC20 contracts of wrapped coins
+    @param _y_pool Curve y-pool address (needed to calculate rate of yvyCRV)
     @param _pool_token Address of the token representing LP share
     @param _A Amplification coefficient multiplied by n * (n - 1)
     @param _fee Fee to charge for exchanges
@@ -171,6 +176,7 @@ def __init__(
             assert convert(_response, bool)
 
     self.coins = _coins
+    self.y_pool = _y_pool
     self.initial_A = _A * A_PRECISION
     self.future_A = _A * A_PRECISION
     self.fee = _fee
@@ -179,6 +185,7 @@ def __init__(
     self.kill_deadline = block.timestamp + KILL_DEADLINE_DT
     self.lp_token = _pool_token
 
+    # USDC price is always 1e18
     self.coin_rates[5] = PRECISION_MUL[5] * 10 ** 18
 
 
@@ -228,6 +235,9 @@ def _get_stored_rates(_force: bool = False) -> uint256[N_COINS]:
     for i in range(5):
         _coin_rates[i] = precision_mul[i] * yERC20(self.coins[i]).getPricePerFullShare()
 
+    # ycyCRV is a special case - it tracks against the price of yCRV, not USD
+    _coin_rates[4] = _coin_rates[4] * CurvePool(self.y_pool).get_virtual_price() / LENDING_PRECISION
+
     return _coin_rates
 
 
@@ -236,6 +246,21 @@ def _update_stored_rates():
     if self.coin_rates_update + CACHE_TIME < block.timestamp:
         self.coin_rates = self._get_stored_rates(True)
         self.coin_rates_update = block.timestamp
+
+
+@view
+@external
+def get_coin_rates() -> uint256[N_COINS]:
+    """
+    @notice Get the current rate for each coin
+    @dev Values are normalized to 1e18 precision
+    @return Array of coin rates
+    """
+    _coin_rates: uint256[N_COINS] = self._get_stored_rates()
+    _precision_mul: uint256[N_COINS] = PRECISION_MUL
+    for i in range(N_COINS):
+        _coin_rates[i] /= _precision_mul[i]
+    return _coin_rates
 
 
 @view
