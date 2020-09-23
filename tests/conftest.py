@@ -4,7 +4,8 @@ import pytest
 from brownie.project.main import get_loaded_projects
 from pathlib import Path
 
-from brownie_hooks import DECIMALS as hook_decimals
+from brownie_hooks import DECIMALS as hook_decimals, USE_LENDING as hook_lending
+
 
 # functions in wrapped methods are renamed to simplify common tests
 
@@ -60,17 +61,21 @@ def pytest_sessionstart():
                 name=path.name,
                 swap_contract=next(i.stem for i in path.glob(f"StableSwap*"))
             )
+            zap_contract = next((i.stem for i in path.glob(f"Deposit*")), None)
+            if zap_contract:
+                _pooldata[path.name]['zap_contract'] = zap_contract
 
     # create pooldata for templates
     lp_contract = sorted(i._name for i in project if i._name.startswith("CurveToken"))[-1]
     _pooldata['template-y'] = {
         "name": "template-y",
         "swap_contract": "StableSwapYLend",
+        "zap_contract": "DepositYLend",
         "lp_contract": lp_contract,
         "wrapped_contract": "yERC20",
         "coins": [
-            {"decimals": i, "tethered": bool(i), "wrapped": True, "wrapped_decimals": i}
-            for i in hook_decimals
+            {"decimals": d, "tethered": bool(d), "wrapped": w, "wrapped_decimals": d}
+            for d, w in zip(hook_decimals, hook_lending)
         ]
     }
     _pooldata['template-base'] = {
@@ -88,11 +93,19 @@ def pytest_generate_tests(metafunc):
     if "pool_data" in metafunc.fixturenames:
         # parametrize `pool_data`
         test_path = Path(metafunc.definition.fspath).relative_to(project._path)
-        if test_path.parts[:3] == ("tests", "pools", "common"):
-            if metafunc.config.getoption("pool"):
-                params = metafunc.config.getoption("pool").split(',')
+        if test_path.parts[1] in ("pools", "zaps"):
+            # parametrize common pool/zap tests to run against all pools
+            if test_path.parts[2] == "common":
+                if metafunc.config.getoption("pool"):
+                    params = metafunc.config.getoption("pool").split(',')
+                else:
+                    params = list(_pooldata)
+                if test_path.parts[1] == "zaps":
+                    # for zap tests, filter by pools that have a Deposit contract
+                    params = [i for i in params if _pooldata[i].get("zap_contract")]
             else:
-                params = list(_pooldata)
+                # run targetted pool/zap tests against only the specific pool
+                params = [test_path.parts[2]]
             metafunc.parametrize("pool_data", params, indirect=True, scope="session")
 
         # apply initial parametrization of `itercoins`
@@ -111,30 +124,30 @@ def pytest_collection_modifyitems(config, items):
             continue
 
         # remove excess `itercoins` parametrized tests
-        if next(item.iter_markers(name="itercoins"), None):
-            values = [i for i in params.values() if isinstance(i, int)]
+        for marker in item.iter_markers(name="itercoins"):
+            values = [params[i] for i in marker.args]
             if max(values) >= len(data['coins']) or len(set(values)) < len(values):
                 items.remove(item)
-                continue
+                break
+
+        if item not in items:
+            continue
 
         # apply `skip_pool` marker
         for marker in item.iter_markers(name="skip_pool"):
             if params["pool_data"] in marker.args:
                 items.remove(item)
-                continue
 
         # apply `target_pool` marker
         for marker in item.iter_markers(name="target_pool"):
             if params["pool_data"] not in marker.args:
                 items.remove(item)
-                continue
 
         # apply `lending` marker
         for marker in item.iter_markers(name="lending"):
             deployer = getattr(project, data['swap_contract'])
             if "exchange_underlying" not in deployer.signatures:
                 items.remove(item)
-                continue
 
     # hacky magic to ensure the correct number of tests is shown in collection report
     config.pluginmanager.get_plugin("terminalreporter")._numcollected = len(items)
@@ -157,7 +170,7 @@ def pool_data(request):
         pool_name = request.param
     else:
         test_path = Path(request.fspath).relative_to(project._path)
-        # ("tests", "pools", pool_name, ...)
+        # ("tests", "pools" or "zaps", pool_name, ...)
         pool_name = test_path.parts[2]
     yield _pooldata[pool_name]
 

@@ -49,7 +49,6 @@ def pool_token(project, alice, pool_data):
 
 
 @pytest.fixture(scope="module")
-@pytest.mark.parametrize()
 def swap(project, alice, underlying_coins, wrapped_coins, pool_token, pool_data):
     deployer = getattr(project, pool_data['swap_contract'])
 
@@ -70,6 +69,12 @@ def swap(project, alice, underlying_coins, wrapped_coins, pool_token, pool_data)
     pool_token.set_minter(contract, {'from': alice})
 
     yield contract
+
+
+@pytest.fixture(scope="module")
+def zap(project, alice, swap, underlying_coins, wrapped_coins, pool_token, pool_data):
+    deployer = getattr(project, pool_data['zap_contract'])
+    yield deployer.deploy(wrapped_coins, underlying_coins, swap, pool_token, {'from': alice})
 
 
 @pytest.fixture(scope="module")

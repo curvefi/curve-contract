@@ -20,6 +20,7 @@ interface Curve:
     def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256): nonpayable
     def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS]): nonpayable
     def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint256): nonpayable
+    def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_amount: uint256): nonpayable
     def balances(i: int128) -> uint256: view
     def A() -> uint256: view
     def fee() -> uint256: view
@@ -50,6 +51,15 @@ def __init__(
     _curve: address,
     _token: address
 ):
+    """
+    @notice Contract constructor
+    @dev Where a token does not use wrapping, use the same address
+         for `_coins` and `_underlying_coins`
+    @param _coins List of wrapped coin addresses
+    @param _underlying_coins List of underlying coin addresses
+    @param _curve Pool address
+    @param _token Pool LP token address
+    """
     for i in range(N_COINS):
         assert _coins[i] != ZERO_ADDRESS
         assert _underlying_coins[i] != ZERO_ADDRESS
@@ -86,14 +96,20 @@ def __init__(
 
 @external
 @nonreentrant('lock')
-def add_liquidity(uamounts: uint256[N_COINS], min_mint_amount: uint256):
+def add_liquidity(_underlying_amounts: uint256[N_COINS], _min_mint_amount: uint256) -> uint256:
+    """
+    @notice Wrap underlying coins and deposit them in the pool
+    @param _underlying_amounts List of amounts of underlying coins to deposit
+    @param _min_mint_amount Minimum amount of LP tokens to mint from the deposit
+    @return Amount of LP tokens received by depositing
+    """
     use_lending: bool[N_COINS] = USE_LENDING
-    amounts: uint256[N_COINS] = empty(uint256[N_COINS])
+    _wrapped_amounts: uint256[N_COINS] = empty(uint256[N_COINS])
 
     for i in range(N_COINS):
-        uamount: uint256 = uamounts[i]
+        _amount: uint256 = _underlying_amounts[i]
 
-        if uamount != 0:
+        if _amount != 0:
             # Transfer the underlying coin from owner
             _response: Bytes[32] = raw_call(
                 self.underlying_coins[i],
@@ -101,7 +117,7 @@ def add_liquidity(uamounts: uint256[N_COINS], min_mint_amount: uint256):
                     method_id("transferFrom(address,address,uint256)"),
                     convert(msg.sender, bytes32),
                     convert(self, bytes32),
-                    convert(uamount, bytes32)
+                    convert(_amount, bytes32)
                 ),
                 max_outsize=32
             )
@@ -111,282 +127,153 @@ def add_liquidity(uamounts: uint256[N_COINS], min_mint_amount: uint256):
             # Mint if needed
             if use_lending[i]:
                 _coin: address = self.coins[i]
-                yERC20(_coin).deposit(uamount)
-                amounts[i] = ERC20(_coin).balanceOf(self)
+                yERC20(_coin).deposit(_amount)
+                _wrapped_amounts[i] = ERC20(_coin).balanceOf(self)
             else:
-                amounts[i] = uamount
+                _wrapped_amounts[i] = _amount
 
-    Curve(self.curve).add_liquidity(amounts, min_mint_amount)
+    Curve(self.curve).add_liquidity(_wrapped_amounts, _min_mint_amount)
 
-    _token: address = self.token
-    tokens: uint256 = ERC20(_token).balanceOf(self)
-    assert ERC20(_token).transfer(msg.sender, tokens)
+    _lp_token: address = self.token
+    _lp_amount: uint256 = ERC20(_lp_token).balanceOf(self)
+    assert ERC20(_lp_token).transfer(msg.sender, _lp_amount)
+
+    return _lp_amount
 
 
 @internal
-def _send_all(_addr: address, min_uamounts: uint256[N_COINS], one: int128):
+def _unwrap_and_transfer(_addr: address, _min_amounts: uint256[N_COINS]) -> uint256[N_COINS]:
+    # unwrap coins and transfer them to the sender
     use_lending: bool[N_COINS] = USE_LENDING
+    _amounts: uint256[N_COINS] = empty(uint256[N_COINS])
 
     for i in range(N_COINS):
-        if (one < 0) or (i == one):
-            if use_lending[i]:
-                _coin: address = self.coins[i]
-                _balance: uint256 = ERC20(_coin).balanceOf(self)
-                if _balance == 0:  # Do nothing if there are 0 coins
-                    continue
-                yERC20(_coin).withdraw(_balance)
+        if use_lending[i]:
+            _coin: address = self.coins[i]
+            _balance: uint256 = ERC20(_coin).balanceOf(self)
+            if _balance == 0:  # Do nothing if there are 0 coins
+                continue
+            yERC20(_coin).withdraw(_balance)
 
-            _ucoin: address = self.underlying_coins[i]
-            _uamount: uint256 = ERC20(_ucoin).balanceOf(self)
-            assert _uamount >= min_uamounts[i], "Not enough coins withdrawn"
+        _ucoin: address = self.underlying_coins[i]
+        _uamount: uint256 = ERC20(_ucoin).balanceOf(self)
+        assert _uamount >= _min_amounts[i], "Not enough coins withdrawn"
 
-            # Send only if we have something to send
-            if _uamount != 0:
-                _response: Bytes[32] = raw_call(
-                    _ucoin,
-                    concat(
-                        method_id("transfer(address,uint256)"),
-                        convert(_addr, bytes32),
-                        convert(_uamount, bytes32)
-                    ),
-                    max_outsize=32
-                )
-                if len(_response) > 0:
-                    assert convert(_response, bool)
+        # Send only if we have something to send
+        if _uamount != 0:
+            _response: Bytes[32] = raw_call(
+                _ucoin,
+                concat(
+                    method_id("transfer(address,uint256)"),
+                    convert(_addr, bytes32),
+                    convert(_uamount, bytes32)
+                ),
+                max_outsize=32
+            )
+            if len(_response) > 0:
+                assert convert(_response, bool)
+            _amounts[i] = _uamount
 
+    return _amounts
 
 @external
 @nonreentrant('lock')
-def remove_liquidity(_amount: uint256, min_uamounts: uint256[N_COINS]):
+def remove_liquidity(
+    _amount: uint256,
+    _min_underlying_amounts: uint256[N_COINS]
+) -> uint256[N_COINS]:
+    """
+    @notice Withdraw and unwrap coins from the pool
+    @dev Withdrawal amounts are based on current deposit ratios
+    @param _amount Quantity of LP tokens to burn in the withdrawal
+    @param _min_underlying_amounts Minimum amounts of underlying coins to receive
+    @return List of amounts of underlying coins that were withdrawn
+    """
     assert ERC20(self.token).transferFrom(msg.sender, self, _amount)
     Curve(self.curve).remove_liquidity(_amount, empty(uint256[N_COINS]))
 
-    self._send_all(msg.sender, min_uamounts, -1)
+    return self._unwrap_and_transfer(msg.sender, _min_underlying_amounts)
 
 
 @external
 @nonreentrant('lock')
-def remove_liquidity_imbalance(uamounts: uint256[N_COINS], max_burn_amount: uint256):
+def remove_liquidity_imbalance(
+    _underlying_amounts: uint256[N_COINS],
+    _max_burn_amount: uint256
+) -> uint256[N_COINS]:
     """
-    Get max_burn_amount in, remove requested liquidity and transfer back what is left
+    @notice Withdraw and unwrap coins from the pool in an imbalanced amount
+    @dev Amounts in `_underlying_amounts` correspond to withdrawn amounts
+         before any fees charge for unwrapping.
+    @param _underlying_amounts List of amounts of underlying coins to withdraw
+    @param _max_burn_amount Maximum amount of LP token to burn in the withdrawal
+    @return List of amounts of underlying coins that were withdrawn
     """
     use_lending: bool[N_COINS] = USE_LENDING
     _token: address = self.token
 
-    amounts: uint256[N_COINS] = uamounts
+    amounts: uint256[N_COINS] = _underlying_amounts
     for i in range(N_COINS):
         if use_lending[i] and amounts[i] > 0:
             rate: uint256 = yERC20(self.coins[i]).getPricePerFullShare()
             amounts[i] = amounts[i] * LENDING_PRECISION / rate
         # if not use_lending - all good already
 
-    # Transfrer max tokens in
-    _tokens: uint256 = ERC20(_token).balanceOf(msg.sender)
-    if _tokens > max_burn_amount:
-        _tokens = max_burn_amount
-    assert ERC20(_token).transferFrom(msg.sender, self, _tokens)
+    # Transfer max tokens in
+    _lp_amount: uint256 = ERC20(_token).balanceOf(msg.sender)
+    if _lp_amount > _max_burn_amount:
+        _lp_amount = _max_burn_amount
+    assert ERC20(_token).transferFrom(msg.sender, self, _lp_amount)
 
-    Curve(self.curve).remove_liquidity_imbalance(amounts, max_burn_amount)
+    Curve(self.curve).remove_liquidity_imbalance(amounts, _max_burn_amount)
 
-    # Transfer unused tokens back
-    _tokens = ERC20(_token).balanceOf(self)
-    assert ERC20(_token).transfer(msg.sender, _tokens)
+    # Transfer unused LP tokens back
+    _lp_amount = ERC20(_token).balanceOf(self)
+    if _lp_amount != 0:
+        assert ERC20(_token).transfer(msg.sender, _lp_amount)
 
     # Unwrap and transfer all the coins we've got
-    self._send_all(msg.sender, empty(uint256[N_COINS]), -1)
-
-
-@pure
-@internal
-def _xp_mem(rates: uint256[N_COINS], _balances: uint256[N_COINS]) -> uint256[N_COINS]:
-    result: uint256[N_COINS] = rates
-    for i in range(N_COINS):
-        result[i] = result[i] * _balances[i] / PRECISION
-    return result
-
-
-@pure
-@internal
-def get_D(A: uint256, xp: uint256[N_COINS]) -> uint256:
-    S: uint256 = 0
-    for _x in xp:
-        S += _x
-    if S == 0:
-        return 0
-
-    Dprev: uint256 = 0
-    D: uint256 = S
-    Ann: uint256 = A * N_COINS
-    for _i in range(255):
-        D_P: uint256 = D
-        for _x in xp:
-            D_P = D_P * D / (_x * N_COINS + 1)  # +1 is to prevent /0
-        Dprev = D
-        D = (Ann * S + D_P * N_COINS) * D / ((Ann - 1) * D + (N_COINS + 1) * D_P)
-        # Equality with the precision of 1
-        if D > Dprev:
-            if D - Dprev <= 1:
-                break
-        else:
-            if Dprev - D <= 1:
-                break
-    return D
-
-
-@pure
-@internal
-def get_y(A: uint256, i: int128, _xp: uint256[N_COINS], D: uint256) -> uint256:
-    """
-    Calculate x[i] if one reduces D from being calculated for _xp to D
-
-    Done by solving quadratic equation iteratively.
-    x_1**2 + x1 * (sum' - (A*n**n - 1) * D / (A * n**n)) = D ** (n + 1) / (n ** (2 * n) * prod' * A)
-    x_1**2 + b*x_1 = c
-
-    x_1 = (x_1**2 + c) / (2*x_1 + b)
-    """
-    # x in the input is converted to the same price/precision
-
-    assert i >= 0
-    assert i < N_COINS
-
-    c: uint256 = D
-    S_: uint256 = 0
-    Ann: uint256 = A * N_COINS
-
-    _x: uint256 = 0
-    for _i in range(N_COINS):
-        if _i != i:
-            _x = _xp[_i]
-        else:
-            continue
-        S_ += _x
-        c = c * D / (_x * N_COINS)
-    c = c * D / (Ann * N_COINS)
-    b: uint256 = S_ + D / Ann
-    y_prev: uint256 = 0
-    y: uint256 = D
-    for _i in range(255):
-        y_prev = y
-        y = (y*y + c) / (2 * y + b - D)
-        # Equality with the precision of 1
-        if y > y_prev:
-            if y - y_prev <= 1:
-                break
-        else:
-            if y_prev - y <= 1:
-                break
-    return y
-
-
-@view
-@internal
-def _calc_withdraw_one_coin(_token_amount: uint256, i: int128, rates: uint256[N_COINS]) -> uint256:
-    # First, need to calculate
-    # * Get current D
-    # * Solve Eqn against y_i for D - _token_amount
-    use_lending: bool[N_COINS] = USE_LENDING
-    crv: address = self.curve
-    A: uint256 = Curve(crv).A()
-    fee: uint256 = Curve(crv).fee() * N_COINS / (4 * (N_COINS - 1))
-    fee += fee * FEE_IMPRECISION / FEE_DENOMINATOR  # Overcharge to account for imprecision
-    precisions: uint256[N_COINS] = PRECISION_MUL
-    total_supply: uint256 = ERC20(self.token).totalSupply()
-
-    xp: uint256[N_COINS] = PRECISION_MUL
-    S: uint256 = 0
-    for j in range(N_COINS):
-        xp[j] *= Curve(crv).balances(j)
-        if use_lending[j]:
-            # Use stored rate b/c we have imprecision anyway
-            xp[j] = xp[j] * rates[j] / LENDING_PRECISION
-        S += xp[j]
-        # if not use_lending - all good already
-
-    D0: uint256 = self.get_D(A, xp)
-    D1: uint256 = D0 - _token_amount * D0 / total_supply
-    xp_reduced: uint256[N_COINS] = xp
-
-    # xp = xp - fee * | xp * D1 / D0 - (xp - S * dD / D0 * (0, ... 1, ..0))|
-    for j in range(N_COINS):
-        dx_expected: uint256 = 0
-        b_ideal: uint256 = xp[j] * D1 / D0
-        b_expected: uint256 = xp[j]
-        if j == i:
-            b_expected -= S * (D0 - D1) / D0
-        if b_ideal >= b_expected:
-            dx_expected = (b_ideal - b_expected)
-        else:
-            dx_expected = (b_expected - b_ideal)
-        xp_reduced[j] -= fee * dx_expected / FEE_DENOMINATOR
-
-    dy: uint256 = xp_reduced[i] - self.get_y(A, i, xp_reduced, D1)
-    dy = dy / precisions[i]
-
-    return dy
-
-
-@view
-@external
-def calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> uint256:
-    rates: uint256[N_COINS] = empty(uint256[N_COINS])
-    use_lending: bool[N_COINS] = USE_LENDING
-
-    for j in range(N_COINS):
-        if use_lending[j]:
-            rates[j] = yERC20(self.coins[j]).getPricePerFullShare()
-        else:
-            rates[j] = 10 ** 18
-
-    return self._calc_withdraw_one_coin(_token_amount, i, rates)
+    return self._unwrap_and_transfer(msg.sender, empty(uint256[N_COINS]))
 
 
 @external
 @nonreentrant('lock')
 def remove_liquidity_one_coin(
-    _token_amount: uint256,
+    _amount: uint256,
     i: int128,
-    min_uamount: uint256,
-    donate_dust: bool = False
-):
+    _min_underlying_amount: uint256
+) -> uint256:
     """
-    Remove _amount of liquidity all in a form of coin i
+    @notice Withdraw and unwrap a single coin from the pool
+    @param _amount Amount of LP tokens to burn in the withdrawal
+    @param i Index value of the coin to withdraw
+    @param _min_underlying_amount Minimum amount of underlying coin to receive
+    @return Amount of underlying coin received
     """
+    assert ERC20(self.token).transferFrom(msg.sender, self, _amount)
+
+    Curve(self.curve).remove_liquidity_one_coin(_amount, i, 0)
+
     use_lending: bool[N_COINS] = USE_LENDING
-    rates: uint256[N_COINS] = empty(uint256[N_COINS])
-    _token: address = self.token
+    if use_lending[i]:
+        _coin: address = self.coins[i]
+        _balance: uint256 = ERC20(_coin).balanceOf(self)
+        yERC20(_coin).withdraw(_balance)
 
-    for j in range(N_COINS):
-        if use_lending[j]:
-            rates[j] = yERC20(self.coins[j]).getPricePerFullShare()
-        else:
-            rates[j] = LENDING_PRECISION
+    _coin: address = self.underlying_coins[i]
+    _balance: uint256 = ERC20(_coin).balanceOf(self)
+    assert _balance >= _min_underlying_amount, "Not enough coins removed"
 
-    dy: uint256 = self._calc_withdraw_one_coin(_token_amount, i, rates)
-    assert dy >= min_uamount, "Not enough coins removed"
+    _response: Bytes[32] = raw_call(
+        _coin,
+        concat(
+            method_id("transfer(address,uint256)"),
+            convert(msg.sender, bytes32),
+            convert(_balance, bytes32),
+        ),
+        max_outsize=32,
+    )
+    if len(_response) > 0:
+        assert convert(_response, bool)
 
-    assert ERC20(self.token).transferFrom(msg.sender, self, _token_amount)
-
-    amounts: uint256[N_COINS] = empty(uint256[N_COINS])
-    amounts[i] = dy * LENDING_PRECISION / rates[i]
-    token_amount_before: uint256 = ERC20(_token).balanceOf(self)
-    Curve(self.curve).remove_liquidity_imbalance(amounts, _token_amount)
-
-    # Unwrap and transfer all the coins we've got
-    self._send_all(msg.sender, empty(uint256[N_COINS]), i)
-
-    if not donate_dust:
-        # Transfer unused tokens back
-        token_amount_after: uint256 = ERC20(_token).balanceOf(self)
-        if token_amount_after > token_amount_before:
-            assert ERC20(_token).transfer(msg.sender, token_amount_after - token_amount_before)
-
-
-@external
-@nonreentrant('lock')
-def withdraw_donated_dust():
-    owner: address = Curve(self.curve).owner()
-    assert msg.sender == owner
-
-    _token: address = self.token
-    assert ERC20(_token).transfer(owner, ERC20(_token).balanceOf(self))
+    return _balance

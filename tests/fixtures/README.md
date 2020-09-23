@@ -33,6 +33,7 @@ All deployment fixtures are [parametrized](https://docs.pytest.org/en/stable/par
 * `swap`: [`StableSwap`](../../contracts/pool-templates) deployment for the pool being tested.
 * `underlying_coins`: A list of mocked token contracts representing the underlying coins in the active pool.
 * `wrapped_coins`: A list of mocked token contracts representing the wrapped coins in the active pool. The contract used is determined based on `pooldata.json` for the active pool. For pools without lending, these are the same deployments as `underlying_coins`.
+* `zap`: [`Deposit`](../../contracts/pool-templates) deployment for the pool being tested.
 
 ### `functions.py`
 
@@ -64,5 +65,6 @@ pytestmark = pytest.mark.usefixtures("add_initial_liquidity", "mint_bob")
 * `add_initial_liquidity`: Mints and approves `initial_amounts` coins for `alice` and adds them to `swap` to provide initial liquidity.
 * `approve_alice`: Approves `swap` for unlimited transfers of all underlying and wrapped coins from `alice`.
 * `approve_bob`:Approves `swap` for unlimited transfers of all underlying and wrapped coins from `bob`.
+* `approve_zap`: Approves `zap` for unlimited transfers of `pool_token` and all coins and from `alice` and `bob`.
 * `mint_alice`: Mints `initial_amounts` of each underlying and wrapped coin for `alice`.
 * `mint_bob`: Mints `initial_amounts` of each underlying and wrapped coin for `bob`.
