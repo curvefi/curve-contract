@@ -4,6 +4,7 @@ name: main workflow
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  NODE_OPTIONS: --max_old_space_size=4096
 
 jobs:
 
@@ -13,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        pool: [3pool, busd, compound, hbtc, pax, ren, sbtc, susd, template-base, template-y, usdt, y]
+        pool: [3pool, busd, compound, hbtc, pax, ren, sbtc, snow, susd, template-base, template-y, usdt, y]
 
     steps:
     - uses: actions/checkout@v1
@@ -49,7 +50,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        pool: [3pool, busd, compound, hbtc, pax, ren, sbtc, susd, template-base, template-y, usdt, y]
+        pool: [3pool, busd, compound, hbtc, pax, ren, sbtc, snow, susd, template-base, template-y, usdt, y]
 
     steps:
     - uses: actions/checkout@v1
