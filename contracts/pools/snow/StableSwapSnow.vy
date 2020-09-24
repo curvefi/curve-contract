@@ -501,6 +501,8 @@ def get_dy_underlying(i: int128, j: int128, dx: uint256) -> uint256:
 @external
 @nonreentrant('lock')
 def exchange(i: int128, j: int128, dx: uint256, min_dy: uint256):
+    assert not self.is_killed
+    
     self._update_stored_rates()
     rates: uint256[N_COINS] = self.coin_rates
 
