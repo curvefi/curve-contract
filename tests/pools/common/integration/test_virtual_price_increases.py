@@ -1,61 +1,134 @@
+
 import pytest
-from brownie.test import given, strategy
-from hypothesis import settings
+from brownie import chain
+from brownie.test import strategy
 
-pytestmark = pytest.mark.usefixtures("add_initial_liquidity", "mint_bob", "approve_bob")
+pytestmark = pytest.mark.usefixtures("add_initial_liquidity")
 
 
-@given(
-    st_coin=strategy('decimal[100]', min_value=0, max_value="0.99", unique=True, places=2),
-    st_divisor=strategy('uint[50]', min_value=1, max_value=100, unique=True),
-)
-@settings(max_examples=5)
-def test_number_go_up(
-    chain,
-    bob,
+class StateMachine:
+    """
+    Stateful test that performs a series of deposits, swaps and withdrawals
+    and confirms that the virtual price only goes up.
+    """
+
+    st_pct = strategy("decimal", min_value="0.5", max_value="1", places=2)
+    st_rates = strategy("decimal[8]", min_value="1.001", max_value="1.004", places=4, unique=True)
+
+    def __init__(cls, alice, swap, wrapped_coins, wrapped_decimals):
+        cls.alice = alice
+        cls.swap = swap
+        cls.coins = wrapped_coins
+        cls.decimals = wrapped_decimals
+        cls.n_coins = len(wrapped_coins)
+
+    def setup(self):
+        # reset the virtual price between each test run
+        self.virtual_price = self.swap.get_virtual_price()
+
+    def _min_max(self):
+        # get index values for the coins with the smallest and largest balances in the pool
+        balances = [self.swap.balances(i) / self.decimals[i] for i in range(self.n_coins)]
+        min_idx = balances.index(min(balances))
+        max_idx = balances.index(max(balances))
+        if min_idx == max_idx:
+            min_idx = abs(min_idx - 1)
+
+        print(min_idx, max_idx, self.n_coins)
+        return min_idx, max_idx
+
+    def rule_increase_rates(self, st_rates):
+        """
+        Increase the stored rate for each wrapped coin.
+        """
+        for rate, coin in zip(self.coins, st_rates):
+            if hasattr(coin, "set_exchange_rate"):
+                coin.set_exchange_rate(int(coin.get_rate() * rate), {'from': self.alice})
+
+    def rule_exchange(self, st_pct):
+        # perform a swap using wrapped coins
+        send, recv = self._min_max()
+        amount = int(10**self.decimals[send] * st_pct)
+        self.swap.exchange(send, recv, amount, 0, {'from': self.alice})
+
+    def rule_exchange_underlying(self, st_pct):
+        """
+        Perform a swap using underlying coins.
+        """
+        if not hasattr(self.swap, "exchange_underlying"):
+            # if underlying coins aren't available, use wrapped instead
+            return self.rule_exchange(st_pct)
+
+        send, recv = self._min_max()
+        amount = int(10**self.decimals[send] * st_pct)
+        self.swap.exchange_underlying(send, recv, amount, 0, {'from': self.alice})
+
+    def rule_remove_one_coin(self, st_pct):
+        """
+        Remove liquidity from the pool in only one coin.
+        """
+        if not hasattr(self.swap, "remove_liquidity_one_coin"):
+            # not all pools include `remove_liquidity_one_coin`
+            return self.rule_remove_imbalance(st_pct)
+
+        idx = self._min_max()[1]
+        amount = int(10**self.decimals[idx] * st_pct)
+        self.swap.remove_liquidity_one_coin(amount, idx, 0, {'from': self.alice})
+
+    def rule_remove_imbalance(self, st_pct):
+        """
+        Remove liquidity from the pool in an imbalanced manner.
+        """
+        idx = self._min_max()[1]
+        amounts = [0] * self.n_coins
+        amounts[idx] = 10**self.decimals[idx] * st_pct
+        self.swap.remove_liquidity_imbalance(amounts, 2**256-1, {'from': self.alice})
+
+    def rule_remove(self, st_pct):
+        """
+        Remove liquidity from the pool.
+        """
+        amount = int(10**18 * st_pct)
+        self.swap.remove_liquidity(amount, [0] * self.n_coins, {'from': self.alice})
+
+    def invariant_check_virtual_price(self):
+        """
+        Verify that the pool's virtual price has either increased or stayed the same.
+        """
+        virtual_price = self.swap.get_virtual_price()
+        assert virtual_price >= self.virtual_price
+        self.virtual_price = virtual_price
+
+    def invariant_advance_time(self):
+        """
+        Advance the clock by 1 hour between each action.
+        """
+        chain.sleep(3600)
+
+
+@pytest.mark.skip_pool("ren", "sbtc")
+def test_number_always_go_up(
+    add_initial_liquidity,
+    state_machine,
+    swap,
+    alice,
+    underlying_coins,
     wrapped_coins,
     wrapped_decimals,
-    swap,
-    n_coins,
-    st_coin,
-    st_divisor,
     set_fees,
 ):
-    """
-    Perform a series of token swaps and compare the resulting amounts and pool balances
-    with those in our python-based model.
-
-    Strategies
-    ----------
-    st_coin : decimal[100]
-        Array of decimal values, used to choose the coins used in each swap
-    st_divisor: uint[50]
-        Array of integers, used to choose the size of each swap
-    """
-
     set_fees(10**7, 0)
 
-    rate_mul = [10**i for i in wrapped_decimals]
-    while st_coin:
-        # Tune exchange rates
-        for coin in wrapped_coins:
-            if hasattr(coin, 'set_exchange_rate'):
-                rate = int(coin.get_rate() * 1.0001)
-                coin.set_exchange_rate(rate, {'from': bob})
+    for underlying, wrapped in zip(underlying_coins, wrapped_coins):
+        underlying._mint_for_testing(alice, 10**24, {'from': alice})
+        if underlying != wrapped:
+            wrapped._mint_for_testing(alice, 10**24, {'from': alice})
 
-        old_virtual_price = swap.get_virtual_price()
-
-        chain.sleep(60)
-
-        # choose which coins to swap
-        send, recv = [int(st_coin.pop() * n_coins) for _ in range(2)]
-        if send == recv:
-            # if send and recv are the same, adjust send
-            send = abs(send - 1)
-
-        value = 5 * rate_mul[send] // st_divisor.pop()
-
-        min_amount = int(0.5 * value * rate_mul[recv] / rate_mul[send])
-        swap.exchange(send, recv, value, min_amount, {'from': bob})
-
-        assert swap.get_virtual_price() >= old_virtual_price
+    state_machine(
+        StateMachine,
+        alice,
+        swap,
+        wrapped_coins,
+        wrapped_decimals,
+        settings={'max_examples': 25, 'stateful_step_count': 50}
+    )
