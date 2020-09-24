@@ -9,6 +9,7 @@
 ## Deployments
 
 * [`CurveContractV2`](../../tokens/CurveTokenV2.vy): [0xb19059ebb43466C323583928285a49f558E572Fd](https://etherscan.io/address/0xb19059ebb43466C323583928285a49f558E572Fd)
+* [`LiquidityGauge`](../../gauges/LiquidityGauge.vy): [0x4c18E409Dc8619bFb6a1cB56D114C3f592E0aE79](https://etherscan.io/address/0x4c18E409Dc8619bFb6a1cB56D114C3f592E0aE79)
 * [`StableSwapHBTC`](StableSwapHBTC.vy): [0x4CA9b3063Ec5866A4B82E437059D2C43d1be596F](https://etherscan.io/address/0x4CA9b3063Ec5866A4B82E437059D2C43d1be596F)
 
 ## Stablecoins

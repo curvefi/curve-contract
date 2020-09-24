@@ -4,12 +4,12 @@
 
 ## Contracts
 
-
 * [`StableSwap3Pool`](StableSwap3Pool.vy): Curve stablecoin AMM contract
 
 ## Deployments
 
 * [`CurveContractV2`](../../tokens/CurveTokenV2.vy): [0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490](https://etherscan.io/address/0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490)
+* [`LiquidityGauge`](../../gauges/LiquidityGauge.vy): [0xbFcF63294aD7105dEa65aA58F8AE5BE2D9d0952A](https://etherscan.io/address/0xbfcf63294ad7105dea65aa58f8ae5be2d9d0952a)
 * [`StableSwap3Pool`](StableSwapUSDT.vy): [0xbebc44782c7db0a1a60cb6fe97d0b483032ff1c7](https://etherscan.io/address/0xbebc44782c7db0a1a60cb6fe97d0b483032ff1c7)
 
 ## Stablecoins

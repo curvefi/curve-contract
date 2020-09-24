@@ -6,6 +6,7 @@ Deployed Curve pool contracts.
 
 Each subdirectory holds contracts and other files specific to a single Curve pool.
 
+* [`3pool`](3pool): [Tri-pool](https://www.curve.fi/3pool)
 * [`busd`](busd): [BUSD pool](https://www.curve.fi/busd), with lending on [yearn.finance](https://yearn.finance/)
 * [`compound`](compound): [Compound pool](https://www.curve.fi/compound), with lending on [Compound](https://compound.finance/)
 * [`hbtc`](hbtc): [hBTC pool](https://www.curve.fi/hbtc)
@@ -34,7 +35,8 @@ Each subdirectory holds contracts and other files specific to a single Curve poo
             "decimals": 18,         // number of decimal places for the underlying coin
             "tethered": false,      // does the token contract return `None` on a successful transfer/approve?
             "wrapped": true,        // is wrapping used for this coin?
-            "wrapped_decimals": 18  // decimal places for the wrapped coin - can be omitted if wrapped == false
+            "wrapped_decimals": 18, // decimal places for the wrapped coin - can be omitted if wrapped == false
+            "withdrawal_fee": 0     // optional fee when converting wrapped to underlying, expressed in bps
         },
     ]
 }
