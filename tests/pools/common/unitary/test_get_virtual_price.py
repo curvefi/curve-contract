@@ -4,7 +4,9 @@ MAX_FEE = 5 * 10**9
 
 
 @pytest.fixture(scope="module", autouse=True, params=[1.1, 0.9])
-def setup(alice, wrapped_coins, add_initial_liquidity, approve_bob, mint_bob, set_fees, request):
+def setup(
+    chain, alice, wrapped_coins, add_initial_liquidity, approve_bob, mint_bob, set_fees, request
+):
     set_fees(MAX_FEE, MAX_FEE)
 
     for i, coin in enumerate(wrapped_coins, start=1):
@@ -16,6 +18,9 @@ def setup(alice, wrapped_coins, add_initial_liquidity, approve_bob, mint_bob, se
                 rate_mod -= i/20
             rate = int(coin.get_rate() * rate_mod)
             coin.set_exchange_rate(rate, {'from': alice})
+
+    # time travel so rates take effect in pools that use rate caching
+    chain.sleep(3600)
 
 
 def test_add_liquidity(bob, swap, initial_amounts, n_coins):
