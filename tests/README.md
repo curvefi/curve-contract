@@ -38,6 +38,16 @@ To run against one of the templates, use `template-base` or `template-y`.
 
 You can optionally include the `--coverage` flag to view a coverage report upon completion of the tests.
 
+## Testing against a forked mainnet
+
+To run the test suite against a forked mainnet:
+
+```bash
+brownie test --network mainnet-fork
+```
+
+In this mode, the actual underlying and wrapped coins are used for testing. Note that forked mode can be _very slow_, especially if you are running against a public node.
+
 ## Fixtures
 
 Test fixtures are located within the [`tests/fixtures`](fixtures) subdirectory. New fixtures should be added here instead of within the base [`conftest.py`](conftest.py).
@@ -74,6 +84,16 @@ Only run the given test against pools that involve lending.
 ```python
 @pytest.mark.lending
 def test_underlying(swap):
+    ...
+```
+
+### `zap`
+
+Only run the given test against pools that use a deposit contract.
+
+```python
+@pytest.mark.zap
+def test_deposits(zap):
     ...
 ```
 
