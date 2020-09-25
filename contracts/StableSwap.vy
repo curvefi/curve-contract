@@ -511,13 +511,15 @@ def get_dy_underlying(i: int128, j: int128, dx: uint256) -> uint256:
     # This pool is involved only when in-pool assets are used
     y: uint256 = self.get_y(meta_i, meta_j, x, xp)
     dy: uint256 = xp[meta_j] - y - 1
-    dy = (dy - self.fee * dy / FEE_DENOMINATOR) / precisions[meta_j]
+    dy = (dy - self.fee * dy / FEE_DENOMINATOR)
 
     # If output is going via the metapool
-    if base_j >= 0:
+    if base_j < 0:
+        dy /= precisions[meta_j]
+    else:
         # j is from BasePool
         # The fee is already accounted for
-        dy = Curve(_base_pool).calc_withdraw_one_coin(dy, base_j)
+        dy = Curve(_base_pool).calc_withdraw_one_coin(dy * PRECISION / vp_rate, base_j)
 
     return dy
 
@@ -692,7 +694,7 @@ def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS]):
 
     for i in range(N_COINS):
         value: uint256 = self.balances[i] * _amount / total_supply
-        assert value >= min_amounts[i], "Withdrawal resulted in fewer coins than expected"
+        assert value >= min_amounts[i], "Too few coins in result"
         self.balances[i] -= value
         amounts[i] = value
         assert ERC20(self.coins[i]).transfer(msg.sender, value)
