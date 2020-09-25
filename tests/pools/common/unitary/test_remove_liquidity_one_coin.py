@@ -7,17 +7,55 @@ pytestmark = [
 ]
 
 
+@pytest.mark.itercoins("idx")
+@pytest.mark.parametrize("rate_mod", [0.9, 0.99, 1.01, 1.1])
+@pytest.mark.skip_pool("ren", "sbtc")
+def test_amount_received(chain, alice, swap, wrapped_coins, wrapped_decimals, idx, rate_mod):
+
+    decimals = wrapped_decimals[idx]
+    wrapped = wrapped_coins[idx]
+
+    if hasattr(wrapped, 'set_exchange_rate'):
+        wrapped.set_exchange_rate(int(wrapped.get_rate() * rate_mod), {'from': alice})
+        # time travel so rates take effect in pools that use rate caching
+        chain.sleep(3600)
+    else:
+        rate_mod = 1.00001
+
+    swap.remove_liquidity_one_coin(10**18, idx, 0, {'from': alice})
+
+    if rate_mod < 1:
+        assert 10**decimals <= wrapped.balanceOf(alice) < 10**decimals / rate_mod
+    else:
+        assert 10**decimals / rate_mod < wrapped.balanceOf(alice) <= 10**decimals
+
 
 @pytest.mark.itercoins("idx")
 @pytest.mark.parametrize("divisor", [1, 5, 42])
-def test_remove_one_coin(alice, swap, wrapped_coins, pool_token, idx, divisor, n_coins):
+def test_lp_token_balance(alice, swap, pool_token, idx, divisor, n_coins):
     amount = pool_token.balanceOf(alice) // divisor
+
+    swap.remove_liquidity_one_coin(amount, idx, 0, {'from': alice})
+
+    assert pool_token.balanceOf(alice) == n_coins * 10**24 - amount
+
+
+@pytest.mark.itercoins("idx")
+@pytest.mark.parametrize("rate_mod", [0.9, 1.1])
+def test_expected_vs_actual(chain, alice, swap, wrapped_coins, pool_token, idx, rate_mod):
+    amount = pool_token.balanceOf(alice) // 10
+    wrapped = wrapped_coins[idx]
+
+    if hasattr(wrapped, 'set_exchange_rate'):
+        wrapped.set_exchange_rate(int(wrapped.get_rate() * rate_mod), {'from': alice})
+        # time travel so rates take effect in pools that use rate caching
+        chain.sleep(3600)
+        chain.mine()
 
     expected = swap.calc_withdraw_one_coin(amount, idx)
     swap.remove_liquidity_one_coin(amount, idx, 0, {'from': alice})
 
     assert wrapped_coins[idx].balanceOf(alice) == expected
-    assert pool_token.balanceOf(alice) == n_coins * 10**24 - amount
 
 
 @pytest.mark.itercoins("idx")
