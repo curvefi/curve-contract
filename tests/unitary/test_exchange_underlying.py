@@ -81,7 +81,16 @@ def test_exchange_underlying(chain, alice, bob, bank, swap, coins, sending, rece
 
 
 @pytest.mark.parametrize("sending,receiving", itertools.permutations(range(len(PRECISIONS) + len(BASE_PRECISIONS) - 1), 2))
-def test_min_dy_underlying(bob, bank, swap, coins, sending, receiving, base_coins, base_swap):
+@pytest.mark.parametrize("base_volume", [0, 10**6])
+def test_min_dy_underlying(chain, alice, bob, bank, swap, coins, sending, receiving, base_coins, base_swap, base_volume):
+    if base_volume:
+        base_coins[0]._mint_for_testing(alice, base_volume * 10**BASE_PRECISIONS[0], {'from': alice})
+        dump_amount = base_coins[1].balanceOf(alice)
+        base_swap.exchange(0, 1, base_volume * 10**BASE_PRECISIONS[0], 0, {'from': alice})
+        dump_amount = base_coins[1].balanceOf(alice) - dump_amount
+        base_swap.exchange(1, 0, dump_amount, 0, {'from': alice})
+        chain.sleep(3600)  # Making sure that the metapool will update virtual price
+
     underlying_coins = coins[:-1] + base_coins
     underlying_precisions = PRECISIONS[:-1] + BASE_PRECISIONS
     amount = 10**underlying_precisions[sending]

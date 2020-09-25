@@ -473,7 +473,8 @@ def get_dy(i: int128, j: int128, dx: uint256) -> uint256:
 @external
 def get_dy_underlying(i: int128, j: int128, dx: uint256) -> uint256:
     # dx and dy in underlying units
-    xp: uint256[N_COINS] = self._xp(self._vp_rate_ro())
+    vp_rate: uint256 = self._vp_rate_ro()
+    xp: uint256[N_COINS] = self._xp(vp_rate)
     precisions: uint256[N_COINS] = PRECISION_MUL
     base_precisions: uint256[BASE_N_COINS] = BASE_PRECISION_MUL
     _base_pool: address = self.base_pool
@@ -497,9 +498,10 @@ def get_dy_underlying(i: int128, j: int128, dx: uint256) -> uint256:
             # At first, get the amount of pool tokens
             base_inputs: uint256[BASE_N_COINS] = empty(uint256[BASE_N_COINS])
             base_inputs[base_i] = dx
-            x = Curve(_base_pool).calc_token_amount(base_inputs, True)
+            # Token amount transformed to underlying "dollars"
+            x = Curve(_base_pool).calc_token_amount(base_inputs, True) * vp_rate / PRECISION
             # Accounting for deposit/withdraw fees approximately
-            x -= x * Curve(_base_pool).fee() / (2 * 10 ** 10)
+            x -= x * Curve(_base_pool).fee() / (2 * FEE_DENOMINATOR)
             # Adding number of pool tokens
             x += xp[MAX_COIN]
         else:
@@ -509,8 +511,7 @@ def get_dy_underlying(i: int128, j: int128, dx: uint256) -> uint256:
     # This pool is involved only when in-pool assets are used
     y: uint256 = self.get_y(meta_i, meta_j, x, xp)
     dy: uint256 = xp[meta_j] - y - 1
-    dy -= self.fee * dy / FEE_DENOMINATOR
-    dy /= precisions[meta_j]
+    dy = (dy - self.fee * dy / FEE_DENOMINATOR) / precisions[meta_j]
 
     # If output is going via the metapool
     if base_j >= 0:
@@ -539,7 +540,7 @@ def exchange(i: int128, j: int128, dx: uint256, min_dy: uint256):
 
     # Convert all to real units
     dy = (dy - dy_fee) * PRECISION / rates[j]
-    assert dy >= min_dy, "Exchange resulted in fewer coins than expected"
+    assert dy >= min_dy, "Too few coins in result"
 
     dy_admin_fee: uint256 = dy_fee * self.admin_fee / FEE_DENOMINATOR
     dy_admin_fee = dy_admin_fee * PRECISION / rates[j]
@@ -657,7 +658,7 @@ def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256):
             Curve(_base_pool).remove_liquidity_one_coin(dy, base_j, 0)
             dy = ERC20(output_coin).balanceOf(self) - out_amount
 
-        assert dy >= min_dy, "Exchange resulted in fewer coins than expected"
+        assert dy >= min_dy, "Too few coins in result"
 
     else:
         # If both are from the base pool
