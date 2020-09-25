@@ -78,8 +78,11 @@ def swap(project, alice, underlying_coins, wrapped_coins, pool_token, pool_data,
 
 @pytest.fixture(scope="module")
 def zap(project, alice, swap, underlying_coins, wrapped_coins, pool_token, pool_data):
-    deployer = getattr(project, pool_data['zap_contract'])
-    yield deployer.deploy(wrapped_coins, underlying_coins, swap, pool_token, {'from': alice})
+    deployer = getattr(project, pool_data.get('zap_contract'), None)
+    if deployer is None:
+        yield False
+    else:
+        yield deployer.deploy(wrapped_coins, underlying_coins, swap, pool_token, {'from': alice})
 
 
 @pytest.fixture(scope="module")
