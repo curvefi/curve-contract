@@ -4,6 +4,7 @@ import pytest
 from brownie.project.main import get_loaded_projects
 from pathlib import Path
 
+from brownie._config import CONFIG
 from brownie_hooks import DECIMALS as hook_decimals, USE_LENDING as hook_lending
 
 
@@ -127,11 +128,18 @@ def pytest_generate_tests(metafunc):
 
 def pytest_collection_modifyitems(config, items):
     project = get_loaded_projects()[0]
+    is_forked = "fork" in CONFIG.active_network['id']
+
     for item in items.copy():
         try:
             params = item.callspec.params
             data = _pooldata[params['pool_data']]
         except Exception:
+            continue
+
+        # during forked tests, filter pools where pooldata does not contain deployment addresses
+        if is_forked and next((i for i in data["coins"] if "underlying_address" not in i), False):
+            items.remove(item)
             continue
 
         # remove excess `itercoins` parametrized tests
@@ -194,3 +202,8 @@ def pool_data(request):
 @pytest.fixture(scope="session")
 def project():
     yield get_loaded_projects()[0]
+
+
+@pytest.fixture(scope="session")
+def is_forked():
+    yield "fork" in CONFIG.active_network['id']

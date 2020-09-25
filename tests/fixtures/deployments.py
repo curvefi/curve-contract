@@ -6,41 +6,53 @@ ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 
 
 @pytest.fixture(scope="module")
-def wrapped_coins(project, alice, pool_data, underlying_coins):
+def wrapped_coins(Contract, project, alice, pool_data, underlying_coins, is_forked):
+    coins = []
+
     if not pool_data.get("wrapped_contract"):
         yield underlying_coins
+
+    elif is_forked:
+        for i, coin_data in enumerate(pool_data['coins']):
+            if not coin_data['wrapped']:
+                coins.append(underlying_coins[i])
+            else:
+                coins.append(Contract(coin_data['wrapped_address']))
+        yield coins
+
     else:
         fn_names = WRAPPED_COIN_METHODS[pool_data['wrapped_contract']]
         deployer = getattr(project, pool_data['wrapped_contract'])
-        coins = []
         for i, coin_data in enumerate(pool_data['coins']):
             underlying = underlying_coins[i]
             if not coin_data['wrapped']:
                 coins.append(underlying)
             else:
                 decimals = coin_data['wrapped_decimals']
-                contract = deployer.deploy(
-                    f"Coin {i}", f"C{i}", decimals, underlying, {'from': alice}
-                )
+                name = coin_data.get("name", f"Coin {i}")
+                symbol = coin_data.get("name", f"C{i}")
+                contract = deployer.deploy(name, symbol, decimals, underlying, {'from': alice})
                 for target, attr in fn_names.items():
                     setattr(contract, target, getattr(contract, attr))
-
                 if coin_data.get("withdrawal_fee"):
                     contract._set_withdrawal_fee(coin_data["withdrawal_fee"], {'from': alice})
-
                 coins.append(contract)
-
         yield coins
 
 
 @pytest.fixture(scope="module")
-def underlying_coins(ERC20Mock, ERC20MockNoReturn, alice, pool_data):
+def underlying_coins(Contract, ERC20Mock, ERC20MockNoReturn, alice, pool_data, is_forked):
     coins = []
-    for i, coin_data in enumerate(pool_data['coins']):
-        decimals = coin_data['decimals']
-        deployer = ERC20MockNoReturn if coin_data['tethered'] else ERC20Mock
-        contract = deployer.deploy(f"Underlying Coin {i}", f"UC{i}", decimals, {'from': alice})
-        coins.append(contract)
+
+    if is_forked:
+        for data in pool_data['coins']:
+            coins.append(Contract(data['underlying_address']))
+    else:
+        for i, coin_data in enumerate(pool_data['coins']):
+            decimals = coin_data['decimals']
+            deployer = ERC20MockNoReturn if coin_data['tethered'] else ERC20Mock
+            contract = deployer.deploy(f"Underlying Coin {i}", f"UC{i}", decimals, {'from': alice})
+            coins.append(contract)
 
     yield coins
 

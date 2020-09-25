@@ -11,3 +11,5 @@ hypothesis:
     generate: true
     target: false
     shrink: false
+
+autofetch_sources: true
