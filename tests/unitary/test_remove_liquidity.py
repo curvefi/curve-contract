@@ -50,7 +50,7 @@ def test_below_min_amount(alice, swap, coins, pool_token, idx):
     min_amount = INITIAL_AMOUNTS.copy()
     min_amount[idx] += 1
 
-    with brownie.reverts("Withdrawal resulted in fewer coins than expected"):
+    with brownie.reverts("Too few coins in result"):
         swap.remove_liquidity(2 * 10**24, min_amount, {'from': alice})
 
 

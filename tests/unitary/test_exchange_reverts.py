@@ -41,7 +41,7 @@ def test_min_dy_too_high(bob, bank, swap, coins, sending, receiving):
     coins[sending].transfer(bob, amount, {'from': bank})
 
     min_dy = swap.get_dy(sending, receiving, amount)
-    with brownie.reverts("Exchange resulted in fewer coins than expected"):
+    with brownie.reverts("Too few coins in result"):
         swap.exchange(sending, receiving, amount, min_dy+1, {'from': bob})
 
 
