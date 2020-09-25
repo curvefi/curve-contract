@@ -686,17 +686,17 @@ def _calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> (uint256, uint
     # * Solve Eqn against y_i for D - _token_amount
     amp: uint256 = self._A()
     _fee: uint256 = self.fee * N_COINS / (4 * (N_COINS - 1))
-    precisions: uint256[N_COINS] = PRECISION_MUL
+    rates: uint256[N_COINS] = self._stored_rates()
     total_supply: uint256 = ERC20(self.lp_token).totalSupply()
 
-    xp: uint256[N_COINS] = self._xp(self._stored_rates())
+    xp: uint256[N_COINS] = self._xp(rates)
 
     D0: uint256 = self.get_D(xp, amp)
     D1: uint256 = D0 - _token_amount * D0 / total_supply
     xp_reduced: uint256[N_COINS] = xp
 
     new_y: uint256 = self.get_y_D(amp, i, xp, D1)
-    dy_0: uint256 = (xp[i] - new_y) / precisions[i]  # w/o fees
+    dy_0: uint256 = (xp[i] - new_y) * PRECISION / rates[i]   # w/o fees
 
     for j in range(N_COINS):
         dx_expected: uint256 = 0
@@ -707,7 +707,7 @@ def _calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> (uint256, uint
         xp_reduced[j] -= _fee * dx_expected / FEE_DENOMINATOR
 
     dy: uint256 = xp_reduced[i] - self.get_y_D(amp, i, xp_reduced, D1)
-    dy = (dy - 1) / precisions[i]  # Withdraw less to account for rounding errors
+    dy = (dy - 1) * PRECISION / rates[i]  # Withdraw less to account for rounding errors
 
     return dy, dy_0 - dy
 

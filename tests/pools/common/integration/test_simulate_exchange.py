@@ -13,6 +13,7 @@ pytestmark = pytest.mark.lending
 )
 @settings(max_examples=5)
 def test_simulated_exchange(
+    chain,
     alice,
     bob,
     underlying_coins,
@@ -85,6 +86,8 @@ def test_simulated_exchange(
                 rate = int(cc.get_rate() * 1.0001)
                 cc.set_exchange_rate(rate, {'from': alice})
                 curve_model.p[i] = rate * (10 ** (18-data['decimals']))
+
+        chain.sleep(3600)
 
         # Simulate the exchange
         old_virtual_price = swap.get_virtual_price()
