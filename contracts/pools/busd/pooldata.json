@@ -2,9 +2,41 @@
     "lp_contract": "CurveTokenV1",
     "wrapped_contract": "yERC20",
     "coins": [
-        {"decimals": 18, "tethered": false, "wrapped": true, "wrapped_decimals": 18},
-        {"decimals": 6, "tethered": false, "wrapped": true, "wrapped_decimals": 6},
-        {"decimals": 6, "tethered": true, "wrapped": true, "wrapped_decimals": 6},
-        {"decimals": 18, "tethered": false, "wrapped": true, "wrapped_decimals": 18}
+        {
+            "name": "DAI",
+            "decimals": 18,
+            "tethered": false,
+            "wrapped": true,
+            "wrapped_decimals": 18,
+            "underlying_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+            "wrapped_address": "0xc2cb1040220768554cf699b0d863a3cd4324ce32"
+        },
+        {
+            "name": "USDC",
+            "decimals": 6,
+            "tethered": false,
+            "wrapped": true,
+            "wrapped_decimals": 6,
+            "underlying_address": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+            "wrapped_address": "0x26ea744e5b887e5205727f55dfbe8685e3b21951"
+        },
+        {
+            "name": "USDT",
+            "decimals": 6,
+            "tethered": true,
+            "wrapped": true,
+            "wrapped_decimals": 6,
+            "underlying_address": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+            "wrapped_address": "0xe6354ed5bc4b393a5aad09f21c46e101e692d447"
+        },
+        {
+            "name": "BUSD",
+            "decimals": 18,
+            "tethered": false,
+            "wrapped": true,
+            "wrapped_decimals": 18,
+            "underlying_address": "0x4fabb145d64652a948d72533023f6e7a623c7c53",
+            "wrapped_address": "0x04bc0ab673d88ae9dbc9da2380cb6b79c4bca9ae"
+        }
     ]
 }
