@@ -96,7 +96,6 @@ N_COINS: constant(int128) = ___N_COINS___
 MAX_COIN: constant(int128) = N_COINS - 1
 
 FEE_DENOMINATOR: constant(uint256) = 10 ** 10
-LENDING_PRECISION: constant(uint256) = 10 ** 18
 PRECISION: constant(uint256) = 10 ** 18  # The precision to convert to
 PRECISION_MUL: constant(uint256[N_COINS]) = ___PRECISION_MUL___
 RATES: constant(uint256[N_COINS]) = ___RATES___
@@ -230,7 +229,7 @@ def _xp(vp_rate: uint256) -> uint256[N_COINS]:
     result: uint256[N_COINS] = RATES
     result[MAX_COIN] = vp_rate  # virtual price for the metacurrency
     for i in range(N_COINS):
-        result[i] = result[i] * self.balances[i] / LENDING_PRECISION
+        result[i] = result[i] * self.balances[i] / PRECISION
     return result
 
 
@@ -476,7 +475,6 @@ def get_dy_underlying(i: int128, j: int128, dx: uint256) -> uint256:
     vp_rate: uint256 = self._vp_rate_ro()
     xp: uint256[N_COINS] = self._xp(vp_rate)
     precisions: uint256[N_COINS] = PRECISION_MUL
-    base_precisions: uint256[BASE_N_COINS] = BASE_PRECISION_MUL
     _base_pool: address = self.base_pool
 
     # Use base_i or base_j if they are >= 0
@@ -562,8 +560,6 @@ def exchange(i: int128, j: int128, dx: uint256, min_dy: uint256):
 @nonreentrant('lock')
 def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256):
     assert not self.is_killed  # dev: is killed
-    precisions: uint256[N_COINS] = PRECISION_MUL
-    base_precisions: uint256[BASE_N_COINS] = BASE_PRECISION_MUL
     rates: uint256[N_COINS] = RATES
     rates[MAX_COIN] = self._vp_rate()
     _base_pool: address = self.base_pool
@@ -619,7 +615,7 @@ def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256):
 
         x: uint256 = 0
         if base_i < 0:
-            x = xp[i] + dx_w_fee * precisions[i]
+            x = xp[i] + dx_w_fee * rates[i] / PRECISION
         else:
             # i is from BasePool
             # At first, get the amount of pool tokens
@@ -802,7 +798,8 @@ def _calc_withdraw_one_coin(_token_amount: uint256, i: int128, vp_rate: uint256)
     # * Solve Eqn against y_i for D - _token_amount
     amp: uint256 = self._A()
     _fee: uint256 = self.fee * N_COINS / (4 * (N_COINS - 1))
-    precisions: uint256[N_COINS] = PRECISION_MUL
+    rates: uint256[N_COINS] = RATES
+    rates[MAX_COIN] = vp_rate
     total_supply: uint256 = self.token.totalSupply()
 
     xp: uint256[N_COINS] = self._xp(vp_rate)
@@ -812,7 +809,7 @@ def _calc_withdraw_one_coin(_token_amount: uint256, i: int128, vp_rate: uint256)
     xp_reduced: uint256[N_COINS] = xp
 
     new_y: uint256 = self.get_y_D(amp, i, xp, D1)
-    dy_0: uint256 = (xp[i] - new_y) / precisions[i]  # w/o fees
+    dy_0: uint256 = (xp[i] - new_y) * PRECISION / rates[i]  # w/o fees
 
     for j in range(N_COINS):
         dx_expected: uint256 = 0
@@ -823,7 +820,7 @@ def _calc_withdraw_one_coin(_token_amount: uint256, i: int128, vp_rate: uint256)
         xp_reduced[j] -= _fee * dx_expected / FEE_DENOMINATOR
 
     dy: uint256 = xp_reduced[i] - self.get_y_D(amp, i, xp_reduced, D1)
-    dy = (dy - 1) / precisions[i]  # Withdraw less to account for rounding errors
+    dy = (dy - 1) * PRECISION / rates[i]  # Withdraw less to account for rounding errors
 
     return dy, dy_0 - dy
 
