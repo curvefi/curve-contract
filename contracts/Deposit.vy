@@ -11,12 +11,14 @@ from vyper.interfaces import ERC20
 interface CurveMeta:
     def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256): nonpayable
     def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS]): nonpayable
+    def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_amount: uint256): nonpayable
     def base_pool() -> address: view
     def coins(i: uint256) -> address: view
 
 interface CurveBase:
     def add_liquidity(amounts: uint256[BASE_N_COINS], min_mint_amount: uint256): nonpayable
     def remove_liquidity(_amount: uint256, min_amounts: uint256[BASE_N_COINS]): nonpayable
+    def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_amount: uint256): nonpayable
     def coins(i: uint256) -> address: view
 
 
@@ -153,7 +155,37 @@ def remove_liquidity(_amount: uint256, min_amounts: uint256[N_ALL_COINS]):
 @external
 @nonreentrant('lock')
 def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_amount: uint256):
-    pass
+    _token: address = self.token
+    assert ERC20(_token).transferFrom(msg.sender, self, _token_amount)
+
+    coin: address = ZERO_ADDRESS
+    if i < MAX_COIN:
+        coin = self.coins[i]
+        # Withdraw a metapool coin
+        CurveMeta(self.pool).remove_liquidity_one_coin(_token_amount, i, min_amount)
+    else:
+        coin = self.base_coins[i - MAX_COIN]
+        # Withdraw a base pool coin
+        CurveMeta(self.pool).remove_liquidity_one_coin(_token_amount, MAX_COIN, 0)
+        CurveBase(self.base_pool).remove_liquidity_one_coin(
+            ERC20(self.coins[MAX_COIN]).balanceOf(self), i-MAX_COIN, min_amount
+        )
+
+    # Tranfer the coin out
+    coin_amount: uint256 = ERC20(coin).balanceOf(self)
+    # "safeTransfer" which works for ERC20s which return bool or not
+    _response: Bytes[32] = raw_call(
+        coin,
+        concat(
+            method_id("transfer(address,uint256)"),
+            convert(msg.sender, bytes32),
+            convert(coin_amount, bytes32),
+        ),
+        max_outsize=32,
+    )  # dev: failed transfer
+    if len(_response) > 0:
+        assert convert(_response, bool)  # dev: failed transfer
+    # end "safeTransfer"
 
 
 @view
