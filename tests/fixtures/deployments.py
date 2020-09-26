@@ -1,4 +1,8 @@
 import pytest
+import requests
+
+from brownie.convert import to_address
+
 from conftest import WRAPPED_COIN_METHODS
 from scripts.utils import right_pad, pack_values
 
@@ -6,7 +10,52 @@ ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 
 
 @pytest.fixture(scope="module")
-def wrapped_coins(Contract, project, alice, pool_data, underlying_coins, is_forked):
+def MintableTestToken(Contract, accounts, web3, pool_data):
+
+    class _MintableTestToken(Contract):
+
+        _holders = {}
+
+        def __init__(self, address):
+            super().__init__(address)
+
+            # standardize mint / rate methods
+            if 'wrapped_contract' in pool_data:
+                fn_names = WRAPPED_COIN_METHODS[pool_data['wrapped_contract']]
+                for target, attr in fn_names.items():
+                    if hasattr(self, attr):
+                        setattr(self, target, getattr(self, attr))
+
+            # get top token holder addresses
+            address = self.address
+            if address not in self._holders:
+                holders = requests.get(
+                    f"https://api.ethplorer.io/getTopTokenHolders/{address}",
+                    params={'apiKey': "freekey", 'limit': 50},
+                ).json()
+                self._holders[address] = [to_address(i['address']) for i in holders['holders']]
+
+        def _mint_for_testing(self, target, amount, tx=None):
+            for address in self._holders[self.address].copy():
+                if address == self.address:
+                    # don't claim from the treasury - that could cause wierdness
+                    continue
+
+                balance = self.balanceOf(address)
+                if amount > balance:
+                    self.transfer(target, balance, {'from': address})
+                    amount -= balance
+                else:
+                    self.transfer(target, amount, {'from': address})
+                    return
+
+            raise ValueError("Insufficient tokens available to mint")
+
+    yield _MintableTestToken
+
+
+@pytest.fixture(scope="module")
+def wrapped_coins(MintableTestToken, project, alice, pool_data, underlying_coins, is_forked):
     coins = []
 
     if not pool_data.get("wrapped_contract"):
@@ -17,7 +66,7 @@ def wrapped_coins(Contract, project, alice, pool_data, underlying_coins, is_fork
             if not coin_data['wrapped']:
                 coins.append(underlying_coins[i])
             else:
-                coins.append(Contract(coin_data['wrapped_address']))
+                coins.append(MintableTestToken(coin_data['wrapped_address']))
         yield coins
 
     else:
@@ -41,12 +90,12 @@ def wrapped_coins(Contract, project, alice, pool_data, underlying_coins, is_fork
 
 
 @pytest.fixture(scope="module")
-def underlying_coins(Contract, ERC20Mock, ERC20MockNoReturn, alice, pool_data, is_forked):
+def underlying_coins(MintableTestToken, ERC20Mock, ERC20MockNoReturn, alice, pool_data, is_forked):
     coins = []
 
     if is_forked:
         for data in pool_data['coins']:
-            coins.append(Contract(data['underlying_address']))
+            coins.append(MintableTestToken(data['underlying_address']))
     else:
         for i, coin_data in enumerate(pool_data['coins']):
             decimals = coin_data['decimals']

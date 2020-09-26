@@ -18,9 +18,9 @@ def mint_bob(bob, underlying_coins, wrapped_coins, initial_amounts):
             continue
 
         if underlying != wrapped:
-            underlying._mint_for_testing(bob, amount * 2, {'from': bob})
-            underlying.approve(wrapped, 2**256-1, {'from': bob})
-            wrapped.mint(amount, {'from': bob})
+            wrapped._mint_for_testing(bob, amount, {'from': bob})
+            amount = amount * 10 ** wrapped.decimals() / 10 ** underlying.decimals()
+            underlying._mint_for_testing(bob, amount, {'from': bob})
         else:
             underlying._mint_for_testing(bob, amount, {'from': bob})
 
@@ -42,9 +42,9 @@ def mint_alice(alice, underlying_coins, wrapped_coins, initial_amounts):
             continue
 
         if underlying != wrapped:
-            underlying._mint_for_testing(alice, amount * 2, {'from': alice})
-            underlying.approve(wrapped, 2**256-1, {'from': alice})
-            wrapped.mint(amount, {'from': alice})
+            wrapped._mint_for_testing(alice, amount, {'from': alice})
+            amount = amount * 10 ** wrapped.decimals() / 10 ** underlying.decimals()
+            underlying._mint_for_testing(alice, amount, {'from': alice})
         else:
             underlying._mint_for_testing(alice, amount, {'from': alice})
 
