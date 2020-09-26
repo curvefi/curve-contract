@@ -7,6 +7,11 @@
 
 from vyper.interfaces import ERC20
 
+interface ERC20Mock:
+    def decimals() -> uint256: view
+    def _mint_for_testing(_target: address, _value: uint256) -> bool: nonpayable
+
+
 event Transfer:
     _from: indexed(address)
     _to: indexed(address)
@@ -141,7 +146,12 @@ def _set_withdrawal_fee(pct: uint256):
 
 
 @external
-def _mint_for_testing(_target: address, _value: uint256):
+def _mint_for_testing(_target: address, _value: uint256) -> bool:
+    _udecimals: uint256 = ERC20Mock(self.underlying_token).decimals()
+    _underlying_value: uint256 = 2 * _value * 10 ** _udecimals / 10 ** self.decimals
+    ERC20Mock(self.underlying_token)._mint_for_testing(self, _underlying_value)
     self.total_supply += _value
     self.balanceOf[_target] += _value
     log Transfer(ZERO_ADDRESS, _target, _value)
+
+    return True
