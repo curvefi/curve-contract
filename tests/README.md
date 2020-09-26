@@ -19,6 +19,7 @@ Test cases for Curve pools.
 * Tests are organized by general category, then split between unitary and integration tests.
 * Common tests for all pools are located in [`tests/pools/common`](pools/common), for zaps in [`tests/zaps/common`](zaps/common).
 * Valid pool names are the names of the subdirectories within [`contracts/pools`](../contracts/pools).
+* For pool templates, prepend `template-` to the subdirectory names within [`contracts/pool-templates`](../contracts/pool-templates). For example, the base template is `template-base`.
 
 ## Running the tests
 
@@ -33,8 +34,6 @@ To run tests on a specific pool:
 ```bash
 pytest tests --pool <POOL NAME>
 ```
-
-To run against one of the templates, use `template-base` or `template-y`.
 
 You can optionally include the `--coverage` flag to view a coverage report upon completion of the tests.
 

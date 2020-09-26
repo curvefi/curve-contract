@@ -49,7 +49,7 @@ To run tests on a specific pool:
 pytest tests --pool <POOL NAME>
 ```
 
-Valid pool names are the names of the subdirectories within [`contracts/pools`](contracts/pools). To run against one of the templates, use `template-base` or `template-y`.
+Valid pool names are the names of the subdirectories within [`contracts/pools`](contracts/pools). For templates, prepend `template-` to the subdirectory names within [`contracts/pool-templates`](../contracts/pool-templates). For example, the base template is `template-base`.
 
 You can optionally include the `--coverage` flag to view a coverage report upon completion of the tests.
 

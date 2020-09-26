@@ -2,11 +2,12 @@
 
 Contract templates used as the basis for future pools.
 
-## Contracts
+## Subdirectories
 
-* [`DepositYLend`](DepositYLend.vy): Depositer for Yearn-style lending tokens
-* [`StableSwapBase`](StableSwapBase.vy): Minimal pool implementation optimized for no lending
-* [`StableSwapYLend`](StableSwapYLend.vy): Pool implementation with yearn-style lending
+Each subdirectory holds contracts and other files specific to a single Curve pool template.
+
+* [`base`]: Minimal pool implementation optimized for no lending
+* [`y`]: Pool implementation with yearn-style lending
 
 ## Development
 
@@ -19,4 +20,22 @@ Contracts in this subdirectory contain special triple-dunder variables which are
 * `___PRECISION_MUL___`: Array of integers that coin balances are multiplied by in order to adjust their precision to 18 decimal places
 * `___RATES___`: Array of integers indicating the relative value of `1e18` tokens for each stablecoin
 
-These variables are substituted out at compile-time. To set the actual values you should modify [`brownie_hooks.py`](../../brownie_hooks.py) rather than changing them directly in the template.
+These variables are substituted out at compile-time. To set the values, edit the `pooldata.json` file within the template directory.
+
+The layout of a template's `pooldata.json` is similar to that of an actual pool, but less fields are required:
+
+```js
+{
+    "wrapped_contract": "yERC20",   // mock wrapped coin contract to use, from `contracts/testing`
+    "coins": [                      // each list item represents 1 swappable coin within the pool
+        {
+            // required fields
+            "decimals": 18,          // number of decimal places for the underlying coin
+            "tethered": false,       // does the token contract return `None` on a successful transfer/approve?
+            "wrapped": true,         // is wrapping used for this coin?
+            "wrapped_decimals": 18,  // decimal places for the wrapped coin - can be omitted if wrapped == false
+        },
+    ]
+}
+```
+
