@@ -20,8 +20,10 @@ Contracts used exclusively for testing. These are not considered part of Curve a
 All test tokens implement the following method to allow minting to arbitrary addresses during testing:
 
 ```python
-def _mint_for_testing(_target: address, _value: uint256):
+def _mint_for_testing(_target: address, _value: uint256) -> bool:
 ```
 
 * `_target`: Address to mint tokens to
 * `_value`: Number of tokens to mint
+
+When called on a wrapped token, an amount of the underlying token is also minted at the wrapped token address in order to ensure unwrapping is possible.

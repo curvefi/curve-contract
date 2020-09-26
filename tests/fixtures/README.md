@@ -10,7 +10,6 @@ Pytest fixtures used in Curve's test suite.
 * [`pooldata.py`](pooldata.py): Pool dependent data fixtures
 * [`setup.py`](setup.py): Test setup fixtures, used for common processes such as adding initial liquidity or approving token transfers
 
-
 ## Fixtures
 
 ### `accounts.py`

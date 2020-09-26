@@ -4,6 +4,7 @@ import pytest
 from brownie.project.main import get_loaded_projects
 from pathlib import Path
 
+from brownie._config import CONFIG
 from brownie_hooks import DECIMALS as hook_decimals, USE_LENDING as hook_lending
 
 
@@ -44,6 +45,7 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "target_pool: run test against one or more specific pool")
     config.addinivalue_line("markers", "skip_pool: exclude one or more pools in this test")
     config.addinivalue_line("markers", "lending: only run test against pools that involve lending")
+    config.addinivalue_line("markers", "zap: only run test against pools with a deposit contract")
     config.addinivalue_line(
         "markers",
         "itercoins: parametrize a test with one or more ranges, equal to the length "
@@ -106,7 +108,17 @@ def pytest_generate_tests(metafunc):
             else:
                 # run targetted pool/zap tests against only the specific pool
                 params = [test_path.parts[2]]
-            metafunc.parametrize("pool_data", params, indirect=True, scope="session")
+        else:
+            # pool tests outside `tests/pools` or `tests/zaps` will only run when
+            # a target pool is explicitly declared
+            try:
+                params = metafunc.config.getoption("pool").split(',')
+            except Exception:
+                raise pytest.UsageError(
+                    f"'{test_path.as_posix()}' contains pool tests, but is outside of "
+                    "'tests/pools/'. To run it, specify a pool with `--pool [name]`"
+                )
+        metafunc.parametrize("pool_data", params, indirect=True, scope="session")
 
         # apply initial parametrization of `itercoins`
         for marker in metafunc.definition.iter_markers(name="itercoins"):
@@ -116,11 +128,18 @@ def pytest_generate_tests(metafunc):
 
 def pytest_collection_modifyitems(config, items):
     project = get_loaded_projects()[0]
+    is_forked = "fork" in CONFIG.active_network['id']
+
     for item in items.copy():
         try:
             params = item.callspec.params
             data = _pooldata[params['pool_data']]
         except Exception:
+            continue
+
+        # during forked tests, filter pools where pooldata does not contain deployment addresses
+        if is_forked and next((i for i in data["coins"] if "underlying_address" not in i), False):
+            items.remove(item)
             continue
 
         # remove excess `itercoins` parametrized tests
@@ -147,6 +166,11 @@ def pytest_collection_modifyitems(config, items):
         for marker in item.iter_markers(name="lending"):
             deployer = getattr(project, data['swap_contract'])
             if "exchange_underlying" not in deployer.signatures:
+                items.remove(item)
+
+        # apply `lending` marker
+        for marker in item.iter_markers(name="zap"):
+            if "zap_contract" not in data:
                 items.remove(item)
 
     # hacky magic to ensure the correct number of tests is shown in collection report
@@ -178,3 +202,8 @@ def pool_data(request):
 @pytest.fixture(scope="session")
 def project():
     yield get_loaded_projects()[0]
+
+
+@pytest.fixture(scope="session")
+def is_forked():
+    yield "fork" in CONFIG.active_network['id']

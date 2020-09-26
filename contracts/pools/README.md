@@ -28,15 +28,20 @@ Each subdirectory holds contracts and other files specific to a single Curve poo
 
 ```js
 {
-    "lp_contract": "CurveTokenV1", // LP token contract to use with this pool, from `contracts/tokens`
-    "wrapped_contract": "yERC20",  // mock wrapped coin contract to use, from `contracts/testing`
-    "coins": [                     // each list item represents 1 swappable coin within the pool
+    "lp_contract": "CurveTokenV1",       // LP token contract to use with this pool, from `contracts/tokens`
+    "wrapped_contract": "yERC20",        // mock wrapped coin contract to use, from `contracts/testing`
+    "coins": [                           // each list item represents 1 swappable coin within the pool
         {
-            "decimals": 18,         // number of decimal places for the underlying coin
-            "tethered": false,      // does the token contract return `None` on a successful transfer/approve?
-            "wrapped": true,        // is wrapping used for this coin?
-            "wrapped_decimals": 18, // decimal places for the wrapped coin - can be omitted if wrapped == false
-            "withdrawal_fee": 0     // optional fee when converting wrapped to underlying, expressed in bps
+            // required fields
+            "decimals": 18,               // number of decimal places for the underlying coin
+            "tethered": false,            // does the token contract return `None` on a successful transfer/approve?
+            "wrapped": true,              // is wrapping used for this coin?
+            "wrapped_decimals": 18,       // decimal places for the wrapped coin - can be omitted if wrapped == false
+            // optional fields
+            "name": "",                   // underlying coin name
+            "withdrawal_fee": 0,          // fee applied when converting wrapped to underlying, expressed in bps
+            "underlying_address": "0x00", // underlying coin mainnet deployment address, used in forked tests
+            "wrapped_address": "0x00"     // wrapped coin mainnet deployment address
         },
     ]
 }

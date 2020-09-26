@@ -28,29 +28,31 @@ def test_amount_dy_underlying(registry, swap, send, recv):
 
 
 @pytest.mark.itercoins("send", "recv")
-def test_exchange(bob, registry, wrapped_coins, swap, send, recv):
+def test_exchange(bob, registry, wrapped_coins, wrapped_decimals, swap, send, recv):
     send_token = wrapped_coins[send]
     recv_token = wrapped_coins[recv]
 
-    send_token._mint_for_testing(bob, 10**18, {'from': bob})
-    send_token.approve(registry, 10**18, {'from': bob})
-    expected = registry.get_exchange_amount(swap, send_token, recv_token, 10**18)
+    amount = 10**wrapped_decimals[send]
+    send_token._mint_for_testing(bob, amount, {'from': bob})
+    send_token.approve(registry, amount, {'from': bob})
+    expected = registry.get_exchange_amount(swap, send_token, recv_token, amount)
 
-    registry.exchange(swap, send_token, recv_token, 10**18, 0, {'from': bob})
+    registry.exchange(swap, send_token, recv_token, amount, 0, {'from': bob})
     assert send_token.balanceOf(bob) == 0
     assert recv_token.balanceOf(bob) / expected == pytest.approx(1)
 
 
 @pytest.mark.lending
 @pytest.mark.itercoins("send", "recv")
-def test_exchange_underlying(bob, registry, underlying_coins, swap, send, recv):
+def test_exchange_underlying(bob, registry, underlying_coins, underlying_decimals, swap, send, recv):
     send_token = underlying_coins[send]
     recv_token = underlying_coins[recv]
 
-    send_token._mint_for_testing(bob, 10**18, {'from': bob})
-    send_token.approve(registry, 10**18, {'from': bob})
-    expected = registry.get_exchange_amount(swap, send_token, recv_token, 10**18)
+    amount = 10**underlying_decimals[send]
+    send_token._mint_for_testing(bob, amount, {'from': bob})
+    send_token.approve(registry, amount, {'from': bob})
+    expected = registry.get_exchange_amount(swap, send_token, recv_token, amount)
 
-    registry.exchange(swap, send_token, recv_token, 10**18, 0, {'from': bob})
+    registry.exchange(swap, send_token, recv_token, amount, 0, {'from': bob})
     assert send_token.balanceOf(bob) == 0
     assert recv_token.balanceOf(bob) / expected == pytest.approx(1)
