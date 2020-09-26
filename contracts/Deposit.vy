@@ -12,38 +12,98 @@ interface CurveMeta:
     def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256): nonpayable
     def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS]): nonpayable
     def base_pool() -> address: view
+    def coins(i: uint256) -> address: view
 
 interface CurveBase:
     def add_liquidity(amounts: uint256[BASE_N_COINS], min_mint_amount: uint256): nonpayable
     def remove_liquidity(_amount: uint256, min_amounts: uint256[BASE_N_COINS]): nonpayable
+    def coins(i: uint256) -> address: view
 
 
 N_COINS: constant(int128) = ___N_COINS___
+MAX_COIN: constant(int128) = N_COINS-1
 BASE_N_COINS: constant(int128) = ___BASE_N_COINS___
 N_ALL_COINS: constant(int128) = N_COINS + BASE_N_COINS - 1
+#
+# An asset shich may have a transfer fee (USDT)
+FEE_ASSET: constant(address) = 0xdAC17F958D2ee523a2206206994597C13D831ec7
 
 
 pool: public(address)
 token: public(address)
 base_pool: public(address)
 
+coins: public(address[N_COINS])
+base_coins: public(address[BASE_N_COINS])
+
 
 @external
 def __init__(_pool: address, _token: address):
     self.pool = _pool
     self.token = _token
-    self.base_pool = CurveMeta(_pool).base_pool()
+    _base_pool: address = CurveMeta(_pool).base_pool()
+    self.base_pool = _base_pool
+
+    for i in range(N_COINS):
+        coin: address = CurveMeta(_pool).coins(convert(i, uint256))
+        self.coins[i] = coin
+        ERC20(coin).approve(_pool, MAX_UINT256)
+
+    for i in range(BASE_N_COINS):
+        coin: address = CurveBase(_base_pool).coins(convert(i, uint256))
+        self.base_coins[i] = coin
+        ERC20(coin).approve(self, MAX_UINT256)
 
 
 @external
 @nonreentrant('lock')
 def add_liquidity(amounts: uint256[N_ALL_COINS], min_mint_amount: uint256):
     meta_amounts: uint256[N_COINS] = empty(uint256[N_COINS])  # Ben, Bryant, - wen slicing? :-D
-    for i in range(N_COINS-1):
+    for i in range(MAX_COIN):
         meta_amounts[i] = amounts[i]
     base_amounts: uint256[BASE_N_COINS] = empty(uint256[BASE_N_COINS])
     for i in range(BASE_N_COINS):
-        base_amounts[i] = amounts[i + N_COINS-1]
+        base_amounts[i] = amounts[i + MAX_COIN]
+
+    # Transfer all coins in
+    for i in range(N_ALL_COINS):
+        coin: address = ZERO_ADDRESS
+        if i < MAX_COIN:
+            coin = self.coins[i]
+        else:
+            coin = self.base_coins[i - MAX_COIN]
+        # "safeTransferFrom" which works for ERC20s which return bool or not
+        _response: Bytes[32] = raw_call(
+            coin,
+            concat(
+                method_id("transferFrom(address,address,uint256)"),
+                convert(msg.sender, bytes32),
+                convert(self, bytes32),
+                convert(amounts[i], bytes32),
+            ),
+            max_outsize=32,
+        )  # dev: failed transfer
+        if len(_response) > 0:
+            assert convert(_response, bool)  # dev: failed transfer
+        # end "safeTransferFrom"
+        # Handle potential Tether fees
+        if coin == FEE_ASSET:
+            amount: uint256 = ERC20(FEE_ASSET).balanceOf(self)
+            if i < MAX_COIN:
+                meta_amounts[i] = amount
+            else:
+                base_amounts[i] = amount
+    # End transfer
+
+    CurveBase(self.base_pool).add_liquidity(base_amounts, 0)
+    base_tokens: uint256 = ERC20(self.coins[MAX_COIN]).balanceOf(self)
+
+    meta_amounts[MAX_COIN] = base_tokens
+    CurveMeta(self.pool).add_liquidity(meta_amounts, min_mint_amount)
+
+    _token: address = self.token
+    assert ERC20(_token).transfer(
+        msg.sender, ERC20(_token).balanceOf(self))
 
 
 @external
