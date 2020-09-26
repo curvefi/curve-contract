@@ -5,8 +5,6 @@
 # Coins 0 .. N_COINS-2 are normal coins
 # Coin N_COINS-1 is another pool token which has get_virtual_price()
 
-# XXX return on exchange to be able to use it for precise calc
-
 from vyper.interfaces import ERC20
 
 
