@@ -95,12 +95,14 @@ def add_liquidity(amounts: uint256[N_ALL_COINS], min_mint_amount: uint256):
                 base_amounts[i] = amount
     # End transfer
 
+    # Deposit to the base pool
     CurveBase(self.base_pool).add_liquidity(base_amounts, 0)
-    base_tokens: uint256 = ERC20(self.coins[MAX_COIN]).balanceOf(self)
+    meta_amounts[MAX_COIN] = ERC20(self.coins[MAX_COIN]).balanceOf(self)
 
-    meta_amounts[MAX_COIN] = base_tokens
+    # Deposit to the meta pool
     CurveMeta(self.pool).add_liquidity(meta_amounts, min_mint_amount)
 
+    # Transfer meta token back
     _token: address = self.token
     assert ERC20(_token).transfer(
         msg.sender, ERC20(_token).balanceOf(self))
@@ -109,8 +111,44 @@ def add_liquidity(amounts: uint256[N_ALL_COINS], min_mint_amount: uint256):
 @external
 @nonreentrant('lock')
 def remove_liquidity(_amount: uint256, min_amounts: uint256[N_ALL_COINS]):
-    pass
+    _token: address = self.token
+    assert ERC20(_token).transferFrom(msg.sender, self, _amount)
 
+    # Withdraw from meta
+    min_amounts_meta: uint256[N_COINS] = empty(uint256[N_COINS])
+    for i in range(MAX_COIN):
+        min_amounts_meta[i] = min_amounts[i]
+    CurveMeta(self.pool).remove_liquidity(_amount, min_amounts_meta)
+
+    # Withdraw from base
+    _base_amount: uint256 = ERC20(_token).balanceOf(self)
+    min_amounts_base: uint256[BASE_N_COINS] = empty(uint256[BASE_N_COINS])
+    for i in range(BASE_N_COINS):
+        min_amounts_base[i] = min_amounts[MAX_COIN+i]
+    CurveBase(self.base_pool).remove_liquidity(_base_amount, min_amounts_base)
+
+    # Transfer all coins out
+    for i in range(N_ALL_COINS):
+        coin: address = ZERO_ADDRESS
+        if i < MAX_COIN:
+            coin = self.coins[i]
+        else:
+            coin = self.base_coins[i - MAX_COIN]
+        coin_amount: uint256 = ERC20(coin).balanceOf(self)
+        # "safeTransfer" which works for ERC20s which return bool or not
+        _response: Bytes[32] = raw_call(
+            coin,
+            concat(
+                method_id("transfer(address,uint256)"),
+                convert(msg.sender, bytes32),
+                convert(coin_amount, bytes32),
+            ),
+            max_outsize=32,
+        )  # dev: failed transfer
+        if len(_response) > 0:
+            assert convert(_response, bool)  # dev: failed transfer
+        # end "safeTransfer"
+    # End transfer
 
 @external
 @nonreentrant('lock')
