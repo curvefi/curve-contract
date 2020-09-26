@@ -12,6 +12,8 @@ interface CurveMeta:
     def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256): nonpayable
     def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS]): nonpayable
     def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_amount: uint256): nonpayable
+    def calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> uint256: view
+    def calc_token_amount(amounts: uint256[N_COINS], deposit: bool) -> uint256: view
     def base_pool() -> address: view
     def coins(i: uint256) -> address: view
 
@@ -19,6 +21,8 @@ interface CurveBase:
     def add_liquidity(amounts: uint256[BASE_N_COINS], min_mint_amount: uint256): nonpayable
     def remove_liquidity(_amount: uint256, min_amounts: uint256[BASE_N_COINS]): nonpayable
     def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_amount: uint256): nonpayable
+    def calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> uint256: view
+    def calc_token_amount(amounts: uint256[BASE_N_COINS], deposit: bool) -> uint256: view
     def coins(i: uint256) -> address: view
 
 
@@ -191,10 +195,24 @@ def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_amount: uin
 @view
 @external
 def calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> uint256:
-    return 0
+    if i < MAX_COIN:
+        return CurveMeta(self.pool).calc_withdraw_one_coin(_token_amount, i)
+    else:
+        _base_tokens: uint256 = CurveMeta(self.pool).calc_withdraw_one_coin(_token_amount, MAX_COIN)
+        return CurveBase(self.base_pool).calc_withdraw_one_coin(_base_tokens, i-MAX_COIN)
 
 
 @view
 @external
 def calc_token_amount(amounts: uint256[N_ALL_COINS], deposit: bool) -> uint256:
-    return 0
+    meta_amounts: uint256[N_COINS] = empty(uint256[N_COINS])
+    for i in range(MAX_COIN):
+        meta_amounts[i] = amounts[i]
+    base_amounts: uint256[BASE_N_COINS] = empty(uint256[BASE_N_COINS])
+    for i in range(BASE_N_COINS):
+        base_amounts[i] = amounts[i + MAX_COIN]
+
+    _base_tokens: uint256 = CurveBase(self.base_pool).calc_token_amount(base_amounts, deposit)
+    meta_amounts[MAX_COIN] = _base_tokens
+
+    return CurveMeta(self.pool).calc_token_amount(meta_amounts, deposit)
