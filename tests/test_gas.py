@@ -4,7 +4,16 @@ import pytest
 pytestmark = pytest.mark.usefixtures("mint_alice", "approve_alice", "mint_bob", "approve_bob")
 
 
-def test_swap_gas(chain, alice, bob, swap, n_coins, wrapped_decimals, initial_amounts):
+def test_swap_gas(
+    chain,
+    alice,
+    bob,
+    swap,
+    n_coins,
+    wrapped_decimals,
+    underlying_decimals,
+    initial_amounts,
+):
     swap.add_liquidity(initial_amounts, 0, {'from': alice})
     chain.sleep(3600)
 
@@ -15,7 +24,7 @@ def test_swap_gas(chain, alice, bob, swap, n_coins, wrapped_decimals, initial_am
 
     if hasattr(swap, "exchange_underlying"):
         for send, recv in itertools.permutations(range(n_coins), 2):
-            amount = 10**wrapped_decimals[send]
+            amount = 10**underlying_decimals[send]
             swap.exchange_underlying(send, recv, amount, 0, {'from': bob})
             chain.sleep(3600)
 
