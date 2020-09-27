@@ -1,5 +1,6 @@
 import json
 import pytest
+import warnings
 
 from brownie.project.main import get_loaded_projects
 from pathlib import Path
@@ -108,7 +109,8 @@ def pytest_generate_tests(metafunc):
             try:
                 params = metafunc.config.getoption("pool").split(',')
             except Exception:
-                raise pytest.UsageError(
+                params = []
+                warnings.warn(
                     f"'{test_path.as_posix()}' contains pool tests, but is outside of "
                     "'tests/pools/'. To run it, specify a pool with `--pool [name]`"
                 )
