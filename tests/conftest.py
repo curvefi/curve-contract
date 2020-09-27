@@ -1,12 +1,11 @@
 import json
 import pytest
+import warnings
 
 from brownie.project.main import get_loaded_projects
 from pathlib import Path
 
 from brownie._config import CONFIG
-from brownie_hooks import DECIMALS as hook_decimals, USE_LENDING as hook_lending
-
 
 # functions in wrapped methods are renamed to simplify common tests
 
@@ -69,23 +68,19 @@ def pytest_sessionstart():
 
     # create pooldata for templates
     lp_contract = sorted(i._name for i in project if i._name.startswith("CurveToken"))[-1]
-    _pooldata['template-y'] = {
-        "name": "template-y",
-        "swap_contract": "StableSwapYLend",
-        "zap_contract": "DepositYLend",
-        "lp_contract": lp_contract,
-        "wrapped_contract": "yERC20",
-        "coins": [
-            {"decimals": d, "tethered": bool(d), "wrapped": w, "wrapped_decimals": d}
-            for d, w in zip(hook_decimals, hook_lending)
-        ]
-    }
-    _pooldata['template-base'] = {
-        "name": "template-base",
-        "swap_contract": "StableSwapBase",
-        "lp_contract": lp_contract,
-        "coins": [{"decimals": i, "tethered": bool(i), "wrapped": False} for i in hook_decimals]
-    }
+
+    for path in [i for i in project._path.glob("contracts/pool-templates/*") if i.is_dir()]:
+        with path.joinpath('pooldata.json').open() as fp:
+            name = f"template-{path.name}"
+            _pooldata[name] = json.load(fp)
+            _pooldata[name].update(
+                name=name,
+                lp_contract=lp_contract,
+                swap_contract=next(i.stem for i in path.glob(f"*Swap*")),
+            )
+            zap_contract = next((i.stem for i in path.glob(f"Deposit*")), None)
+            if zap_contract:
+                _pooldata[name]['zap_contract'] = zap_contract
 
 
 def pytest_generate_tests(metafunc):
@@ -114,7 +109,8 @@ def pytest_generate_tests(metafunc):
             try:
                 params = metafunc.config.getoption("pool").split(',')
             except Exception:
-                raise pytest.UsageError(
+                params = []
+                warnings.warn(
                     f"'{test_path.as_posix()}' contains pool tests, but is outside of "
                     "'tests/pools/'. To run it, specify a pool with `--pool [name]`"
                 )

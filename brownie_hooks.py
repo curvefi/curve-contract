@@ -1,36 +1,33 @@
 """
 Compile-time hook used to set `StableSwap` constants.
 
-In order to set the compile-time constants, set `DECIMALS` to the number
-of decimal places for each underlying coin within the pool.
+This file should not be modified directly. Values are set based on the
+`pooldata.json` file within each template subdirectory.
 """
 
-# number of decimals for each underlying coin within the pool
-DECIMALS = [18, 8]
-
-# is each underlying coin lent out on the lending protocol associated with the given pool?
-USE_LENDING = [True, True]
-
-
-n_coins = len(DECIMALS)
-precision_multiplier = [10**18 // (10**i) for i in DECIMALS]
-rates = [i*10**18 for i in precision_multiplier]
-
-replacements = {
-    '___N_COINS___': str(n_coins),
-    '___PRECISION_MUL___': str(precision_multiplier),
-    '___RATES___': str(rates),
-    '___USE_LENDING___': str(USE_LENDING),
-}
+import json
 
 
 def brownie_load_source(path, source):
 
-    if len(DECIMALS) < 2:
-        raise ValueError("Must set at least 2 decimal values in `brownie_hooks.py`")
+    if "pool-templates" not in path.parts:
+        return source
 
-    if path.stem.startswith("StableSwap") or path.stem.startswith("Deposit"):
-        for k, v in replacements.items():
-            source = source.replace(k, v)
+    with path.parent.joinpath('pooldata.json').open() as fp:
+        pool_data = json.load(fp)
+
+    decimals = [i['decimals'] for i in pool_data['coins']]
+    precision_multiplier = [10**18 // (10**i) for i in decimals]
+    rates = [i*10**18 for i in precision_multiplier]
+
+    replacements = {
+        '___N_COINS___': len(decimals),
+        '___PRECISION_MUL___': precision_multiplier,
+        '___RATES___': rates,
+        '___USE_LENDING___': [i['wrapped'] for i in pool_data['coins']],
+    }
+
+    for k, v in replacements.items():
+        source = source.replace(k, str(v))
 
     return source
