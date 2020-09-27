@@ -96,10 +96,12 @@ def test_deposits(zap):
     ...
 ```
 
-### `itercoins(*arg)`
+### `itercoins(*arg, underlying=False)`
 Parametrizes each of the given arguments with a range of numbers equal to the total number of coins for the given pool. When multiple arguments are given, each argument has a unique value for every generated test.
 
 For example, `itercoins("send", "recv")` with a pool of 3 coins will parametrize with the sequence `[(0, 1), (0, 2), (1, 0), (1, 2), (2, 0), (2, 1)]`.
+
+If `underlying` is set as `True`, the upper bound of iteration corresponds to the true number of underlying coins. This is useful when testing metapools.
 
 ```python
 @pytest.mark.itercoins("send", "recv"):
