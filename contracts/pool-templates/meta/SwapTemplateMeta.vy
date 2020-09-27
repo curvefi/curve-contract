@@ -184,7 +184,19 @@ def __init__(
     for i in range(BASE_POOL_COINS):
         _base_coin: address = Curve(_base_pool).coins(convert(i, uint256))
         self.base_coins[i] = _base_coin
-        ERC20(_base_coin).approve(_base_pool, MAX_UINT256)
+
+        # approve underlying coins for infinite transfers
+        _response: Bytes[32] = raw_call(
+            _base_coin,
+            concat(
+                method_id("approve(address,uint256)"),
+                convert(_base_pool, bytes32),
+                convert(MAX_UINT256, bytes32),
+            ),
+            max_outsize=32,
+        )
+        if len(_response) > 0:
+            assert convert(_response, bool)
 
 
 @view
