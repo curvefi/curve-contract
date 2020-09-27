@@ -14,7 +14,22 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        pool: [3pool, busd, compound, hbtc, pax, ren, sbtc, snow, susd, template-base, template-y, usdt, y]
+        pool: [
+          3pool,
+          busd,
+          compound,
+          hbtc,
+          pax,
+          ren,
+          sbtc,
+          snow,
+          susd,
+          template-base,
+          template-meta,
+          template-y,
+          usdt,
+          y
+        ]
 
     steps:
     - uses: actions/checkout@v1
@@ -50,7 +65,22 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        pool: [3pool, busd, compound, hbtc, pax, ren, sbtc, snow, susd, template-base, template-y, usdt, y]
+        pool: [
+          3pool,
+          busd,
+          compound,
+          hbtc,
+          pax,
+          ren,
+          sbtc,
+          snow,
+          susd,
+          template-base,
+          template-meta,
+          template-y,
+          usdt,
+          y
+        ]
 
     steps:
     - uses: actions/checkout@v1
