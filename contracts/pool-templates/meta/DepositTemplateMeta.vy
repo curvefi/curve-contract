@@ -86,20 +86,24 @@ def __init__(_pool: address, _token: address):
 @external
 @nonreentrant('lock')
 def add_liquidity(amounts: uint256[N_ALL_COINS], min_mint_amount: uint256) -> uint256:
-    meta_amounts: uint256[N_COINS] = empty(uint256[N_COINS])  # Ben, Bryant, - wen slicing? :-D
-    for i in range(MAX_COIN):
-        meta_amounts[i] = amounts[i]
+    meta_amounts: uint256[N_COINS] = empty(uint256[N_COINS])
     base_amounts: uint256[BASE_N_COINS] = empty(uint256[BASE_N_COINS])
-    for i in range(BASE_N_COINS):
-        base_amounts[i] = amounts[i + MAX_COIN]
+    deposit_base: bool = False
 
     # Transfer all coins in
     for i in range(N_ALL_COINS):
+        amount: uint256 = amounts[i]
+        if amount == 0:
+            continue
         coin: address = ZERO_ADDRESS
         if i < MAX_COIN:
             coin = self.coins[i]
+            meta_amounts[i] = amount
         else:
-            coin = self.base_coins[i - MAX_COIN]
+            x: int128 = i - MAX_COIN
+            coin = self.base_coins[x]
+            base_amounts[x] = amount
+            deposit_base = True
         # "safeTransferFrom" which works for ERC20s which return bool or not
         _response: Bytes[32] = raw_call(
             coin,
@@ -107,7 +111,7 @@ def add_liquidity(amounts: uint256[N_ALL_COINS], min_mint_amount: uint256) -> ui
                 method_id("transferFrom(address,address,uint256)"),
                 convert(msg.sender, bytes32),
                 convert(self, bytes32),
-                convert(amounts[i], bytes32),
+                convert(amount, bytes32),
             ),
             max_outsize=32,
         )  # dev: failed transfer
@@ -116,16 +120,16 @@ def add_liquidity(amounts: uint256[N_ALL_COINS], min_mint_amount: uint256) -> ui
         # end "safeTransferFrom"
         # Handle potential Tether fees
         if coin == FEE_ASSET:
-            amount: uint256 = ERC20(FEE_ASSET).balanceOf(self)
+            amount = ERC20(FEE_ASSET).balanceOf(self)
             if i < MAX_COIN:
                 meta_amounts[i] = amount
             else:
                 base_amounts[i] = amount
-    # End transfer
 
     # Deposit to the base pool
-    CurveBase(self.base_pool).add_liquidity(base_amounts, 0)
-    meta_amounts[MAX_COIN] = ERC20(self.coins[MAX_COIN]).balanceOf(self)
+    if deposit_base:
+        CurveBase(self.base_pool).add_liquidity(base_amounts, 0)
+        meta_amounts[MAX_COIN] = ERC20(self.coins[MAX_COIN]).balanceOf(self)
 
     # Deposit to the meta pool
     CurveMeta(self.pool).add_liquidity(meta_amounts, min_mint_amount)
