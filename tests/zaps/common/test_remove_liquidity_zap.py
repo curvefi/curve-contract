@@ -4,8 +4,25 @@ import pytest
 pytestmark = pytest.mark.usefixtures("add_initial_liquidity", "approve_zap")
 
 
-def test_remove_liquidity(
-    alice,
+@pytest.fixture(scope="module", autouse=True)
+def setup(add_initial_liquidity, approve_zap, alice, bob, pool_token):
+    pool_token.transfer(bob, pool_token.balanceOf(alice), {'from': alice})
+
+
+@pytest.mark.parametrize("divisor", [1, 23, 1337])
+def test_lp_token_balances(bob, zap, underlying_coins, pool_token, divisor):
+    initial_balance = pool_token.balanceOf(bob)
+    withdraw_amount = initial_balance // divisor
+    min_amounts = [0] * len(underlying_coins)
+    zap.remove_liquidity(withdraw_amount, min_amounts, {'from': bob})
+
+    # bob is the only LP, total supply is affected in the same way as his balance
+    assert pool_token.balanceOf(bob) == initial_balance - withdraw_amount
+    assert pool_token.totalSupply() == initial_balance - withdraw_amount
+
+
+@pytest.mark.parametrize("divisor", [1, 23, 1337])
+def test_wrapped_balances(
     bob,
     swap,
     zap,
@@ -13,52 +30,58 @@ def test_remove_liquidity(
     wrapped_coins,
     pool_token,
     initial_amounts,
-    n_coins,
+    divisor,
 ):
-    pool_token.transfer(bob, pool_token.balanceOf(alice), {'from': alice})
-    zap.remove_liquidity(n_coins * 10**24, [0] * n_coins, {'from': bob})
+    initial_balance = pool_token.balanceOf(bob)
+    withdraw_amount = initial_balance // divisor
+    min_amounts = [0] * len(underlying_coins)
+    zap.remove_liquidity(withdraw_amount, min_amounts, {'from': bob})
 
-    zipped = zip(underlying_coins, wrapped_coins, initial_amounts)
-    for underlying, wrapped, amount in zipped:
-        assert underlying.balanceOf(zap) == 0
-        assert wrapped.balanceOf(zap) == 0
-
-        assert underlying.balanceOf(swap) == 0
-        assert wrapped.balanceOf(swap) == 0
-        assert 0 < underlying.balanceOf(bob) <= amount
-
-    assert pool_token.balanceOf(bob) == 0
-    assert pool_token.totalSupply() == 0
+    for coin, initial in zip(wrapped_coins, initial_amounts):
+        assert coin.balanceOf(zap) == 0
+        assert coin.balanceOf(swap) == initial - (initial // divisor)
 
 
-def test_remove_partial(
-    alice, bob, swap, zap, underlying_coins, wrapped_coins, pool_token, initial_amounts, n_coins
+@pytest.mark.parametrize("divisor", [1, 23, 1337])
+def test_underlying_balances(
+    bob,
+    swap,
+    zap,
+    underlying_coins,
+    wrapped_coins,
+    pool_token,
+    initial_amounts_underlying,
+    divisor,
+    is_metapool,
 ):
-    withdraw_amount = pool_token.balanceOf(alice) // 2
-    pool_token.transfer(bob, pool_token.balanceOf(alice), {'from': alice})
-    zap.remove_liquidity(withdraw_amount, [0] * n_coins, {'from': bob})
+    initial_balance = pool_token.balanceOf(bob)
+    withdraw_amount = initial_balance // divisor
+    min_amounts = [0] * len(underlying_coins)
+    zap.remove_liquidity(withdraw_amount, min_amounts, {'from': bob})
 
-    for underlying, wrapped, amount in zip(underlying_coins, wrapped_coins, initial_amounts):
-        assert underlying.balanceOf(zap) == 0
-        assert wrapped.balanceOf(zap) == 0
+    expected = [i // divisor for i in initial_amounts_underlying]
 
-        assert wrapped.balanceOf(swap) == amount // 2
-        assert 0 < underlying.balanceOf(bob) <= amount // 2
+    for coin, amount, initial in zip(underlying_coins, expected, initial_amounts_underlying):
+        if coin not in wrapped_coins:
+            assert coin.balanceOf(swap) == 0
+        else:
+            assert coin.balanceOf(swap) == initial - amount
+        assert coin.balanceOf(zap) == 0
 
-    assert pool_token.balanceOf(zap) == 0
-    assert pool_token.balanceOf(bob) == n_coins * 10**24 - withdraw_amount
-    assert pool_token.totalSupply() == n_coins * 10**24 - withdraw_amount
+        assert 0.9 < coin.balanceOf(bob) / amount <= 1
 
 
 @pytest.mark.itercoins("idx")
-def test_below_min_amount(alice, zap, initial_amounts, n_coins, idx):
-    min_amount = initial_amounts.copy()
+def test_below_min_amount(alice, zap, initial_amounts_underlying, idx):
+    n_coins = len(initial_amounts_underlying)
+    min_amount = initial_amounts_underlying.copy()
     min_amount[idx] += 1
 
     with brownie.reverts():
         zap.remove_liquidity(n_coins * 10**24, min_amount, {'from': alice})
 
 
-def test_amount_exceeds_balance(alice, zap, n_coins):
+def test_amount_exceeds_balance(alice, zap, underlying_coins):
+    n_coins = len(underlying_coins)
     with brownie.reverts():
         zap.remove_liquidity(n_coins * 10**24 + 1, [0] * n_coins, {'from': alice})
