@@ -85,7 +85,7 @@ def __init__(_pool: address, _token: address):
 
 @external
 @nonreentrant('lock')
-def add_liquidity(amounts: uint256[N_ALL_COINS], min_mint_amount: uint256):
+def add_liquidity(amounts: uint256[N_ALL_COINS], min_mint_amount: uint256) -> uint256:
     meta_amounts: uint256[N_COINS] = empty(uint256[N_COINS])  # Ben, Bryant, - wen slicing? :-D
     for i in range(MAX_COIN):
         meta_amounts[i] = amounts[i]
@@ -131,14 +131,16 @@ def add_liquidity(amounts: uint256[N_ALL_COINS], min_mint_amount: uint256):
     CurveMeta(self.pool).add_liquidity(meta_amounts, min_mint_amount)
 
     # Transfer meta token back
-    _token: address = self.token
-    assert ERC20(_token).transfer(
-        msg.sender, ERC20(_token).balanceOf(self))
+    _lp_token: address = self.token
+    _lp_amount: uint256 = ERC20(_lp_token).balanceOf(self)
+    assert ERC20(_lp_token).transfer(msg.sender, _lp_amount)
+
+    return _lp_amount
 
 
 @external
 @nonreentrant('lock')
-def remove_liquidity(_amount: uint256, min_amounts: uint256[N_ALL_COINS]):
+def remove_liquidity(_amount: uint256, min_amounts: uint256[N_ALL_COINS]) -> uint256[N_ALL_COINS]:
     _token: address = self.token
     assert ERC20(_token).transferFrom(msg.sender, self, _amount)
 
@@ -155,6 +157,7 @@ def remove_liquidity(_amount: uint256, min_amounts: uint256[N_ALL_COINS]):
         min_amounts_base[i] = min_amounts[MAX_COIN+i]
     CurveBase(self.base_pool).remove_liquidity(_base_amount, min_amounts_base)
 
+    amounts: uint256[N_ALL_COINS] = empty(uint256[N_ALL_COINS])
     # Transfer all coins out
     for i in range(N_ALL_COINS):
         coin: address = ZERO_ADDRESS
@@ -162,25 +165,27 @@ def remove_liquidity(_amount: uint256, min_amounts: uint256[N_ALL_COINS]):
             coin = self.coins[i]
         else:
             coin = self.base_coins[i - MAX_COIN]
-        coin_amount: uint256 = ERC20(coin).balanceOf(self)
+        amounts[i] = ERC20(coin).balanceOf(self)
         # "safeTransfer" which works for ERC20s which return bool or not
         _response: Bytes[32] = raw_call(
             coin,
             concat(
                 method_id("transfer(address,uint256)"),
                 convert(msg.sender, bytes32),
-                convert(coin_amount, bytes32),
+                convert(amounts[i], bytes32),
             ),
             max_outsize=32,
         )  # dev: failed transfer
         if len(_response) > 0:
             assert convert(_response, bool)  # dev: failed transfer
         # end "safeTransfer"
-    # End transfer
+
+    return amounts
+
 
 @external
 @nonreentrant('lock')
-def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_amount: uint256):
+def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_amount: uint256) -> uint256:
     _token: address = self.token
     assert ERC20(_token).transferFrom(msg.sender, self, _token_amount)
 
@@ -212,6 +217,8 @@ def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_amount: uin
     if len(_response) > 0:
         assert convert(_response, bool)  # dev: failed transfer
     # end "safeTransfer"
+
+    return coin_amount
 
 
 @view
