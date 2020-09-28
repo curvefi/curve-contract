@@ -53,12 +53,34 @@ def __init__(_pool: address, _token: address):
     for i in range(N_COINS):
         coin: address = CurveMeta(_pool).coins(convert(i, uint256))
         self.coins[i] = coin
-        ERC20(coin).approve(_pool, MAX_UINT256)
+        # approve coins for infinite transfers
+        _response: Bytes[32] = raw_call(
+            coin,
+            concat(
+                method_id("approve(address,uint256)"),
+                convert(_pool, bytes32),
+                convert(MAX_UINT256, bytes32),
+            ),
+            max_outsize=32,
+        )
+        if len(_response) > 0:
+            assert convert(_response, bool)
 
     for i in range(BASE_N_COINS):
         coin: address = CurveBase(_base_pool).coins(convert(i, uint256))
         self.base_coins[i] = coin
-        ERC20(coin).approve(self, MAX_UINT256)
+        # approve underlying coins for infinite transfers
+        _response: Bytes[32] = raw_call(
+            coin,
+            concat(
+                method_id("approve(address,uint256)"),
+                convert(_base_pool, bytes32),
+                convert(MAX_UINT256, bytes32),
+            ),
+            max_outsize=32,
+        )
+        if len(_response) > 0:
+            assert convert(_response, bool)
 
 
 @external
