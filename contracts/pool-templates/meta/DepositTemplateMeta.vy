@@ -151,7 +151,7 @@ def remove_liquidity(_amount: uint256, min_amounts: uint256[N_ALL_COINS]) -> uin
     CurveMeta(self.pool).remove_liquidity(_amount, min_amounts_meta)
 
     # Withdraw from base
-    _base_amount: uint256 = ERC20(_token).balanceOf(self)
+    _base_amount: uint256 = ERC20(self.coins[1]).balanceOf(self)
     min_amounts_base: uint256[BASE_N_COINS] = empty(uint256[BASE_N_COINS])
     for i in range(BASE_N_COINS):
         min_amounts_base[i] = min_amounts[MAX_COIN+i]
