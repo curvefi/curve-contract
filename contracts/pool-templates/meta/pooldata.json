@@ -1,0 +1,15 @@
+{
+    "base_pool_contract": "SwapTemplateBase",
+    "coins": [
+        {
+            "decimals": 18,
+            "tethered": false,
+            "wrapped": false
+        },
+        {
+            "decimals": 18,
+            "wrapped": false,
+            "base_pool_token": true
+        }
+    ]
+}

@@ -26,6 +26,7 @@ WRAPPED_COIN_METHODS = {
 
 pytest_plugins = [
     "fixtures.accounts",
+    "fixtures.coins",
     "fixtures.deployments",
     "fixtures.functions",
     "fixtures.pooldata",
@@ -82,6 +83,12 @@ def pytest_sessionstart():
             if zap_contract:
                 _pooldata[name]['zap_contract'] = zap_contract
 
+    for name, data in _pooldata.items():
+        if "base_pool_contract" in data:
+            base_swap = data["base_pool_contract"]
+            base_data = next(v for v in _pooldata.values() if v['swap_contract'] == base_swap)
+            data["base_pool"] = base_data
+
 
 def pytest_generate_tests(metafunc):
     project = get_loaded_projects()[0]
@@ -124,7 +131,10 @@ def pytest_generate_tests(metafunc):
 
 def pytest_collection_modifyitems(config, items):
     project = get_loaded_projects()[0]
-    is_forked = "fork" in CONFIG.active_network['id']
+    try:
+        is_forked = "fork" in CONFIG.active_network['id']
+    except Exception:
+        is_forked = False
 
     for item in items.copy():
         try:
@@ -140,8 +150,14 @@ def pytest_collection_modifyitems(config, items):
 
         # remove excess `itercoins` parametrized tests
         for marker in item.iter_markers(name="itercoins"):
+            n_coins = len(data['coins'])
+
+            # for metapools, consider the base pool when calculating n_coins
+            if marker.kwargs.get("underlying") and "base_pool" in data:
+                n_coins = len(data['base_pool']['coins']) + 1
+
             values = [params[i] for i in marker.args]
-            if max(values) >= len(data['coins']) or len(set(values)) < len(values):
+            if max(values) >= n_coins or len(set(values)) < len(values):
                 items.remove(item)
                 break
 
@@ -192,7 +208,12 @@ def pool_data(request):
         test_path = Path(request.fspath).relative_to(project._path)
         # ("tests", "pools" or "zaps", pool_name, ...)
         pool_name = test_path.parts[2]
-    yield _pooldata[pool_name]
+    return _pooldata[pool_name]
+
+
+@pytest.fixture(scope="module")
+def base_pool_data(pool_data):
+    return pool_data.get("base_pool", None)
 
 
 @pytest.fixture(scope="session")

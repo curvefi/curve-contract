@@ -1,9 +1,8 @@
 import brownie
 import pytest
 
-pytestmark = pytest.mark.skip_pool(
-    "busd", "compound", "snow", "susd", "usdt", "y", "template-base", "template-y"
-)
+pytestmark = pytest.mark.target_pool("3pool", "hbtc", "pax", "sbtc")
+
 
 MIN_RAMP_TIME = 86400
 

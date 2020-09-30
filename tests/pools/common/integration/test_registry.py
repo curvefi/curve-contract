@@ -7,7 +7,10 @@ import pytest
 
 ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 
-pytestmark = pytest.mark.usefixtures("add_initial_liquidity")
+pytestmark = [
+    pytest.mark.usefixtures("add_initial_liquidity"),
+    pytest.mark.skip_pool("template-meta")
+]
 
 
 @pytest.mark.itercoins("send", "recv")
@@ -20,10 +23,10 @@ def test_amount_dy(registry, swap, send, recv):
 
 @pytest.mark.lending
 @pytest.mark.itercoins("send", "recv")
-def test_amount_dy_underlying(registry, swap, send, recv):
+def test_amount_dy_underlying(registry, swap, send, recv, underlying_coins):
     dy = swap.get_dy_underlying(send, recv, 10**18)
-    send_address = swap.underlying_coins(send)
-    recv_address = swap.underlying_coins(recv)
+    send_address = underlying_coins[send]
+    recv_address = underlying_coins[recv]
     assert registry.get_exchange_amount(swap, send_address, recv_address, 10**18) == dy
 
 

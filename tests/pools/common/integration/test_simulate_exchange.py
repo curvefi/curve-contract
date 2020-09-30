@@ -4,7 +4,10 @@ from hypothesis import settings
 from simulation import Curve
 
 # do not run this test on pools without lending
-pytestmark = pytest.mark.lending
+pytestmark = [
+    pytest.mark.lending,
+    pytest.mark.skip_pool("template-meta")
+]
 
 
 @given(

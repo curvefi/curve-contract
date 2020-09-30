@@ -46,3 +46,31 @@ Each subdirectory holds contracts and other files specific to a single Curve poo
     ]
 }
 ```
+
+### Metapools
+
+A metapool is a pool where a stablecoin is paired against the LP token from another pool.
+
+The `pooldata.json` for a metapool is similar to that of a regular pool:
+
+```js
+{
+    "lp_contract": "CurveContractV2",         // LP token contract to use with this pool, from `contracts/tokens`
+    "base_pool_contract": "SwapTemplateBase", // Contract name for the related base pool
+    "coins": [
+        {
+            // the first coin in the metapool is an unwrapped stablecoin
+            "decimals": 18,
+            "tethered": false,
+            "wrapped": false
+        },
+        {
+            // the second coin in the metapool is the LP token from the base pool
+            "decimals": 18,
+            "wrapped": false,
+            "base_pool_token": true
+        }
+    ]
+
+}
+```

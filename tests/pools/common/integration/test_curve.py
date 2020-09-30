@@ -1,8 +1,12 @@
+import pytest
+
 from brownie.test import given, strategy
 from collections import deque
 from hypothesis import settings
 from itertools import permutations
 from simulation import Curve
+
+pytestmark = pytest.mark.skip_pool("template-meta")
 
 
 @given(
