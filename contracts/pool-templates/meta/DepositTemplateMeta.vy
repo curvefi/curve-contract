@@ -1,4 +1,4 @@
-# @version 0.2.4
+# @version ^0.2.0
 # (c) Curve.Fi, 2020
 # Deposit zap for the metapool
 #
@@ -148,20 +148,21 @@ def remove_liquidity(_amount: uint256, min_amounts: uint256[N_ALL_COINS]) -> uin
     _token: address = self.token
     assert ERC20(_token).transferFrom(msg.sender, self, _amount)
 
-    # Withdraw from meta
     min_amounts_meta: uint256[N_COINS] = empty(uint256[N_COINS])
+    min_amounts_base: uint256[BASE_N_COINS] = empty(uint256[BASE_N_COINS])
+    amounts: uint256[N_ALL_COINS] = empty(uint256[N_ALL_COINS])
+
+    # Withdraw from meta
     for i in range(MAX_COIN):
         min_amounts_meta[i] = min_amounts[i]
     CurveMeta(self.pool).remove_liquidity(_amount, min_amounts_meta)
 
     # Withdraw from base
     _base_amount: uint256 = ERC20(self.coins[1]).balanceOf(self)
-    min_amounts_base: uint256[BASE_N_COINS] = empty(uint256[BASE_N_COINS])
     for i in range(BASE_N_COINS):
         min_amounts_base[i] = min_amounts[MAX_COIN+i]
     CurveBase(self.base_pool).remove_liquidity(_base_amount, min_amounts_base)
 
-    amounts: uint256[N_ALL_COINS] = empty(uint256[N_ALL_COINS])
     # Transfer all coins out
     for i in range(N_ALL_COINS):
         coin: address = ZERO_ADDRESS
@@ -239,9 +240,11 @@ def calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> uint256:
 @external
 def calc_token_amount(amounts: uint256[N_ALL_COINS], deposit: bool) -> uint256:
     meta_amounts: uint256[N_COINS] = empty(uint256[N_COINS])
+    base_amounts: uint256[BASE_N_COINS] = empty(uint256[BASE_N_COINS])
+
     for i in range(MAX_COIN):
         meta_amounts[i] = amounts[i]
-    base_amounts: uint256[BASE_N_COINS] = empty(uint256[BASE_N_COINS])
+
     for i in range(BASE_N_COINS):
         base_amounts[i] = amounts[i + MAX_COIN]
 

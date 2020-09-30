@@ -1,4 +1,4 @@
-# @version 0.2.4
+# @version ^0.2.0
 # (c) Curve.Fi, 2020
 # Metapool
 #
@@ -277,12 +277,12 @@ def _vp_rate_ro() -> uint256:
 @internal
 def get_D(xp: uint256[N_COINS], amp: uint256) -> uint256:
     S: uint256 = 0
+    Dprev: uint256 = 0
     for _x in xp:
         S += _x
     if S == 0:
         return 0
 
-    Dprev: uint256 = 0
     D: uint256 = S
     Ann: uint256 = amp * N_COINS
     for _i in range(255):
@@ -330,9 +330,9 @@ def calc_token_amount(amounts: uint256[N_COINS], deposit: bool) -> uint256:
     slippage).
     Needed to prevent front-running, not for precise calculations!
     """
-    _balances: uint256[N_COINS] = self.balances
     amp: uint256 = self._A()
     vp_rate: uint256 = self._vp_rate_ro()
+    _balances: uint256[N_COINS] = self.balances
     D0: uint256 = self.get_D_mem(vp_rate, _balances, amp)
     for i in range(N_COINS):
         if deposit:
@@ -354,13 +354,12 @@ def calc_token_amount(amounts: uint256[N_COINS], deposit: bool) -> uint256:
 def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256):
     assert not self.is_killed  # dev: is killed
 
-    fees: uint256[N_COINS] = empty(uint256[N_COINS])
-    _fee: uint256 = self.fee * N_COINS / (4 * (N_COINS - 1))
-    _admin_fee: uint256 = self.admin_fee
     amp: uint256 = self._A()
     vp_rate: uint256 = self._vp_rate()
-
     token_supply: uint256 = self.token.totalSupply()
+    _fee: uint256 = self.fee * N_COINS / (4 * (N_COINS - 1))
+    _admin_fee: uint256 = self.admin_fee
+
     # Initial invariant
     D0: uint256 = 0
     old_balances: uint256[N_COINS] = self.balances
@@ -380,6 +379,7 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256):
 
     # We need to recalculate the invariant accounting for fees
     # to calculate fair user's share
+    fees: uint256[N_COINS] = empty(uint256[N_COINS])
     D2: uint256 = D1
     if token_supply > 0:
         # Only account for fees if we are not the first to deposit
@@ -432,11 +432,13 @@ def get_y(i: int128, j: int128, x: uint256, xp_: uint256[N_COINS]) -> uint256:
 
     amp: uint256 = self._A()
     D: uint256 = self.get_D(xp_, amp)
-    c: uint256 = D
+
     S_: uint256 = 0
+    _x: uint256 = 0
+    y_prev: uint256 = 0
+    c: uint256 = D
     Ann: uint256 = amp * N_COINS
 
-    _x: uint256 = 0
     for _i in range(N_COINS):
         if _i == i:
             _x = x
@@ -448,7 +450,6 @@ def get_y(i: int128, j: int128, x: uint256, xp_: uint256[N_COINS]) -> uint256:
         c = c * D / (_x * N_COINS)
     c = c * D * A_PRECISION / (Ann * N_COINS)
     b: uint256 = S_ + D * A_PRECISION / Ann  # - D
-    y_prev: uint256 = 0
     y: uint256 = D
     for _i in range(255):
         y_prev = y
@@ -715,12 +716,13 @@ def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS]):
 def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint256):
     assert not self.is_killed  # dev: is killed
 
+    amp: uint256 = self._A()
+    vp_rate: uint256 = self._vp_rate()
+
     token_supply: uint256 = self.token.totalSupply()
     assert token_supply != 0  # dev: zero total supply
     _fee: uint256 = self.fee * N_COINS / (4 * (N_COINS - 1))
     _admin_fee: uint256 = self.admin_fee
-    amp: uint256 = self._A()
-    vp_rate: uint256 = self._vp_rate()
 
     old_balances: uint256[N_COINS] = self.balances
     new_balances: uint256[N_COINS] = old_balances
@@ -728,6 +730,7 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint2
     for i in range(N_COINS):
         new_balances[i] -= amounts[i]
     D1: uint256 = self.get_D_mem(vp_rate, new_balances, amp)
+
     fees: uint256[N_COINS] = empty(uint256[N_COINS])
     for i in range(N_COINS):
         ideal_balance: uint256 = D1 * old_balances[i] / D0
@@ -771,11 +774,13 @@ def get_y_D(A_: uint256, i: int128, xp: uint256[N_COINS], D: uint256) -> uint256
     assert i >= 0  # dev: i below zero
     assert i < N_COINS  # dev: i above N_COINS
 
-    c: uint256 = D
     S_: uint256 = 0
+    _x: uint256 = 0
+    y_prev: uint256 = 0
+
+    c: uint256 = D
     Ann: uint256 = A_ * N_COINS
 
-    _x: uint256 = 0
     for _i in range(N_COINS):
         if _i != i:
             _x = xp[_i]
@@ -785,7 +790,6 @@ def get_y_D(A_: uint256, i: int128, xp: uint256[N_COINS], D: uint256) -> uint256
         c = c * D / (_x * N_COINS)
     c = c * D * A_PRECISION / (Ann * N_COINS)
     b: uint256 = S_ + D * A_PRECISION / Ann
-    y_prev: uint256 = 0
     y: uint256 = D
     for _i in range(255):
         y_prev = y
@@ -807,18 +811,18 @@ def _calc_withdraw_one_coin(_token_amount: uint256, i: int128, vp_rate: uint256)
     # * Get current D
     # * Solve Eqn against y_i for D - _token_amount
     amp: uint256 = self._A()
+    xp: uint256[N_COINS] = self._xp(vp_rate)
+    D0: uint256 = self.get_D(xp, amp)
+
+    total_supply: uint256 = self.token.totalSupply()
+    D1: uint256 = D0 - _token_amount * D0 / total_supply
+    new_y: uint256 = self.get_y_D(amp, i, xp, D1)
+
     _fee: uint256 = self.fee * N_COINS / (4 * (N_COINS - 1))
     rates: uint256[N_COINS] = RATES
     rates[MAX_COIN] = vp_rate
-    total_supply: uint256 = self.token.totalSupply()
 
-    xp: uint256[N_COINS] = self._xp(vp_rate)
-
-    D0: uint256 = self.get_D(xp, amp)
-    D1: uint256 = D0 - _token_amount * D0 / total_supply
     xp_reduced: uint256[N_COINS] = xp
-
-    new_y: uint256 = self.get_y_D(amp, i, xp, D1)
     dy_0: uint256 = (xp[i] - new_y) * PRECISION / rates[i]  # w/o fees
 
     for j in range(N_COINS):
