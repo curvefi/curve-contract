@@ -1,4 +1,4 @@
-# @version ^0.2.0
+# @version 0.2.4
 
 MAX_COINS: constant(int128) = 8
 CALC_INPUT_SIZE: constant(int128) = 100
