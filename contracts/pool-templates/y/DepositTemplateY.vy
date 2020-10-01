@@ -214,9 +214,10 @@ def remove_liquidity_imbalance(
 
     amounts: uint256[N_COINS] = _underlying_amounts
     for i in range(N_COINS):
-        if use_lending[i] and amounts[i] > 0:
+        _amount: uint256 = amounts[i]
+        if use_lending[i] and _amount > 0:
             rate: uint256 = yERC20(self.coins[i]).getPricePerFullShare()
-            amounts[i] = amounts[i] * LENDING_PRECISION / rate
+            amounts[i] = _amount * LENDING_PRECISION / rate
         # if not use_lending - all good already
 
     # Transfer max tokens in
