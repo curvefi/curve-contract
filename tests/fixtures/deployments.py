@@ -1,4 +1,5 @@
 import pytest
+from brownie import Contract
 
 from scripts.utils import right_pad, pack_values
 
@@ -35,9 +36,12 @@ def swap(project, alice, _underlying_coins, wrapped_coins, pool_token, pool_data
 
 
 @pytest.fixture(scope="module")
-def base_swap(project, charlie, _base_coins, base_pool_token, base_pool_data):
-    if base_pool_data is not None:
-        return _swap(project, charlie, _base_coins, _base_coins, base_pool_token, base_pool_data, None, None)
+def base_swap(project, charlie, _base_coins, base_pool_token, base_pool_data, is_forked):
+    if base_pool_data is None:
+        return
+    if is_forked:
+        return Contract(base_pool_data["swap_address"])
+    return _swap(project, charlie, _base_coins, _base_coins, base_pool_token, base_pool_data, None, None)
 
 
 @pytest.fixture(scope="module")
