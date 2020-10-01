@@ -28,13 +28,12 @@ class StateMachine:
 
     def _min_max(self):
         # get index values for the coins with the smallest and largest balances in the pool
-        balances = [self.swap.balances(i) / self.decimals[i] for i in range(self.n_coins)]
+        balances = [self.swap.balances(i) / (10 ** self.decimals[i]) for i in range(self.n_coins)]
         min_idx = balances.index(min(balances))
         max_idx = balances.index(max(balances))
         if min_idx == max_idx:
             min_idx = abs(min_idx - 1)
 
-        print(min_idx, max_idx, self.n_coins)
         return min_idx, max_idx
 
     def rule_increase_rates(self, st_rates):
