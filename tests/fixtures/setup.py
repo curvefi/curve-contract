@@ -1,31 +1,33 @@
 import pytest
 
 
+ETH_ADDRESS = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
+
 # shared logic for pool and base_pool setup fixtures
 
 def _add_liquidity(acct, swap, coins, amounts):
     eth_value = 0
-    if "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE" in coins:
-        eth_value = 10 ** 24
+    if ETH_ADDRESS in coins:
+        eth_value = amounts[coins.index(ETH_ADDRESS)]
 
     swap.add_liquidity(amounts, 0, {'from': acct, 'value': eth_value})
 
 
 def _mint(acct, wrapped_coins, wrapped_amounts, underlying_coins, underlying_amounts):
     for coin, amount in zip(wrapped_coins, wrapped_amounts):
-        if coin == "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE":
+        if coin == ETH_ADDRESS:
             continue
         coin._mint_for_testing(acct, amount, {'from': acct})
 
     for coin, amount in zip(underlying_coins, underlying_amounts):
-        if coin == "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE" or coin in wrapped_coins:
+        if coin == ETH_ADDRESS or coin in wrapped_coins:
             continue
         coin._mint_for_testing(acct, amount, {'from': acct})
 
 
 def _approve(owner, spender, *coins):
     for coin in set(x for i in coins for x in i):
-        if coin == "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE":
+        if coin == ETH_ADDRESS:
             continue
         coin.approve(spender, 2**256-1, {'from': owner})
 

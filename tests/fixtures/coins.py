@@ -156,6 +156,9 @@ def _underlying(alice, project, pool_data, is_forked, base_pool_token):
             coins.append(_MintableTestToken(data['underlying_address'], pool_data))
     else:
         for i, coin_data in enumerate(pool_data['coins']):
+            if coin_data.get("eth"):
+                coins.append("0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE")
+                continue
             if coin_data.get("base_pool_token"):
                 coins.append(base_pool_token)
                 continue

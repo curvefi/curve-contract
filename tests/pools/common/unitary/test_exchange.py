@@ -19,6 +19,7 @@ def test_exchange(
     fee,
     admin_fee,
     wrapped_decimals,
+    base_amount,
     set_fees,
     get_admin_balances,
 ):
@@ -35,12 +36,12 @@ def test_exchange(
     swap.exchange(sending, receiving, amount, 0, {'from': bob, 'value': value})
 
     if wrapped_coins[sending] == ETH_ADDRESS:
-        assert bob.balance() + amount == "1000000 ether"
+        assert bob.balance() + amount == 10**18 * base_amount
     else:
         assert wrapped_coins[sending].balanceOf(bob) == 0
 
     if wrapped_coins[receiving] == ETH_ADDRESS:
-        received = bob.balance() - "1000000 ether"
+        received = bob.balance() - 10**18 * base_amount
     else:
         received = wrapped_coins[receiving].balanceOf(bob)
     assert 1 - max(1e-4, 1/received) - fee < received / 10**wrapped_decimals[receiving] < 1-fee
@@ -55,7 +56,7 @@ def test_exchange(
 
 
 @pytest.mark.itercoins("sending", "receiving")
-def test_min_dy(bob, swap, wrapped_coins, sending, receiving, wrapped_decimals):
+def test_min_dy(bob, swap, wrapped_coins, sending, receiving, wrapped_decimals, base_amount):
     amount = 10**wrapped_decimals[sending]
     if wrapped_coins[sending] == ETH_ADDRESS:
         value = amount
@@ -67,7 +68,7 @@ def test_min_dy(bob, swap, wrapped_coins, sending, receiving, wrapped_decimals):
     swap.exchange(sending, receiving, amount, min_dy-1, {'from': bob, 'value': value})
 
     if wrapped_coins[receiving] == ETH_ADDRESS:
-        received = bob.balance() - "1000000 ether"
+        received = bob.balance() - 10**18 * base_amount
     else:
         received = wrapped_coins[receiving].balanceOf(bob)
 

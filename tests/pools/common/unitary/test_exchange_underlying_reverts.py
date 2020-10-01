@@ -60,5 +60,5 @@ def test_j_above_n_coins(bob, swap, idx, n_coins):
 
 @pytest.mark.lending
 def test_exchange_underlying(swap, bob):
-    with brownie.reverts("Cannot send ether to nonpayable function"):
+    with brownie.reverts():
         swap.exchange_underlying(0, 1, 0, 0, {'from': bob, 'value': "1 ether"})

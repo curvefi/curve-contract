@@ -70,21 +70,23 @@ def test_remove(alice, swap, wrapped_coins, pool_token, initial_amounts, n_coins
 
 
 @pytest.mark.itercoins("sending", "receiving")
-def test_exchange(bob, swap, sending, receiving, wrapped_decimals):
+def test_exchange(bob, swap, sending, receiving, wrapped_coins, wrapped_decimals):
     virtual_price = swap.get_virtual_price()
 
     amount = 10**wrapped_decimals[sending]
-    swap.exchange(sending, receiving, amount, 0, {'from': bob})
+    value = amount if wrapped_coins[sending] == ETH_ADDRESS else 0
+    swap.exchange(sending, receiving, amount, 0, {'from': bob, 'value': value})
 
     assert swap.get_virtual_price() > virtual_price
 
 
 @pytest.mark.itercoins("sending", "receiving")
 @pytest.mark.lending
-def test_exchange_underlying(bob, swap, sending, receiving, underlying_decimals):
+def test_exchange_underlying(bob, swap, sending, receiving, underlying_coins, underlying_decimals):
     virtual_price = swap.get_virtual_price()
 
     amount = 10**underlying_decimals[sending]
-    swap.exchange_underlying(sending, receiving, amount, 0, {'from': bob})
+    value = amount if underlying_coins[sending] == ETH_ADDRESS else 0
+    swap.exchange_underlying(sending, receiving, amount, 0, {'from': bob, 'value': value})
 
     assert swap.get_virtual_price() > virtual_price
