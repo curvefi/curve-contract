@@ -332,24 +332,24 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256):
 
     # Take coins from the sender
     for i in range(N_COINS):
-        if amounts[i] > 0:
-            _coin: address = self.coins[i]
-            if _coin == 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE:
-                assert msg.value == amounts[i]
-            else:
-                # "safeTransferFrom" which works for ERC20s which return bool or not
-                _response: Bytes[32] = raw_call(
-                    self.coins[i],
-                    concat(
-                        method_id("transferFrom(address,address,uint256)"),
-                        convert(msg.sender, bytes32),
-                        convert(self, bytes32),
-                        convert(amounts[i], bytes32),
-                    ),
-                    max_outsize=32,
-                )  # dev: failed transfer
-                if len(_response) > 0:
-                    assert convert(_response, bool)
+        _coin: address = self.coins[i]
+        _amount: uint256 = amounts[i]
+        if _coin == 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE:
+            assert msg.value == _amount
+        elif _amount > 0:
+            # "safeTransferFrom" which works for ERC20s which return bool or not
+            _response: Bytes[32] = raw_call(
+                self.coins[i],
+                concat(
+                    method_id("transferFrom(address,address,uint256)"),
+                    convert(msg.sender, bytes32),
+                    convert(self, bytes32),
+                    convert(_amount, bytes32),
+                ),
+                max_outsize=32,
+            )  # dev: failed transfer
+            if len(_response) > 0:
+                assert convert(_response, bool)
 
     # Mint pool tokens
     CurveToken(_lp_token).mint(msg.sender, mint_amount)
@@ -450,6 +450,7 @@ def exchange(i: int128, j: int128, dx: uint256, min_dy: uint256):
     if _coin == 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE:
         assert msg.value == dx
     else:
+        assert msg.value == 0
         _response: Bytes[32] = raw_call(
             _coin,
             concat(
