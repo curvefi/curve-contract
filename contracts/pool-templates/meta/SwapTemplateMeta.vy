@@ -1,4 +1,4 @@
-# @version ^0.2.0
+# @version ^0.2.5
 # (c) Curve.Fi, 2020
 # Metapool
 #

@@ -1,4 +1,4 @@
-# @version ^0.2.0
+# @version ^0.2.5
 # (c) Curve.Fi, 2020
 # Deposit zap for the metapool
 #
@@ -124,7 +124,7 @@ def add_liquidity(amounts: uint256[N_ALL_COINS], min_mint_amount: uint256) -> ui
             if i < MAX_COIN:
                 meta_amounts[i] = amount
             else:
-                base_amounts[i] = amount
+                base_amounts[i - MAX_COIN] = amount
 
     # Deposit to the base pool
     if deposit_base:
