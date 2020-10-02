@@ -33,7 +33,8 @@ def test_amounts(
     assert underlying_coins[sending].balanceOf(bob) == 0
 
     received = underlying_coins[receiving].balanceOf(bob)
-    assert 0.9999-fee < received / 10**underlying_decimals[receiving] < 1-fee
+    prec = -min(underlying_decimals[receiving], 4)
+    assert 1 - 10**prec - fee <= received / 10**underlying_decimals[receiving] < 1-fee
 
 
 @pytest.mark.itercoins("sending", "receiving", underlying=True)
@@ -55,7 +56,7 @@ def test_fees(
     if fee or admin_fee:
         set_fees(10**10 * fee, 10**10 * admin_fee)
 
-    amount = 10**underlying_decimals[sending]
+    amount = 10000 * 10**underlying_decimals[sending]
     underlying_coins[sending]._mint_for_testing(bob, amount, {'from': bob})
     swap.exchange_underlying(sending, receiving, amount, 0, {'from': bob})
 
