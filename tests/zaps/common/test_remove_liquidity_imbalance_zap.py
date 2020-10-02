@@ -2,7 +2,7 @@ import pytest
 
 pytestmark = [
     pytest.mark.usefixtures("add_initial_liquidity", "approve_zap"),
-    pytest.mark.skip_pool("template-meta"),
+    pytest.mark.skip_meta,
 ]
 
 

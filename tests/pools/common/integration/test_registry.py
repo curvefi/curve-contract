@@ -9,7 +9,7 @@ ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 
 pytestmark = [
     pytest.mark.usefixtures("add_initial_liquidity"),
-    pytest.mark.skip_pool("template-meta")
+    pytest.mark.skip_meta,
 ]
 
 

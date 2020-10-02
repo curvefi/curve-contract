@@ -44,6 +44,7 @@ def pytest_configure(config):
     # add custom markers
     config.addinivalue_line("markers", "target_pool: run test against one or more specific pool")
     config.addinivalue_line("markers", "skip_pool: exclude one or more pools in this test")
+    config.addinivalue_line("markers", "skip_meta: exclude metapools in this test")
     config.addinivalue_line("markers", "lending: only run test against pools that involve lending")
     config.addinivalue_line("markers", "zap: only run test against pools with a deposit contract")
     config.addinivalue_line(
@@ -167,6 +168,10 @@ def pytest_collection_modifyitems(config, items):
         # apply `skip_pool` marker
         for marker in item.iter_markers(name="skip_pool"):
             if params["pool_data"] in marker.args:
+                items.remove(item)
+
+        for marker in item.iter_markers(name="skip_meta"):
+            if "base_pool" in data:
                 items.remove(item)
 
         # apply `target_pool` marker
