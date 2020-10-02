@@ -9,7 +9,7 @@
             "wrapped": true,
             "wrapped_decimals": 18,
             "underlying_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
-            "wrapped_address": "0xc2cb1040220768554cf699b0d863a3cd4324ce32"
+            "wrapped_address": "0x16de59092dAE5CcF4A1E6439D611fd0653f0Bd01"
         },
         {
             "name": "USDC",
@@ -18,7 +18,7 @@
             "wrapped": true,
             "wrapped_decimals": 6,
             "underlying_address": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-            "wrapped_address": "0x26ea744e5b887e5205727f55dfbe8685e3b21951"
+            "wrapped_address": "0xd6aD7a6750A7593E092a9B218d66C0A814a3436e"
         },
         {
             "name": "USDT",
@@ -27,7 +27,7 @@
             "wrapped": true,
             "wrapped_decimals": 6,
             "underlying_address": "0xdac17f958d2ee523a2206206994597c13d831ec7",
-            "wrapped_address": "0xe6354ed5bc4b393a5aad09f21c46e101e692d447"
+            "wrapped_address": "0x83f798e925BcD4017Eb265844FDDAbb448f1707D"
         },
         {
             "name": "TUSD",

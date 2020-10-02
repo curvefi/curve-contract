@@ -1,5 +1,5 @@
 {
-    "base_pool_contract": "StableSwap3Pool",
+    "base_pool": "3pool",
     "lp_contract": "CurveTokenV2",
     "coins": [
         {

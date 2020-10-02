@@ -34,6 +34,7 @@ The layout of a template's `pooldata.json` is similar to that of an actual pool,
 ```js
 {
     "wrapped_contract": "yERC20",   // mock wrapped coin contract to use, from `contracts/testing`
+    "base_pool_contract": ""        // for metapool templates, use this contract for the base pool
     "coins": [                      // each list item represents 1 swappable coin within the pool
         {
             "decimals": 18,          // number of decimal places for the underlying coin

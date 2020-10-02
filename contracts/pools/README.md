@@ -59,8 +59,8 @@ The `pooldata.json` for a metapool is similar to that of a regular pool:
 
 ```js
 {
-    "lp_contract": "CurveContractV2",         // LP token contract to use with this pool, from `contracts/tokens`
-    "base_pool_contract": "SwapTemplateBase", // Contract name for the related base pool
+    "lp_contract": "CurveContractV2",  // LP token contract to use with this pool, from `contracts/tokens`
+    "base_pool": "3pool",              // Name for the related base pool
     "coins": [
         {
             // the first coin in the metapool is an unwrapped stablecoin

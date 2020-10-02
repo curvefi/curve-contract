@@ -85,7 +85,10 @@ def pytest_sessionstart():
                 _pooldata[name]['zap_contract'] = zap_contract
 
     for name, data in _pooldata.items():
-        if "base_pool_contract" in data:
+        if "base_pool" in data:
+            data["base_pool"] = _pooldata[data['base_pool']]
+        elif "base_pool_contract" in data:
+            # for metapool templates, we target a contract instead of a specific pool
             base_swap = data["base_pool_contract"]
             base_data = next(v for v in _pooldata.values() if v['swap_contract'] == base_swap)
             data["base_pool"] = base_data
