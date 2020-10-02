@@ -21,8 +21,8 @@ Curve Y pool supports swaps between the following stablecoins:
 ### Wrapped
 
 * `yDAI`: [0x16de59092dAE5CcF4A1E6439D611fd0653f0Bd01](https://etherscan.io/address/0x16de59092dAE5CcF4A1E6439D611fd0653f0Bd01)
-* `yUSDC`: [0x26ea744e5b887e5205727f55dfbe8685e3b21951](https://etherscan.io/address/0x26ea744e5b887e5205727f55dfbe8685e3b21951)
-* `yUSDT`: [0xe6354ed5bc4b393a5aad09f21c46e101e692d447](https://etherscan.io/address/0xe6354ed5bc4b393a5aad09f21c46e101e692d447)
+* `yUSDC`: [0xd6aD7a6750A7593E092a9B218d66C0A814a3436e](https://etherscan.io/address/0xd6aD7a6750A7593E092a9B218d66C0A814a3436e)
+* `yUSDT`: [0x83f798e925BcD4017Eb265844FDDAbb448f1707D](https://etherscan.io/address/0x83f798e925BcD4017Eb265844FDDAbb448f1707D)
 * `yTUSD`: [0x73a052500105205d34daf004eab301916da8190f](https://etherscan.io/address/0x73a052500105205d34daf004eab301916da8190f)
 
 ### Underlying
