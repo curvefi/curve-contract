@@ -1,12 +1,12 @@
 # @version 0.2.5
-# (c) Curve.Fi, 2020
-# Metapool
-#
-# Coins 0 .. N_COINS-2 are normal coins
-# Coin N_COINS-1 is another pool token which has get_virtual_price()
+"""
+@title Curve HUSD Metapool
+@author Curve.Fi
+@license Copyright (c) Curve.Fi, 2020 - all rights reserved
+@dev Utilizes 3Pool to allow swaps between HUSD / DAI / USDC / USDT
+"""
 
 from vyper.interfaces import ERC20
-
 
 interface CurveToken:
     def totalSupply() -> uint256: view
@@ -34,7 +34,6 @@ event TokenExchange:
     tokens_sold: uint256
     bought_id: int128
     tokens_bought: uint256
-
 
 event AddLiquidity:
     provider: indexed(address)
@@ -68,7 +67,6 @@ event CommitNewAdmin:
 event NewAdmin:
     admin: indexed(address)
 
-
 event CommitNewFee:
     deadline: indexed(uint256)
     fee: uint256
@@ -89,7 +87,6 @@ event StopRampA:
     t: uint256
 
 
-# This can (and needs to) be changed at compile time
 N_COINS: constant(int128) = 2
 MAX_COIN: constant(int128) = N_COINS - 1
 

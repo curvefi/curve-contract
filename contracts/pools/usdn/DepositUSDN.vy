@@ -1,9 +1,9 @@
 # @version 0.2.5
-# (c) Curve.Fi, 2020
-# Deposit zap for the metapool
-#
-# Coins 0 .. N_COINS-2 are normal coins
-# Coin N_COINS-1 is another pool token which has get_virtual_price()
+"""
+@title "Zap" Depositer for Curve GUSD pool
+@author Curve.Fi
+@license Copyright (c) Curve.Fi, 2020 - all rights reserved
+"""
 
 from vyper.interfaces import ERC20
 
@@ -30,7 +30,7 @@ N_COINS: constant(int128) = 2
 MAX_COIN: constant(int128) = N_COINS-1
 BASE_N_COINS: constant(int128) = 3
 N_ALL_COINS: constant(int128) = N_COINS + BASE_N_COINS - 1
-#
+
 # An asset shich may have a transfer fee (USDT)
 FEE_ASSET: constant(address) = 0xdAC17F958D2ee523a2206206994597C13D831ec7
 

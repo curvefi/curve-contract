@@ -76,6 +76,15 @@ def test_btc_pools(swap):
     ...
 ```
 
+### `skip_meta`
+Exclude metapools from the given test.
+
+```python
+@pytest.mark.skip_meta
+def test_not_metapools(swap):
+    ...
+```
+
 ### `lending`
 
 Only run the given test against pools that involve lending.

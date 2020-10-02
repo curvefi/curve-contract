@@ -10,7 +10,7 @@
             "underlying_address": "0xdf574c24545e5ffecb9a659c229253d4111d87e1"
         },
         {
-            "name": "triCRV",
+            "name": "3CRV",
             "decimals": 18,
             "wrapped": false,
             "base_pool_token": true,
