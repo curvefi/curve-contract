@@ -30,17 +30,20 @@ def pool_token(project, alice, pool_data):
 
 
 @pytest.fixture(scope="module")
-def base_pool_token(project, charlie, base_pool_data):
-    if base_pool_data is not None:
+def base_pool_token(project, charlie, base_pool_data, is_forked):
+    if base_pool_data is None:
+        return
+    if is_forked:
+        return _MintableTestToken(base_pool_data["lp_token_address"], base_pool_data)
 
-        # we do some voodoo here to make the base LP tokens work like test ERC20's
-        # charlie is the initial liquidity provider, he starts with the full balance
-        def _mint_for_testing(target, amount, tx=None):
-            token.transfer(target, amount, {'from': charlie})
+    # we do some voodoo here to make the base LP tokens work like test ERC20's
+    # charlie is the initial liquidity provider, he starts with the full balance
+    def _mint_for_testing(target, amount, tx=None):
+        token.transfer(target, amount, {'from': charlie})
 
-        token = _pool_token(project, charlie, base_pool_data)
-        token._mint_for_testing = _mint_for_testing
-        return token
+    token = _pool_token(project, charlie, base_pool_data)
+    token._mint_for_testing = _mint_for_testing
+    return token
 
 
 # private API below
@@ -67,6 +70,11 @@ class _MintableTestToken(Contract):
             _holders[address] = [to_address(i['address']) for i in holders['holders']]
 
     def _mint_for_testing(self, target, amount, tx=None):
+        if self.address == "0x674C6Ad92Fd080e4004b2312b45f796a192D27a0":
+            # special case for minting USDN
+            self.deposit(target, amount, {'from': "0x90f85042533F11b362769ea9beE20334584Dcd7D"})
+            return
+
         for address in _holders[self.address].copy():
             if address == self.address:
                 # don't claim from the treasury - that could cause wierdness
@@ -80,7 +88,7 @@ class _MintableTestToken(Contract):
                 self.transfer(target, amount, {'from': address})
                 return
 
-        raise ValueError("Insufficient tokens available to mint")
+        raise ValueError(f"Insufficient tokens available to mint {self.name()}")
 
 
 def _wrapped(project, alice, pool_data, underlying_coins, is_forked):

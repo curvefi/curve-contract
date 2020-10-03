@@ -27,7 +27,7 @@ def test_amount_received(chain, alice, swap, wrapped_coins, wrapped_decimals, id
     if rate_mod < 1:
         assert 10**decimals <= wrapped.balanceOf(alice) < 10**decimals / rate_mod
     else:
-        assert 10**decimals / rate_mod < wrapped.balanceOf(alice) <= 10**decimals
+        assert 10**decimals // rate_mod <= wrapped.balanceOf(alice) <= 10**decimals
 
 
 @pytest.mark.itercoins("idx")

@@ -9,12 +9,16 @@ Each subdirectory holds contracts and other files specific to a single Curve poo
 * [`3pool`](3pool): [Tri-pool](https://www.curve.fi/3pool)
 * [`busd`](busd): [BUSD pool](https://www.curve.fi/busd), with lending on [yearn.finance](https://yearn.finance/)
 * [`compound`](compound): [Compound pool](https://www.curve.fi/compound), with lending on [Compound](https://compound.finance/)
+* [`gusd`](3pool): [GUSD metapool](https://www.curve.fi/gusd)
 * [`hbtc`](hbtc): [hBTC pool](https://www.curve.fi/hbtc)
+* [`husd`](3pool): [HUSD metapool](https://www.curve.fi/husd)
 * [`pax`](pax): [PAX pool](https://www.curve.fi/pax), with lending on [yearn.finance](https://yearn.finance/)
 * [`ren`](ren): [RenBTC pool](https://www.curve.fi/ren)
 * [`sbtc`](sbtc): [sBTC pool](https://www.curve.fi/sbtc)
 * [`snow`](snow): [Snow pool](https://www.curve.fi/snow), for swaps between [yVault](https://feel-the-yearn.app/vaults) tokens
 * [`susd`](susd): [sUSD pool](https://www.curve.fi/susdv2)
+* [`usdk`](3pool): [USDK metapool](https://www.curve.fi/usdk)
+* [`usdn`](3pool): [USDN metapool](https://www.curve.fi/usdn)
 * [`usdt`](usdt): [USDT pool](https://www.curve.fi/usdt), with lending on [Compound](https://compound.finance/)
 * [`y`](y): [Y pool](https://www.curve.fi/y), with lending on [yearn.finance](https://yearn.finance/)
 
@@ -30,7 +34,20 @@ Each subdirectory holds contracts and other files specific to a single Curve poo
 {
     "lp_contract": "CurveTokenV1",       // LP token contract to use with this pool, from `contracts/tokens`
     "wrapped_contract": "yERC20",        // mock wrapped coin contract to use, from `contracts/testing`
-    "coins": [                           // each list item represents 1 swappable coin within the pool
+
+    // constructor settings for the LP token - required for deployment
+    "lp_constructor": {
+        "symbol": "",
+        "name": ""
+    },
+    // constructor settings for the pool - required for deployment
+    "swap_constructor": {
+        "_A": 200,
+        "_fee": 4000000,
+        "_admin_fee": 0
+    },
+    // each list item represents 1 swappable coin within the pool
+    "coins": [
         {
             // required fields
             "decimals": 18,               // number of decimal places for the underlying coin
@@ -55,8 +72,8 @@ The `pooldata.json` for a metapool is similar to that of a regular pool:
 
 ```js
 {
-    "lp_contract": "CurveContractV2",         // LP token contract to use with this pool, from `contracts/tokens`
-    "base_pool_contract": "SwapTemplateBase", // Contract name for the related base pool
+    "lp_contract": "CurveContractV2",  // LP token contract to use with this pool, from `contracts/tokens`
+    "base_pool": "3pool",              // Name for the related base pool
     "coins": [
         {
             // the first coin in the metapool is an unwrapped stablecoin

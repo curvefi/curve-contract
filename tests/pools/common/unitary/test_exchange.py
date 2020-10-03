@@ -30,13 +30,13 @@ def test_exchange(
     assert wrapped_coins[sending].balanceOf(bob) == 0
 
     received = wrapped_coins[receiving].balanceOf(bob)
-    assert 0.9999-fee < received / 10**wrapped_decimals[receiving] < 1-fee
+    assert 1 - max(1e-4, 1/received) - fee < received / 10**wrapped_decimals[receiving] < 1-fee
 
     expected_admin_fee = 10**wrapped_decimals[receiving] * fee * admin_fee
     admin_fees = get_admin_balances()
 
-    if expected_admin_fee:
-        assert expected_admin_fee / admin_fees[receiving] == approx(1, rel=1e-3)
+    if expected_admin_fee >= 1:
+        assert expected_admin_fee / admin_fees[receiving] == approx(1, rel=max(1e-3, 1/(expected_admin_fee-1.1)))
     else:
         assert admin_fees[receiving] <= 1
 

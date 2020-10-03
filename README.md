@@ -13,8 +13,8 @@ Curve allows users to trade between correlated cryptocurrencies with a bespoke l
 ### Dependencies
 
 * [python3](https://www.python.org/downloads/release/python-368/) version 3.6 or greater, python3-dev
-* [brownie](https://github.com/iamdefinitelyahuman/brownie) - tested with version [1.11.0](https://github.com/eth-brownie/brownie/releases/tag/v1.11.0)
-* [ganache-cli](https://github.com/trufflesuite/ganache-cli) - tested with version [6.10.1](https://github.com/trufflesuite/ganache-cli/releases/tag/v6.10.1)
+* [brownie](https://github.com/iamdefinitelyahuman/brownie) - tested with version [1.11.6](https://github.com/eth-brownie/brownie/releases/tag/v1.11.6)
+* [ganache-cli](https://github.com/trufflesuite/ganache-cli) - tested with version [6.11.0](https://github.com/trufflesuite/ganache-cli/releases/tag/v6.11.0)
 
 Curve contracts are compiled using [Vyper](https://github.com/vyperlang/vyper), however installation of the required Vyper versions is handled by Brownie.
 
@@ -55,22 +55,25 @@ You can optionally include the `--coverage` flag to view a coverage report upon 
 
 ## Deployment
 
-To deploy a new pool based on one of the templates:
+To deploy a new pool:
 
-1. In [`brownie_hooks.py`](brownie_hooks.py), set the number of coins and decimal places.
-2. In [`scripts/deploy.py`](scripts/deploy.py), set the constructor parameters and deployer account.
+1. Ensure the `pooldata.json` for the pool you are deploying contains all the necessary fields.
+2. Edit the configuration settings within [`scripts/deploy.py`](scripts/deploy.py).
+3. Test the deployment locally against a forked mainnet.
 
-To deploy a pool based on [`StableSwapBase`](contracts/pool-templates/StableSwapBase.vy) (without lending):
+    ```bash
+    brownie run deploy --network mainnet-fork -I
+    ```
 
-```bash
-brownie run deploy base --network mainnet
-```
+    When the script completes it will open a console. You should call the various getter methods on the deployed contracts to ensure the pool has been configured correctly.
 
-To deploy a pool based on [`StableSwapYLend`](contracts/pool-templates/StableSwapYLend.vy) (with yearn-style lending):
+4. Deploy the pool to the mainnet.
 
-```bash
-brownie run deploy ylend --network mainnet
-```
+    ```bash
+    brownie run deploy --network mainnet
+    ```
+
+    Be sure to open a pull request that adds the deployment addresses to the pool `README.md`.
 
 ## Audits and Security
 

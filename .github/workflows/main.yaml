@@ -18,7 +18,9 @@ jobs:
           3pool,
           busd,
           compound,
+          gusd,
           hbtc,
+          husd,
           pax,
           ren,
           sbtc,
@@ -27,6 +29,8 @@ jobs:
           template-base,
           template-meta,
           template-y,
+          usdk,
+          usdn,
           usdt,
           y
         ]
@@ -46,7 +50,7 @@ jobs:
       uses: actions/setup-node@v1
 
     - name: Install Ganache
-      run: npm install -g ganache-cli@6.10.1
+      run: npm install -g ganache-cli@6.11.0
 
     - name: Setup Python 3.8
       uses: actions/setup-python@v2
@@ -69,7 +73,9 @@ jobs:
           3pool,
           busd,
           compound,
+          gusd,
           hbtc,
+          husd,
           pax,
           ren,
           sbtc,
@@ -78,6 +84,8 @@ jobs:
           template-base,
           template-meta,
           template-y,
+          usdk,
+          usdn,
           usdt,
           y
         ]
@@ -97,7 +105,7 @@ jobs:
       uses: actions/setup-node@v1
 
     - name: Install Ganache
-      run: npm install -g ganache-cli@6.10.1
+      run: npm install -g ganache-cli@6.11.0
 
     - name: Setup Python 3.8
       uses: actions/setup-python@v2
@@ -128,7 +136,7 @@ jobs:
       uses: actions/setup-node@v1
 
     - name: Install Ganache
-      run: npm install -g ganache-cli@6.10.1
+      run: npm install -g ganache-cli@6.11.0
 
     - name: Setup Python 3.8
       uses: actions/setup-python@v2
