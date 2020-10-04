@@ -35,6 +35,13 @@ event TokenExchange:
     bought_id: int128
     tokens_bought: uint256
 
+event TokenExchangeUnderlying:
+    buyer: indexed(address)
+    sold_id: int128
+    tokens_sold: uint256
+    bought_id: int128
+    tokens_bought: uint256
+
 event AddLiquidity:
     provider: indexed(address)
     token_amounts: uint256[N_COINS]
@@ -686,7 +693,7 @@ def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256):
         assert convert(_response, bool)  # dev: failed transfer
     # end "safeTransfer"
 
-    log TokenExchange(msg.sender, i, dx, j, dy)
+    log TokenExchangeUnderlying(msg.sender, i, dx, j, dy)
 
 
 @external
