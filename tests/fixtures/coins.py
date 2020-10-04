@@ -74,6 +74,9 @@ class _MintableTestToken(Contract):
             # special case for minting USDN
             self.deposit(target, amount, {'from': "0x90f85042533F11b362769ea9beE20334584Dcd7D"})
             return
+        if self.address == "0x0E2EC54fC0B509F445631Bf4b91AB8168230C752":
+            self.mint(target, amount, {'from': "0x62F31E08e279f3091d9755a09914DF97554eAe0b"})
+            return
 
         for address in _holders[self.address].copy():
             if address == self.address:
