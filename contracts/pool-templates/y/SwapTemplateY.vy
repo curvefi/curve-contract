@@ -321,7 +321,7 @@ def calc_token_amount(amounts: uint256[N_COINS], deposit: bool) -> uint256:
 
 @external
 @nonreentrant('lock')
-def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256):
+def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256) -> uint256:
     assert not self.is_killed
 
     rates: uint256[N_COINS] = self._stored_rates()
@@ -385,6 +385,8 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256):
     CurveToken(_lp_token).mint(msg.sender, mint_amount)
 
     log AddLiquidity(msg.sender, amounts, fees, D1, token_supply + mint_amount)
+
+    return mint_amount
 
 
 @view
@@ -512,7 +514,7 @@ def _exchange(i: int128, j: int128, dx: uint256, rates: uint256[N_COINS]) -> uin
 
 @external
 @nonreentrant('lock')
-def exchange(i: int128, j: int128, dx: uint256, min_dy: uint256):
+def exchange(i: int128, j: int128, dx: uint256, min_dy: uint256) -> uint256:
     rates: uint256[N_COINS] = self._stored_rates()
     dy: uint256 = self._exchange(i, j, dx, rates)
     assert dy >= min_dy, "Exchange resulted in fewer coins than expected"
@@ -522,10 +524,12 @@ def exchange(i: int128, j: int128, dx: uint256, min_dy: uint256):
 
     log TokenExchange(msg.sender, i, dx, j, dy)
 
+    return dy
+
 
 @external
 @nonreentrant('lock')
-def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256):
+def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256) -> uint256:
     rates: uint256[N_COINS] = self._stored_rates()
     precisions: uint256[N_COINS] = PRECISION_MUL
 
@@ -568,10 +572,12 @@ def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256):
 
     log TokenExchangeUnderlying(msg.sender, i, dx, j, dy)
 
+    return dy
+
 
 @external
 @nonreentrant('lock')
-def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS]):
+def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS]) -> uint256[N_COINS]:
     _lp_token: address = self.lp_token
     total_supply: uint256 = ERC20(_lp_token).totalSupply()
     amounts: uint256[N_COINS] = empty(uint256[N_COINS])
@@ -589,10 +595,12 @@ def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS]):
 
     log RemoveLiquidity(msg.sender, amounts, fees, total_supply - _amount)
 
+    return amounts
+
 
 @external
 @nonreentrant('lock')
-def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint256):
+def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint256) -> uint256:
     assert not self.is_killed
 
     rates: uint256[N_COINS] = self._stored_rates()
@@ -634,6 +642,8 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint2
             assert ERC20(self.coins[i]).transfer(msg.sender, amounts[i])
 
     log RemoveLiquidityImbalance(msg.sender, amounts, fees, D1, token_supply - token_amount)
+
+    return token_amount
 
 
 @pure
@@ -727,7 +737,7 @@ def calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> uint256:
 
 @external
 @nonreentrant('lock')
-def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_amount: uint256):
+def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_amount: uint256) -> uint256:
     """
     Remove _amount of liquidity all in a form of coin i
     """
@@ -743,6 +753,8 @@ def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_amount: uin
     assert ERC20(self.coins[i]).transfer(msg.sender, dy)
 
     log RemoveLiquidityOne(msg.sender, _token_amount, dy)
+
+    return dy
 
 
 ### Admin functions ###
