@@ -17,10 +17,10 @@ interface yERC20:
     def getPricePerFullShare() -> uint256: view
 
 interface Curve:
-    def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256): nonpayable
-    def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS]): nonpayable
-    def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint256): nonpayable
-    def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_amount: uint256): nonpayable
+    def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256) -> uint256: nonpayable
+    def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS]) -> uint256[N_COINS]: nonpayable
+    def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint256) -> uint256: nonpayable
+    def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_amount: uint256) -> uint256: nonpayable
     def balances(i: int128) -> uint256: view
     def A() -> uint256: view
     def fee() -> uint256: view
