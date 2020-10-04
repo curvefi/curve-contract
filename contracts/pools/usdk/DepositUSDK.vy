@@ -45,6 +45,11 @@ base_coins: public(address[BASE_N_COINS])
 
 @external
 def __init__(_pool: address, _token: address):
+    """
+    @notice Contract constructor
+    @param _pool Metapool address
+    @param _token Pool LP token address
+    """
     self.pool = _pool
     self.token = _token
     _base_pool: address = CurveMeta(_pool).base_pool()
@@ -86,6 +91,12 @@ def __init__(_pool: address, _token: address):
 @external
 @nonreentrant('lock')
 def add_liquidity(amounts: uint256[N_ALL_COINS], min_mint_amount: uint256) -> uint256:
+    """
+    @notice Wrap underlying coins and deposit them in the pool
+    @param amounts List of amounts of underlying coins to deposit
+    @param min_mint_amount Minimum amount of LP tokens to mint from the deposit
+    @return Amount of LP tokens received by depositing
+    """
     meta_amounts: uint256[N_COINS] = empty(uint256[N_COINS])
     base_amounts: uint256[BASE_N_COINS] = empty(uint256[BASE_N_COINS])
     deposit_base: bool = False
@@ -145,6 +156,13 @@ def add_liquidity(amounts: uint256[N_ALL_COINS], min_mint_amount: uint256) -> ui
 @external
 @nonreentrant('lock')
 def remove_liquidity(_amount: uint256, min_amounts: uint256[N_ALL_COINS]) -> uint256[N_ALL_COINS]:
+    """
+    @notice Withdraw and unwrap coins from the pool
+    @dev Withdrawal amounts are based on current deposit ratios
+    @param _amount Quantity of LP tokens to burn in the withdrawal
+    @param min_amounts Minimum amounts of underlying coins to receive
+    @return List of amounts of underlying coins that were withdrawn
+    """
     _token: address = self.token
     assert ERC20(_token).transferFrom(msg.sender, self, _amount)
 
@@ -190,21 +208,27 @@ def remove_liquidity(_amount: uint256, min_amounts: uint256[N_ALL_COINS]) -> uin
 
 @external
 @nonreentrant('lock')
-def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_amount: uint256) -> uint256:
-    _token: address = self.token
-    assert ERC20(_token).transferFrom(msg.sender, self, _token_amount)
+def remove_liquidity_one_coin(_token_amount: uint256, i: int128, _min_amount: uint256) -> uint256:
+    """
+    @notice Withdraw and unwrap a single coin from the pool
+    @param _token_amount Amount of LP tokens to burn in the withdrawal
+    @param i Index value of the coin to withdraw
+    @param _min_amount Minimum amount of underlying coin to receive
+    @return Amount of underlying coin received
+    """
+    assert ERC20(self.token).transferFrom(msg.sender, self, _token_amount)
 
     coin: address = ZERO_ADDRESS
     if i < MAX_COIN:
         coin = self.coins[i]
         # Withdraw a metapool coin
-        CurveMeta(self.pool).remove_liquidity_one_coin(_token_amount, i, min_amount)
+        CurveMeta(self.pool).remove_liquidity_one_coin(_token_amount, i, _min_amount)
     else:
         coin = self.base_coins[i - MAX_COIN]
         # Withdraw a base pool coin
         CurveMeta(self.pool).remove_liquidity_one_coin(_token_amount, MAX_COIN, 0)
         CurveBase(self.base_pool).remove_liquidity_one_coin(
-            ERC20(self.coins[MAX_COIN]).balanceOf(self), i-MAX_COIN, min_amount
+            ERC20(self.coins[MAX_COIN]).balanceOf(self), i-MAX_COIN, _min_amount
         )
 
     # Tranfer the coin out
@@ -229,6 +253,12 @@ def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_amount: uin
 @view
 @external
 def calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> uint256:
+    """
+    @notice Calculate the amount received when withdrawing and unwrapping a single coin
+    @param _token_amount Amount of LP tokens to burn in the withdrawal
+    @param i Index value of the underlying coin to withdraw
+    @return Amount of coin received
+    """
     if i < MAX_COIN:
         return CurveMeta(self.pool).calc_withdraw_one_coin(_token_amount, i)
     else:
@@ -238,7 +268,15 @@ def calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> uint256:
 
 @view
 @external
-def calc_token_amount(amounts: uint256[N_ALL_COINS], deposit: bool) -> uint256:
+def calc_token_amount(amounts: uint256[N_ALL_COINS], is_deposit: bool) -> uint256:
+    """
+    @notice Calculate addition or reduction in token supply from a deposit or withdrawal
+    @dev This calculation accounts for slippage, but not fees.
+         Needed to prevent front-running, not for precise calculations!
+    @param amounts Amount of each underlying coin being deposited
+    @param is_deposit set True for deposits, False for withdrawals
+    @return Expected amount of LP tokens received
+    """
     meta_amounts: uint256[N_COINS] = empty(uint256[N_COINS])
     base_amounts: uint256[BASE_N_COINS] = empty(uint256[BASE_N_COINS])
 
@@ -248,7 +286,7 @@ def calc_token_amount(amounts: uint256[N_ALL_COINS], deposit: bool) -> uint256:
     for i in range(BASE_N_COINS):
         base_amounts[i] = amounts[i + MAX_COIN]
 
-    _base_tokens: uint256 = CurveBase(self.base_pool).calc_token_amount(base_amounts, deposit)
+    _base_tokens: uint256 = CurveBase(self.base_pool).calc_token_amount(base_amounts, is_deposit)
     meta_amounts[MAX_COIN] = _base_tokens
 
-    return CurveMeta(self.pool).calc_token_amount(meta_amounts, deposit)
+    return CurveMeta(self.pool).calc_token_amount(meta_amounts, is_deposit)
