@@ -1,6 +1,6 @@
 # @version 0.2.5
 """
-@title "Zap" Depositer for Curve GUSD pool
+@title "Zap" Depositer for Curve USDK pool
 @author Curve.Fi
 @license Copyright (c) Curve.Fi, 2020 - all rights reserved
 """
@@ -9,9 +9,9 @@ from vyper.interfaces import ERC20
 
 
 interface CurveMeta:
-    def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256): nonpayable
-    def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS]): nonpayable
-    def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_amount: uint256): nonpayable
+    def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256) -> uint256: nonpayable
+    def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS]) -> uint256[N_COINS]: nonpayable
+    def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_amount: uint256) -> uint256: nonpayable
     def calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> uint256: view
     def calc_token_amount(amounts: uint256[N_COINS], deposit: bool) -> uint256: view
     def base_pool() -> address: view
