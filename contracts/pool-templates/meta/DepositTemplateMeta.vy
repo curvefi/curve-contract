@@ -274,20 +274,27 @@ def remove_liquidity_imbalance(amounts: uint256[N_ALL_COINS], max_burn_amount: u
     # Transfer the LP token in
     assert ERC20(self.token).transferFrom(msg.sender, self, max_burn_amount)
 
-    # Prepare quantities
-    amounts_base: uint256[BASE_N_COINS] = empty(uint256[BASE_N_COINS])
-    for i in range(BASE_N_COINS):
-        amounts_base[i] = amounts[MAX_COIN + i]
     amounts_meta: uint256[N_COINS] = empty(uint256[N_COINS])
     for i in range(MAX_COIN):
         amounts_meta[i] = amounts[i]
-    _base_amount: uint256 = CurveBase(self.base_pool).calc_token_amount(amounts_base, False)
-    _base_amount = _base_amount + _base_amount * fee / FEE_DENOMINATOR + 1
-    amounts_meta[MAX_COIN] = _base_amount
+
+    # Prepare quantities
+    withdraw_base: bool = False
+    amounts_base: uint256[BASE_N_COINS] = empty(uint256[BASE_N_COINS])
+    for i in range(BASE_N_COINS):
+        amount: uint256 = amounts[MAX_COIN + i]
+        if amount != 0:
+            amounts_base[i] = amount
+            withdraw_base = True
+
+    if withdraw_base:
+        amounts_meta[MAX_COIN] = CurveBase(self.base_pool).calc_token_amount(amounts_base, False)
+        amounts_meta[MAX_COIN] += amounts_meta[MAX_COIN] * fee / FEE_DENOMINATOR + 1
 
     # Remove liquidity and deposit leftovers back
     CurveMeta(_meta_pool).remove_liquidity_imbalance(amounts_meta, max_burn_amount)
-    CurveBase(_base_pool).remove_liquidity_imbalance(amounts_base, _base_amount)
+    if withdraw_base:
+        CurveBase(_base_pool).remove_liquidity_imbalance(amounts_base, amounts_meta[MAX_COIN])
 
     leftover_amounts: uint256[N_COINS] = empty(uint256[N_COINS])
     leftover_amounts[MAX_COIN] = ERC20(_meta_coins[MAX_COIN]).balanceOf(self)
