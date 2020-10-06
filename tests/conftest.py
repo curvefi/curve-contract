@@ -173,25 +173,35 @@ def pytest_collection_modifyitems(config, items):
             if params["pool_data"] in marker.args:
                 items.remove(item)
 
-        for marker in item.iter_markers(name="skip_meta"):
-            if "base_pool" in data:
-                items.remove(item)
+        if item not in items:
+            continue
 
         # apply `target_pool` marker
         for marker in item.iter_markers(name="target_pool"):
             if params["pool_data"] not in marker.args:
                 items.remove(item)
+                break
+
+        if item not in items:
+            continue
+
+        # apply `skip_meta` marker
+        if next(item.iter_markers(name="skip_meta"), False) and "base_pool" in data:
+            items.remove(item)
+            continue
 
         # apply `lending` marker
-        for marker in item.iter_markers(name="lending"):
+        if next(item.iter_markers(name="lending"), False):
             deployer = getattr(project, data['swap_contract'])
             if "exchange_underlying" not in deployer.signatures:
                 items.remove(item)
+                continue
 
-        # apply `lending` marker
-        for marker in item.iter_markers(name="zap"):
-            if "zap_contract" not in data:
-                items.remove(item)
+        # apply `zap` marker
+        if next(item.iter_markers(name="zap"), False) and "zap_contract" not in data:
+            items.remove(item)
+            continue
+
 
     # hacky magic to ensure the correct number of tests is shown in collection report
     config.pluginmanager.get_plugin("terminalreporter")._numcollected = len(items)

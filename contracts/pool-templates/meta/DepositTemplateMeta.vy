@@ -34,7 +34,7 @@ MAX_COIN: constant(int128) = N_COINS-1
 BASE_N_COINS: constant(int128) = ___BASE_N_COINS___
 N_ALL_COINS: constant(int128) = N_COINS + BASE_N_COINS - 1
 
-# An asset shich may have a transfer fee (USDT)
+# An asset which may have a transfer fee (USDT)
 FEE_ASSET: constant(address) = 0xdAC17F958D2ee523a2206206994597C13D831ec7
 
 
@@ -92,7 +92,6 @@ def __init__(_pool: address, _token: address):
 
 
 @external
-@nonreentrant('lock')
 def add_liquidity(amounts: uint256[N_ALL_COINS], min_mint_amount: uint256) -> uint256:
     """
     @notice Wrap underlying coins and deposit them in the pool
@@ -157,7 +156,6 @@ def add_liquidity(amounts: uint256[N_ALL_COINS], min_mint_amount: uint256) -> ui
 
 
 @external
-@nonreentrant('lock')
 def remove_liquidity(_amount: uint256, min_amounts: uint256[N_ALL_COINS]) -> uint256[N_ALL_COINS]:
     """
     @notice Withdraw and unwrap coins from the pool
@@ -210,7 +208,6 @@ def remove_liquidity(_amount: uint256, min_amounts: uint256[N_ALL_COINS]) -> uin
 
 
 @external
-@nonreentrant('lock')
 def remove_liquidity_one_coin(_token_amount: uint256, i: int128, _min_amount: uint256) -> uint256:
     """
     @notice Withdraw and unwrap a single coin from the pool

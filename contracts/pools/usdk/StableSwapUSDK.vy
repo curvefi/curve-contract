@@ -107,7 +107,7 @@ N_ALL_COINS: constant(int128) = N_COINS + BASE_N_COINS - 1
 BASE_PRECISION_MUL: constant(uint256[BASE_N_COINS]) = [1, 1000000000000, 1000000000000]
 BASE_RATES: constant(uint256[BASE_N_COINS]) = [1000000000000000000, 1000000000000000000000000000000, 1000000000000000000000000000000]
 
-# An asset shich may have a transfer fee (USDT)
+# An asset which may have a transfer fee (USDT)
 FEE_ASSET: constant(address) = 0xdAC17F958D2ee523a2206206994597C13D831ec7
 
 MAX_ADMIN_FEE: constant(uint256) = 10 * 10 ** 9
@@ -308,7 +308,8 @@ def get_D(xp: uint256[N_COINS], amp: uint256) -> uint256:
 @view
 @internal
 def get_D_mem(vp_rate: uint256, _balances: uint256[N_COINS], amp: uint256) -> uint256:
-    return self.get_D(self._xp_mem(vp_rate, _balances), amp)
+    xp: uint256[N_COINS] = self._xp_mem(vp_rate, _balances)
+    return self.get_D(xp, amp)
 
 
 @view
@@ -319,7 +320,10 @@ def get_virtual_price() -> uint256:
     @dev Useful for calculating profits
     @return LP token virtual price normalized to 1e18
     """
-    D: uint256 = self.get_D(self._xp(self._vp_rate_ro()), self._A())
+    amp: uint256 = self._A()
+    vp_rate: uint256 = self._vp_rate_ro()
+    xp: uint256[N_COINS] = self._xp(vp_rate)
+    D: uint256 = self.get_D(xp, amp)
     # D is in the units similar to DAI (e.g. converted to precision 1e18)
     # When balanced, D = n * x_u - total virtual value of the portfolio
     token_supply: uint256 = self.token.totalSupply()
@@ -902,7 +906,8 @@ def calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> uint256:
     @param i Index value of the coin to withdraw
     @return Amount of coin received
     """
-    return self._calc_withdraw_one_coin(_token_amount, i, self._vp_rate_ro())[0]
+    vp_rate: uint256 = self._vp_rate_ro()
+    return self._calc_withdraw_one_coin(_token_amount, i, vp_rate)[0]
 
 
 @external
@@ -917,9 +922,10 @@ def remove_liquidity_one_coin(_token_amount: uint256, i: int128, _min_amount: ui
     """
     assert not self.is_killed  # dev: is killed
 
+    vp_rate: uint256 = self._vp_rate()
     dy: uint256 = 0
     dy_fee: uint256 = 0
-    dy, dy_fee = self._calc_withdraw_one_coin(_token_amount, i, self._vp_rate())
+    dy, dy_fee = self._calc_withdraw_one_coin(_token_amount, i, vp_rate)
     assert dy >= _min_amount, "Not enough coins removed"
 
     self.balances[i] -= (dy + dy_fee * self.admin_fee / FEE_DENOMINATOR)
