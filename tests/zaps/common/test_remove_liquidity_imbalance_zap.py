@@ -1,64 +1,82 @@
 import pytest
 
-pytestmark = [
-    pytest.mark.usefixtures("add_initial_liquidity", "approve_zap"),
-    pytest.mark.skip_meta,
-]
+
+@pytest.fixture(scope="module", autouse=True)
+def setup(alice, bob, pool_token, add_initial_liquidity, approve_zap):
+    pool_token.transfer(bob, pool_token.balanceOf(alice), {'from': alice})
 
 
-@pytest.mark.itercoins("idx")
-@pytest.mark.parametrize("divisor", [10, 50, 100])
-def test_remove_imbalance(
-    alice,
+@pytest.mark.parametrize("divisor", [2, 7, 31337])
+def test_lp_token_balances(bob, zap, pool_token, divisor, initial_amounts_underlying, n_coins):
+    amounts = [i // divisor for i in initial_amounts_underlying]
+    max_burn = (n_coins * 10**24) // divisor + 1
+
+    initial_balance = pool_token.balanceOf(bob)
+    zap.remove_liquidity_imbalance(amounts, max_burn, {'from': bob})
+
+    # bob is the only LP, total supply is affected in the same way as his balance
+    assert pool_token.balanceOf(bob) < initial_balance
+    assert pool_token.balanceOf(bob) >= initial_balance - max_burn
+
+    assert pool_token.balanceOf(zap) == 0
+    assert pool_token.balanceOf(bob) == pool_token.totalSupply()
+
+
+@pytest.mark.parametrize("divisor", [2, 7, 31337])
+def test_wrapped_balances(
     bob,
     swap,
     zap,
     underlying_coins,
     wrapped_coins,
     pool_token,
-    idx,
-    n_coins,
     initial_amounts,
+    initial_amounts_underlying,
     divisor,
+    n_coins,
 ):
-    amounts = [i // divisor for i in initial_amounts]
+    amounts = [i // divisor for i in initial_amounts_underlying]
     max_burn = (n_coins * 10**24) // divisor
-
-    pool_token.transfer(bob, pool_token.balanceOf(alice), {'from': alice})
     zap.remove_liquidity_imbalance(amounts, max_burn + 1, {'from': bob})
 
-    zipped = zip(underlying_coins, wrapped_coins, initial_amounts, amounts)
-    for underlying, wrapped, initial, expected in zipped:
-        assert underlying.balanceOf(zap) == 0
-        assert wrapped.balanceOf(zap) == 0
-
-        assert 0 < underlying.balanceOf(bob) <= expected
-        assert wrapped.balanceOf(swap) == initial - expected
-
-    assert abs(pool_token.balanceOf(bob) - (n_coins * 10**24 - max_burn)) <= 1
-    assert pool_token.balanceOf(zap) == 0
+    for coin, initial in zip(wrapped_coins, initial_amounts):
+        assert coin.balanceOf(zap) == 0
+        assert 0.99 < (initial - (initial // divisor)) / coin.balanceOf(swap) <= 1
 
 
-@pytest.mark.itercoins("idx")
-def test_remove_some(
-    alice, bob, swap, zap, underlying_coins, wrapped_coins, pool_token, idx, initial_amounts
+@pytest.mark.parametrize("divisor", [2, 7, 31337])
+@pytest.mark.parametrize("is_inclusive", [True, False])
+@pytest.mark.itercoins("idx", underlying=True)
+def test_underlying_balances(
+    bob,
+    swap,
+    zap,
+    underlying_coins,
+    wrapped_coins,
+    pool_token,
+    initial_amounts_underlying,
+    divisor,
+    idx,
+    is_inclusive,
+    n_coins
 ):
-    amounts = [i//2 for i in initial_amounts]
-    amounts[idx] = 0
+    if is_inclusive:
+        amounts = [i // divisor for i in initial_amounts_underlying]
+        amounts[idx] = 0
+    else:
+        amounts = [0] * len(initial_amounts_underlying)
+        amounts[idx] = initial_amounts_underlying[idx] // divisor
+    max_burn = (n_coins * 10**24) // divisor
+    zap.remove_liquidity_imbalance(amounts, max_burn + 1, {'from': bob})
 
-    pool_token.transfer(bob, pool_token.balanceOf(alice), {'from': alice})
-    zap.remove_liquidity_imbalance(amounts, 2**256-1, {'from': bob})
-
-    zipped = zip(underlying_coins, wrapped_coins, initial_amounts, amounts)
-    for underlying, wrapped, initial, expected in zipped:
-        assert underlying.balanceOf(zap) == 0
-        assert wrapped.balanceOf(zap) == 0
-
-        if expected:
-            assert 0 < underlying.balanceOf(bob) <= expected
-            assert wrapped.balanceOf(swap) == initial - expected
+    for coin, amount, initial in zip(underlying_coins, amounts, initial_amounts_underlying):
+        if coin not in wrapped_coins:
+            assert coin.balanceOf(swap) == 0
         else:
-            assert underlying.balanceOf(bob) == 0
-            assert wrapped.balanceOf(swap) == initial
+            assert coin.balanceOf(swap) == initial - amount
+        assert coin.balanceOf(zap) == 0
 
-    assert pool_token.balanceOf(zap) == 0
+        if amount:
+            assert 0.9 < coin.balanceOf(bob) / amount <= 1
+        else:
+            assert coin.balanceOf(bob) == 0
