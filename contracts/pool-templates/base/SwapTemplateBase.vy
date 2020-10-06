@@ -40,6 +40,7 @@ event RemoveLiquidityOne:
     provider: indexed(address)
     token_amount: uint256
     coin_amount: uint256
+    token_supply: uint256
 
 event RemoveLiquidityImbalance:
     provider: indexed(address)
@@ -722,7 +723,7 @@ def remove_liquidity_one_coin(_token_amount: uint256, i: int128, _min_amount: ui
     if len(_response) > 0:
         assert convert(_response, bool)
 
-    log RemoveLiquidityOne(msg.sender, _token_amount, dy)
+    log RemoveLiquidityOne(msg.sender, _token_amount, dy, ERC20(self.lp_token).totalSupply() - _token_amount)
 
     return dy
 
