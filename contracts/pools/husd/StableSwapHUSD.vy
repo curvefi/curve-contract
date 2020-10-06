@@ -865,7 +865,7 @@ def get_y_D(A_: uint256, i: int128, xp: uint256[N_COINS], D: uint256) -> uint256
 
 @view
 @internal
-def _calc_withdraw_one_coin(_token_amount: uint256, i: int128, vp_rate: uint256) -> (uint256, uint256):
+def _calc_withdraw_one_coin(_token_amount: uint256, i: int128, vp_rate: uint256) -> (uint256, uint256, uint256):
     # First, need to calculate
     # * Get current D
     # * Solve Eqn against y_i for D - _token_amount
@@ -895,7 +895,7 @@ def _calc_withdraw_one_coin(_token_amount: uint256, i: int128, vp_rate: uint256)
     dy: uint256 = xp_reduced[i] - self.get_y_D(amp, i, xp_reduced, D1)
     dy = (dy - 1) * PRECISION / rates[i]  # Withdraw less to account for rounding errors
 
-    return dy, dy_0 - dy
+    return dy, dy_0 - dy, total_supply
 
 
 @view
@@ -926,14 +926,15 @@ def remove_liquidity_one_coin(_token_amount: uint256, i: int128, _min_amount: ui
     vp_rate: uint256 = self._vp_rate()
     dy: uint256 = 0
     dy_fee: uint256 = 0
-    dy, dy_fee = self._calc_withdraw_one_coin(_token_amount, i, vp_rate)
+    total_supply: uint256 = 0
+    dy, dy_fee, total_supply = self._calc_withdraw_one_coin(_token_amount, i, vp_rate)
     assert dy >= _min_amount, "Not enough coins removed"
 
     self.balances[i] -= (dy + dy_fee * self.admin_fee / FEE_DENOMINATOR)
     self.token.burnFrom(msg.sender, _token_amount)  # dev: insufficient funds
     assert ERC20(self.coins[i]).transfer(msg.sender, dy)
 
-    log RemoveLiquidityOne(msg.sender, _token_amount, dy, self.token.totalSupply() - _token_amount)
+    log RemoveLiquidityOne(msg.sender, _token_amount, dy, total_supply - _token_amount)
 
     return dy
 
