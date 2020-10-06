@@ -257,7 +257,6 @@ def remove_liquidity_one_coin(_token_amount: uint256, i: int128, _min_amount: ui
 
 
 @external
-@nonreentrant('lock')
 def remove_liquidity_imbalance(amounts: uint256[N_ALL_COINS], max_burn_amount: uint256) -> uint256:
     """
     @notice Withdraw coins from the pool in an imbalanced amount
@@ -283,15 +282,17 @@ def remove_liquidity_imbalance(amounts: uint256[N_ALL_COINS], max_burn_amount: u
     for i in range(MAX_COIN):
         amounts_meta[i] = amounts[i]
     _base_amount: uint256 = CurveBase(self.base_pool).calc_token_amount(amounts_base, False)
-    _base_amount = _base_amount + _base_amount * fee / FEE_DENOMINATOR
+    _base_amount = _base_amount + _base_amount * fee / FEE_DENOMINATOR + 1
     amounts_meta[MAX_COIN] = _base_amount
 
     # Remove liquidity and deposit leftovers back
     CurveMeta(_meta_pool).remove_liquidity_imbalance(amounts_meta, max_burn_amount)
     CurveBase(_base_pool).remove_liquidity_imbalance(amounts_base, _base_amount)
+
     leftover_amounts: uint256[N_COINS] = empty(uint256[N_COINS])
     leftover_amounts[MAX_COIN] = ERC20(_meta_coins[MAX_COIN]).balanceOf(self)
-    CurveMeta(_meta_pool).add_liquidity(leftover_amounts, 0)
+    if leftover_amounts[MAX_COIN] > 0:
+        CurveMeta(_meta_pool).add_liquidity(leftover_amounts, 0)
 
     # Transfer all coins out
     for i in range(N_ALL_COINS):
