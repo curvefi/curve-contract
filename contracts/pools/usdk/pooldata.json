@@ -1,6 +1,15 @@
 {
     "base_pool": "3pool",
     "lp_contract": "CurveTokenV2",
+    "lp_constructor": {
+        "symbol": "usdk3CRV",
+        "name": "Curve.fi USDK/3Crv"
+    },
+    "swap_constructor": {
+        "_A": 200,
+        "_fee": 4000000,
+        "_admin_fee": 0
+    },
     "coins": [
         {
             "name": "USDK",

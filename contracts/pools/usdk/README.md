@@ -4,17 +4,15 @@
 
 ## Contracts
 
+* [`DepositUSDK`](DepositUSDK.vy): Depositor contract, used to wrap underlying tokens prior to depositing them into the pool
 * [`StableSwapUSDK`](StableSwapUSDK.vy): Curve stablecoin AMM contract
-* [`DepositUSDK`]
 
 ## Deployments
 
-<!--
-* [`CurveContractV2`](../../tokens/CurveTokenV2.vy): [](https://etherscan.io/address/)
-* [`DepositUSDK`](DepositUSDK.vy): [](https://etherscan.io/address/)
-* [`LiquidityGauge`](../../gauges/LiquidityGauge.vy): [](https://etherscan.io/address/)
-* [`StableSwapUSDK`](StableSwapUSDT.vy): [](https://etherscan.io/address/)
- -->
+* [`CurveContractV2`](../../tokens/CurveTokenV2.vy): [0x97E2768e8E73511cA874545DC5Ff8067eB19B787](https://etherscan.io/address/0x97E2768e8E73511cA874545DC5Ff8067eB19B787)
+* [`DepositUSDK`](DepositUSDK.vy): [0x6600e98b71dabfD4A8Cac03b302B0189Adb86Afb](https://etherscan.io/address/0x6600e98b71dabfD4A8Cac03b302B0189Adb86Afb)
+* [`LiquidityGauge`](../../gauges/LiquidityGauge.vy): [0xC2b1DF84112619D190193E48148000e3990Bf627](https://etherscan.io/address/0xC2b1DF84112619D190193E48148000e3990Bf627)
+* [`StableSwapUSDK`](StableSwapUSDK.vy): [0x3E01dD8a5E1fb3481F0F589056b428Fc308AF0Fb](https://etherscan.io/address/0x3E01dD8a5E1fb3481F0F589056b428Fc308AF0Fb)
 
 ## Stablecoins
 
