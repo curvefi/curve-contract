@@ -42,10 +42,15 @@ def test_swap_gas(
 
 
 @pytest.mark.zap
-def test_zap_gas(chain, alice, underlying_decimals, initial_amounts_underlying, zap, approve_zap):
-    if not zap:
-        return
-
+def test_zap_gas(
+    chain,
+    alice,
+    zap,
+    pool_token,
+    underlying_decimals,
+    initial_amounts_underlying,
+    approve_zap,
+):
     n_coins = len(initial_amounts_underlying)
     zap.add_liquidity(initial_amounts_underlying, 0, {'from': alice})
     chain.sleep(3600)
@@ -55,7 +60,7 @@ def test_zap_gas(chain, alice, underlying_decimals, initial_amounts_underlying, 
 
     if hasattr(zap, "remove_liquidity_imbalance"):
         amounts = [10**underlying_decimals[i] for i in range(n_coins)]
-        zap.remove_liquidity_imbalance(amounts, 2**256-1, {'from': alice})
+        zap.remove_liquidity_imbalance(amounts, pool_token.balanceOf(alice), {'from': alice})
         chain.sleep(3600)
 
     if hasattr(zap, "remove_liquidity_one_coin"):
