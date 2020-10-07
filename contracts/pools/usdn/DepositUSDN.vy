@@ -12,6 +12,7 @@ interface CurveMeta:
     def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256) -> uint256: nonpayable
     def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS]) -> uint256[N_COINS]: nonpayable
     def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_amount: uint256) -> uint256: nonpayable
+    def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint256) -> uint256: nonpayable
     def calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> uint256: view
     def calc_token_amount(amounts: uint256[N_COINS], deposit: bool) -> uint256: view
     def base_pool() -> address: view
@@ -21,9 +22,11 @@ interface CurveBase:
     def add_liquidity(amounts: uint256[BASE_N_COINS], min_mint_amount: uint256): nonpayable
     def remove_liquidity(_amount: uint256, min_amounts: uint256[BASE_N_COINS]): nonpayable
     def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_amount: uint256): nonpayable
+    def remove_liquidity_imbalance(amounts: uint256[BASE_N_COINS], max_burn_amount: uint256): nonpayable
     def calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> uint256: view
     def calc_token_amount(amounts: uint256[BASE_N_COINS], deposit: bool) -> uint256: view
     def coins(i: uint256) -> address: view
+    def fee() -> uint256: view
 
 
 N_COINS: constant(int128) = 2
@@ -33,6 +36,9 @@ N_ALL_COINS: constant(int128) = N_COINS + BASE_N_COINS - 1
 
 # An asset shich may have a transfer fee (USDT)
 FEE_ASSET: constant(address) = 0xdAC17F958D2ee523a2206206994597C13D831ec7
+
+FEE_DENOMINATOR: constant(uint256) = 10 ** 10
+FEE_IMPRECISION: constant(uint256) = 25 * 10 ** 8  # % of the fee
 
 
 pool: public(address)
@@ -89,7 +95,6 @@ def __init__(_pool: address, _token: address):
 
 
 @external
-@nonreentrant('lock')
 def add_liquidity(amounts: uint256[N_ALL_COINS], min_mint_amount: uint256) -> uint256:
     """
     @notice Wrap underlying coins and deposit them in the pool
@@ -154,7 +159,6 @@ def add_liquidity(amounts: uint256[N_ALL_COINS], min_mint_amount: uint256) -> ui
 
 
 @external
-@nonreentrant('lock')
 def remove_liquidity(_amount: uint256, min_amounts: uint256[N_ALL_COINS]) -> uint256[N_ALL_COINS]:
     """
     @notice Withdraw and unwrap coins from the pool
@@ -176,7 +180,7 @@ def remove_liquidity(_amount: uint256, min_amounts: uint256[N_ALL_COINS]) -> uin
     CurveMeta(self.pool).remove_liquidity(_amount, min_amounts_meta)
 
     # Withdraw from base
-    _base_amount: uint256 = ERC20(self.coins[1]).balanceOf(self)
+    _base_amount: uint256 = ERC20(self.coins[MAX_COIN]).balanceOf(self)
     for i in range(BASE_N_COINS):
         min_amounts_base[i] = min_amounts[MAX_COIN+i]
     CurveBase(self.base_pool).remove_liquidity(_base_amount, min_amounts_base)
@@ -207,7 +211,6 @@ def remove_liquidity(_amount: uint256, min_amounts: uint256[N_ALL_COINS]) -> uin
 
 
 @external
-@nonreentrant('lock')
 def remove_liquidity_one_coin(_token_amount: uint256, i: int128, _min_amount: uint256) -> uint256:
     """
     @notice Withdraw and unwrap a single coin from the pool
@@ -248,6 +251,86 @@ def remove_liquidity_one_coin(_token_amount: uint256, i: int128, _min_amount: ui
     # end "safeTransfer"
 
     return coin_amount
+
+
+@external
+def remove_liquidity_imbalance(amounts: uint256[N_ALL_COINS], max_burn_amount: uint256) -> uint256:
+    """
+    @notice Withdraw coins from the pool in an imbalanced amount
+    @param amounts List of amounts of underlying coins to withdraw
+    @param max_burn_amount Maximum amount of LP token to burn in the withdrawal
+    @return Actual amount of the LP token burned in the withdrawal
+    """
+    _base_pool: address = self.base_pool
+    _meta_pool: address = self.pool
+    _base_coins: address[BASE_N_COINS] = self.base_coins
+    _meta_coins: address[N_COINS] = self.coins
+    _lp_token: address = self.token
+
+    fee: uint256 = CurveBase(_base_pool).fee() * BASE_N_COINS / (4 * (BASE_N_COINS - 1))
+    fee += fee * FEE_IMPRECISION / FEE_DENOMINATOR  # Overcharge to account for imprecision
+
+    # Transfer the LP token in
+    assert ERC20(_lp_token).transferFrom(msg.sender, self, max_burn_amount)
+
+    withdraw_base: bool = False
+    amounts_base: uint256[BASE_N_COINS] = empty(uint256[BASE_N_COINS])
+    amounts_meta: uint256[N_COINS] = empty(uint256[N_COINS])
+    leftover_amounts: uint256[N_COINS] = empty(uint256[N_COINS])
+
+    # Prepare quantities
+    for i in range(MAX_COIN):
+        amounts_meta[i] = amounts[i]
+
+    for i in range(BASE_N_COINS):
+        amount: uint256 = amounts[MAX_COIN + i]
+        if amount != 0:
+            amounts_base[i] = amount
+            withdraw_base = True
+
+    if withdraw_base:
+        amounts_meta[MAX_COIN] = CurveBase(self.base_pool).calc_token_amount(amounts_base, False)
+        amounts_meta[MAX_COIN] += amounts_meta[MAX_COIN] * fee / FEE_DENOMINATOR + 1
+
+    # Remove liquidity and deposit leftovers back
+    CurveMeta(_meta_pool).remove_liquidity_imbalance(amounts_meta, max_burn_amount)
+    if withdraw_base:
+        CurveBase(_base_pool).remove_liquidity_imbalance(amounts_base, amounts_meta[MAX_COIN])
+        leftover_amounts[MAX_COIN] = ERC20(_meta_coins[MAX_COIN]).balanceOf(self)
+        if leftover_amounts[MAX_COIN] > 0:
+            CurveMeta(_meta_pool).add_liquidity(leftover_amounts, 0)
+
+    # Transfer all coins out
+    for i in range(N_ALL_COINS):
+        coin: address = ZERO_ADDRESS
+        amount: uint256 = 0
+        if i < MAX_COIN:
+            coin = _meta_coins[i]
+            amount = amounts_meta[i]
+        else:
+            coin = _base_coins[i - MAX_COIN]
+            amount = amounts_base[i - MAX_COIN]
+        # "safeTransfer" which works for ERC20s which return bool or not
+        if amount > 0:
+            _response: Bytes[32] = raw_call(
+                coin,
+                concat(
+                    method_id("transfer(address,uint256)"),
+                    convert(msg.sender, bytes32),
+                    convert(amount, bytes32),
+                ),
+                max_outsize=32,
+            )  # dev: failed transfer
+            if len(_response) > 0:
+                assert convert(_response, bool)  # dev: failed transfer
+            # end "safeTransfer"
+
+    # Transfer the leftover LP token out
+    leftover: uint256 = ERC20(_lp_token).balanceOf(self)
+    if leftover > 0:
+        assert ERC20(_lp_token).transfer(msg.sender, leftover)
+
+    return max_burn_amount - leftover
 
 
 @view
