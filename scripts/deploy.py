@@ -30,6 +30,7 @@ def _tx_params():
 
 def main():
     project = get_loaded_projects()[0]
+    balance = DEPLOYER.balance()
 
     # load data about the deployment from `pooldata.json`
     contracts_path = project._path.joinpath("contracts/pools")
@@ -71,7 +72,7 @@ def main():
     token.set_minter(swap, _tx_params())
 
     # deploy the liquidity gauge
-    LiquidityGauge.deploy(token, MINTER, _tx_params())
+    LiquidityGauge.deploy(token, MINTER, POOL_OWNER, _tx_params())
 
     # deploy the zap
     zap_name = next((i.stem for i in contracts_path.glob(f"{POOL_NAME}/Deposit*")), None)
@@ -89,3 +90,5 @@ def main():
         deployment_args = [args[i['name']] for i in abi] + [_tx_params()]
 
         zap_deployer.deploy(*deployment_args)
+
+    print(f'Gas used in deployment: {(balance - DEPLOYER.balance()) / 1e18:.4f} ETH')

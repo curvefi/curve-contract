@@ -1,4 +1,4 @@
-# @version 0.2.4
+# @version 0.2.5
 """
 @title Staking Liquidity Gauge
 @author Curve Finance
@@ -52,6 +52,12 @@ event UpdateLiquidityLimit:
     working_balance: uint256
     working_supply: uint256
 
+event CommitOwnership:
+    admin: address
+
+event ApplyOwnership:
+    admin: address
+
 
 TOKENLESS_PRODUCTION: constant(uint256) = 40
 BOOST_WARMUP: constant(uint256) = 2 * 7 * 86400
@@ -99,15 +105,19 @@ reward_integral_for: public(HashMap[address, uint256])
 rewards_for: public(HashMap[address, uint256])
 claimed_rewards_for: public(HashMap[address, uint256])
 
+admin: public(address)
+future_admin: public(address)  # Can and will be a smart contract
+is_killed: public(bool)
 
 @external
-def __init__(lp_addr: address, _minter: address, _reward_contract: address, _rewarded_token: address):
+def __init__(lp_addr: address, _minter: address, _reward_contract: address, _rewarded_token: address, _admin: address):
     """
     @notice Contract constructor
     @param lp_addr Liquidity Pool contract address
     @param _minter Minter contract address
     @param _reward_contract Synthetix reward contract address
     @param _rewarded_token Received synthetix token contract address
+    @param _admin Admin who can kill the gauge
     """
     assert lp_addr != ZERO_ADDRESS
     assert _minter != ZERO_ADDRESS
@@ -126,6 +136,7 @@ def __init__(lp_addr: address, _minter: address, _reward_contract: address, _rew
     self.reward_contract = _reward_contract
     assert ERC20(lp_addr).approve(_reward_contract, MAX_UINT256)
     self.rewarded_token = _rewarded_token
+    self.admin = _admin
 
 
 @internal
@@ -200,6 +211,10 @@ def _checkpoint(addr: address, claim_rewards: bool):
 
     _working_balance: uint256 = self.working_balances[addr]
     _working_supply: uint256 = self.working_supply
+
+    if self.is_killed:
+        # Stop distributing inflation as soon as killed
+        rate = 0
 
     # Update integral of 1/supply
     if block.timestamp > _period_time:
@@ -386,3 +401,32 @@ def claim_rewards(addr: address = msg.sender):
 @view
 def integrate_checkpoint() -> uint256:
     return self.period_timestamp[self.period]
+
+
+@external
+def kill_me():
+    assert msg.sender == self.admin
+    self.is_killed = not self.is_killed
+
+
+@external
+def commit_transfer_ownership(addr: address):
+    """
+    @notice Transfer ownership of GaugeController to `addr`
+    @param addr Address to have ownership transferred to
+    """
+    assert msg.sender == self.admin  # dev: admin only
+    self.future_admin = addr
+    log CommitOwnership(addr)
+
+
+@external
+def apply_transfer_ownership():
+    """
+    @notice Apply pending ownership transfer
+    """
+    assert msg.sender == self.admin  # dev: admin only
+    _admin: address = self.future_admin
+    assert _admin != ZERO_ADDRESS  # dev: admin not set
+    self.admin = _admin
+    log ApplyOwnership(_admin)
