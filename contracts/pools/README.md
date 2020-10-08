@@ -12,6 +12,8 @@ Each subdirectory holds contracts and other files specific to a single Curve poo
 * [`gusd`](gusd): [GUSD metapool](https://www.curve.fi/gusd)
 * [`hbtc`](hbtc): [hBTC pool](https://www.curve.fi/hbtc)
 * [`husd`](husd): [HUSD metapool](https://www.curve.fi/husd)
+* [`linkusd`](linkusd): [LinkUSD metapool](https://www.curve.fi/linkusd)
+* [`musd`](musd): [MUSD metapool](https://www.curve.fi/musd)
 * [`pax`](pax): [PAX pool](https://www.curve.fi/pax), with lending on [yearn.finance](https://yearn.finance/)
 * [`ren`](ren): [RenBTC pool](https://www.curve.fi/ren)
 * [`sbtc`](sbtc): [sBTC pool](https://www.curve.fi/sbtc)
