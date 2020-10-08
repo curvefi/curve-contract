@@ -1,20 +1,18 @@
-# curve-contract/contracts/pools/gusd
+# curve-contract/contracts/pools/linkusd
 
 [Curve LINKUSD metapool](https://www.curve.fi/linkusd), allowing swaps via the Curve [tri-pool](../3pool).
 
 ## Contracts
 
-* [`DepositLinkUSD`](DepositLinkUSD.vy): Depositor contract, used to wrap underlying tokens prior to depositing them into the pool.
+* [`DepositLinkUSD`](DepositLinkUSD.vy): Depositor contract, used to wrap underlying tokens prior to depositing them into the pool
 * [`StableSwapLinkUSD`](StableSwapLinkUSD.vy): Curve stablecoin AMM contract
 
 ## Deployments
 
-<!--
-* [`CurveContractV2`](../../tokens/CurveTokenV2.vy): [](https://etherscan.io/address/)
-* [`DepositGUSD`](DepositGUSD.vy): [](https://etherscan.io/address/)
+* [`CurveContractV2`](../../tokens/CurveTokenV2.vy): [0x6D65b498cb23deAba52db31c93Da9BFFb340FB8F](https://etherscan.io/address/0x6D65b498cb23deAba52db31c93Da9BFFb340FB8F)
+* [`DepositLinkUSD`](DepositGUSD.vy): [0xF6bDc2619FFDA72c537Cd9605e0A274Dc48cB1C9](https://etherscan.io/address/0xF6bDc2619FFDA72c537Cd9605e0A274Dc48cB1C9)
 * [`LiquidityGauge`](../../gauges/LiquidityGauge.vy): [](https://etherscan.io/address/)
-* [`StableSwapGUSD`](StableSwapUSDT.vy): [](https://etherscan.io/address/)
- -->
+* [`StableSwapLinkUSD`](StableSwapUSDT.vy): [0xE7a24EF0C5e95Ffb0f6684b813A78F2a3AD7D171](https://etherscan.io/address/0xE7a24EF0C5e95Ffb0f6684b813A78F2a3AD7D171)
 
 ## Stablecoins
 
