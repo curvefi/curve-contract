@@ -1,44 +1,29 @@
-on: [push, pull_request]
+name: usdt
 
-name: main workflow
+on:
+  pull_request:
+    paths:
+    - 'tests/**/*.py'
+    - 'contracts/pools/usdt/**.vy'
+  push:
+    paths:
+    - 'tests/**/*.py'
+    - 'contracts/pools/usdt/**.vy'
+
 
 env:
+  pool: 'usdt'
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   NODE_OPTIONS: --max_old_space_size=4096
 
+
 jobs:
 
-  unitary:
+  unitary-pool:
     runs-on: ubuntu-latest
 
-    strategy:
-      fail-fast: false
-      matrix:
-        pool: [
-          3pool,
-          busd,
-          compound,
-          gusd,
-          hbtc,
-          husd,
-          linkusd,
-          musd,
-          pax,
-          ren,
-          sbtc,
-          snow,
-          susd,
-          template-base,
-          template-meta,
-          template-y,
-          usdk,
-          usdn,
-          usdt,
-          y
-        ]
-
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
 
     - name: Cache Compiler Installations
       uses: actions/cache@v2
@@ -52,7 +37,7 @@ jobs:
       uses: actions/setup-node@v1
 
     - name: Install Ganache
-      run: npm install -g ganache-cli@6.11.0
+      run: npm install
 
     - name: Setup Python 3.8
       uses: actions/setup-python@v2
@@ -60,42 +45,18 @@ jobs:
         python-version: 3.8
 
     - name: Install Requirements
-      run: pip install -r requirements.txt
+      run: |
+        pip install wheel
+        pip install -r requirements.txt
 
     - name: Run Tests
-      run: pytest tests/pools/common/unitary tests/zaps/common --pool ${{ matrix.pool }}
+      run: brownie test tests/pools/common/unitary --pool ${{ env.pool }}
 
   integration:
     runs-on: ubuntu-latest
 
-    strategy:
-      fail-fast: false
-      matrix:
-        pool: [
-          3pool,
-          busd,
-          compound,
-          gusd,
-          hbtc,
-          husd,
-          linkusd,
-          musd,
-          pax,
-          ren,
-          sbtc,
-          snow,
-          susd,
-          template-base,
-          template-meta,
-          template-y,
-          usdk,
-          usdn,
-          usdt,
-          y
-        ]
-
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
 
     - name: Cache Compiler Installations
       uses: actions/cache@v2
@@ -109,7 +70,7 @@ jobs:
       uses: actions/setup-node@v1
 
     - name: Install Ganache
-      run: npm install -g ganache-cli@6.11.0
+      run: npm install
 
     - name: Setup Python 3.8
       uses: actions/setup-python@v2
@@ -117,16 +78,18 @@ jobs:
         python-version: 3.8
 
     - name: Install Requirements
-      run: pip install -r requirements.txt
+      run: |
+        pip install wheel
+        pip install -r requirements.txt
 
     - name: Run Tests
-      run: pytest tests/pools/common/integration --pool ${{ matrix.pool }}
+      run: pytest tests/pools/common/integration --pool ${{ env.pool }}
 
-  token:
+  unitary-zap:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
 
     - name: Cache Compiler Installations
       uses: actions/cache@v2
@@ -140,7 +103,7 @@ jobs:
       uses: actions/setup-node@v1
 
     - name: Install Ganache
-      run: npm install -g ganache-cli@6.11.0
+      run: npm install
 
     - name: Setup Python 3.8
       uses: actions/setup-python@v2
@@ -148,7 +111,9 @@ jobs:
         python-version: 3.8
 
     - name: Install Requirements
-      run: pip install -r requirements.txt
+      run: |
+        pip install wheel
+        pip install -r requirements.txt
 
     - name: Run Tests
-      run: pytest tests/token
+      run: brownie test tests/zaps/common --pool ${{ env.pool }}
