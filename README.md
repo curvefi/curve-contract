@@ -25,7 +25,7 @@ To get started, first create and initialize a Python [virtual environment](https
 ```bash
 git clone https://github.com/curvefi/curve-contract.git
 cd curve-contract
-pip install -r requirements
+pip install -r requirements.txt
 ```
 
 ### Organization and Workflow
@@ -46,7 +46,7 @@ brownie test
 To run tests on a specific pool:
 
 ```bash
-pytest tests --pool <POOL NAME>
+brownie test tests/ --pool <POOL NAME>
 ```
 
 Valid pool names are the names of the subdirectories within [`contracts/pools`](contracts/pools). For templates, prepend `template-` to the subdirectory names within [`contracts/pool-templates`](../contracts/pool-templates). For example, the base template is `template-base`.

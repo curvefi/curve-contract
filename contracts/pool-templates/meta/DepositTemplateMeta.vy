@@ -1,4 +1,4 @@
-# @version ^0.2.6
+# @version ^0.2.5
 """
 @title "Zap" Depositer for metapool
 @author Curve.Fi
@@ -65,7 +65,7 @@ def __init__(_pool: address, _token: address):
     self.base_pool = _base_pool
 
     for i in range(N_COINS):
-        coin: address = CurveMeta(_pool).coins(i)
+        coin: address = CurveMeta(_pool).coins(convert(i, uint256))
         self.coins[i] = coin
         # approve coins for infinite transfers
         _response: Bytes[32] = raw_call(
