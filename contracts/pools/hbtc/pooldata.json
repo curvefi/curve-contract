@@ -1,5 +1,7 @@
 {
     "lp_contract": "CurveTokenV2",
+    "swap_address": "0x4CA9b3063Ec5866A4B82E437059D2C43d1be596F",
+    "lp_token_address": "0xb19059ebb43466C323583928285a49f558E572Fd",
     "coins": [
         {
             "name": "hBTC",

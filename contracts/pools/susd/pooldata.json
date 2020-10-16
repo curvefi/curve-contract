@@ -1,5 +1,8 @@
 {
     "lp_contract": "CurveTokenV1",
+    "swap_address": "0xA5407eAE9Ba41422680e2e00537571bcC53efBfD",
+    "lp_token_address": "0xC25a3A3b969415c80451098fa907EC722572917F",
+    "zap_address": "0xfcba3e75865d2d561be8d220616520c171f12851",
     "coins": [
         {
             "name": "DAI",

@@ -1,6 +1,9 @@
 {
     "base_pool": "3pool",
     "lp_contract": "CurveTokenV2",
+    "swap_address": "0x3E01dD8a5E1fb3481F0F589056b428Fc308AF0Fb",
+    "lp_token_address": "0x97E2768e8E73511cA874545DC5Ff8067eB19B787",
+    "zap_address": "0x6600e98b71dabfD4A8Cac03b302B0189Adb86Afb",
     "lp_constructor": {
         "symbol": "usdk3CRV",
         "name": "Curve.fi USDK/3Crv"
