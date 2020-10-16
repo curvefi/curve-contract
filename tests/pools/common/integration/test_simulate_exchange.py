@@ -46,7 +46,7 @@ def test_simulated_exchange(
         amount = 1000 * 10 ** data['decimals']
         underlying._mint_for_testing(alice, amount, {'from': alice})
 
-        if data['wrapped']:
+        if data.get("wrapped_decimals"):
 
             underlying.approve(wrapped, amount, {'from': alice})
             wrapped.mint(amount, {'from': alice})
@@ -62,7 +62,7 @@ def test_simulated_exchange(
     balances = [swap.balances(i) for i in range(n_coins)]
     rates = []
     for (coin, data) in zip(wrapped_coins, pool_data['coins']):
-        if data['wrapped']:
+        if data.get("wrapped_decimals"):
             rate = coin.get_rate()
         else:
             rate = 10 ** 18
@@ -82,7 +82,7 @@ def test_simulated_exchange(
     while st_coin:
         # Tune exchange rates
         for i, (cc, data) in enumerate(zip(wrapped_coins, coin_data)):
-            if data['wrapped']:
+            if data.get("wrapped_decimals"):
                 rate = int(cc.get_rate() * 1.0001)
                 cc.set_exchange_rate(rate, {'from': alice})
                 curve_model.p[i] = rate * (10 ** (18-data['decimals']))
