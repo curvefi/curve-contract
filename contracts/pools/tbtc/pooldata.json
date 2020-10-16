@@ -12,14 +12,14 @@
     },
     "coins": [
         {
-            "name": "GUSD",
+            "name": "tBTC",
             "decimals": 1e18,
             "tethered": false,
             "wrapped": false,
             "underlying_address": "0x8dAEBADE922dF735c38C80C7eBD708Af50815fAa"
         },
         {
-            "name": "3CRV",
+            "name": "sbtcCRV",
             "decimals": 18,
             "wrapped": false,
             "base_pool_token": true,

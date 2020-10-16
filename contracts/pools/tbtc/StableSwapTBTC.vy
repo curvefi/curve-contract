@@ -1,9 +1,9 @@
 # @version 0.2.5
 """
-@title Curve GUSD Metapool
+@title Curve tBTC Metapool
 @author Curve.Fi
 @license Copyright (c) Curve.Fi, 2020 - all rights reserved
-@dev Utilizes 3Pool to allow swaps between GUSD / DAI / USDC / USDT
+@dev Utilizes 3Pool to allow swaps between tBTC / DAI / USDC / USDT
 """
 
 from vyper.interfaces import ERC20

@@ -1,6 +1,6 @@
 # @version 0.2.5
 """
-@title "Zap" Depositer for Curve GUSD pool
+@title "Zap" Depositer for Curve tBTC pool
 @author Curve.Fi
 @license Copyright (c) Curve.Fi, 2020 - all rights reserved
 """
