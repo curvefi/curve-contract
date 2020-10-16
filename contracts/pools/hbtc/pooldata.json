@@ -7,14 +7,12 @@
             "name": "hBTC",
             "decimals": 18,
             "tethered": false,
-            "wrapped": false,
             "underlying_address": "0x0316EB71485b0Ab14103307bf65a021042c6d380"
         },
         {
             "name": "wBTC",
             "decimals": 8,
             "tethered": false,
-            "wrapped": false,
             "underlying_address": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599"
         }
     ]

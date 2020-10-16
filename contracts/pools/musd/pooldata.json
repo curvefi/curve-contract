@@ -18,13 +18,11 @@
             "name": "MUSD",
             "decimals": 18,
             "tethered": false,
-            "wrapped": false,
             "underlying_address": "0xe2f2a5C287993345a840Db3B0845fbC70f5935a5"
         },
         {
             "name": "3CRV",
             "decimals": 18,
-            "wrapped": false,
             "base_pool_token": true,
             "underlying_address": "0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490"
         }

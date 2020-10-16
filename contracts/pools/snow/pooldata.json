@@ -6,7 +6,6 @@
             "name": "DAI",
             "decimals": 18,
             "tethered": false,
-            "wrapped": true,
             "wrapped_decimals": 18,
             "withdrawal_fee": 500,
             "underlying_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
@@ -16,7 +15,6 @@
             "name": "USDC",
             "decimals": 6,
             "tethered": false,
-            "wrapped": true,
             "wrapped_decimals": 6,
             "withdrawal_fee": 500,
             "underlying_address": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
@@ -26,7 +24,6 @@
             "name": "USDT",
             "decimals": 6,
             "tethered": true,
-            "wrapped": true,
             "wrapped_decimals": 6,
             "withdrawal_fee": 500,
             "underlying_address": "0xdac17f958d2ee523a2206206994597c13d831ec7",
@@ -36,7 +33,6 @@
             "name": "TUSD",
             "decimals": 18,
             "tethered": false,
-            "wrapped": true,
             "wrapped_decimals": 18,
             "withdrawal_fee": 500,
             "underlying_address": "0x0000000000085d4780b73119b644ae5ecd22b376",
@@ -46,7 +42,6 @@
             "name": "yCRV",
             "decimals": 18,
             "tethered": false,
-            "wrapped": true,
             "wrapped_decimals": 18,
             "withdrawal_fee": 500,
             "underlying_address": "0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8",
@@ -56,7 +51,6 @@
             "name": "USDC",
             "decimals": 6,
             "tethered": false,
-            "wrapped": false,
             "underlying_address": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
         }
     ]
