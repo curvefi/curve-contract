@@ -29,6 +29,7 @@ def test_curve_in_contract(
         if hasattr(wrapped, 'set_exchange_rate'):
             rate = int(10**18 * (1 + 0.1 * len(initial_liquidity)))
             wrapped.set_exchange_rate(rate, {'from': alice})
+        if hasattr(wrapped, 'mint'):
             underlying.approve(wrapped, amount, {'from': alice})
             wrapped.mint(amount, {'from': alice})
             amount = amount * 10 ** 18 // rate

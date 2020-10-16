@@ -16,7 +16,6 @@ WRAPPED_COIN_METHODS = {
     },
     "renERC20": {
         "get_rate": "exchangeRateCurrent",
-        "mint": "mint",
     },
     "yERC20": {
         "get_rate": "getPricePerFullShare",
