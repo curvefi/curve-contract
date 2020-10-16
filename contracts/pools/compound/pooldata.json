@@ -1,6 +1,9 @@
 {
     "lp_contract": "CurveTokenV1",
     "wrapped_contract": "cERC20",
+    "swap_address": "0xA2B47E3D5c44877cca798226B7B8118F9BFb7A56",
+    "lp_token_address": "0x845838DF265Dcd2c412A1Dc9e959c7d08537f8a2",
+    "zap_address": "0xeb21209ae4c2c9ff2a86aca31e123764a3b6bc06",
     "coins": [
         {
             "decimals": 18,
