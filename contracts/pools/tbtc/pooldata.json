@@ -13,7 +13,7 @@
     "coins": [
         {
             "name": "tBTC",
-            "decimals": 1e18,
+            "decimals": 18,
             "tethered": false,
             "wrapped": false,
             "underlying_address": "0x8dAEBADE922dF735c38C80C7eBD708Af50815fAa"
