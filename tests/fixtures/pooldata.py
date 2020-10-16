@@ -7,14 +7,14 @@ import pytest
 def underlying_decimals(pool_data, base_pool_data):
     # number of decimal places for each underlying coin in the active pool
     if base_pool_data is None:
-        return [i['decimals'] for i in pool_data['coins']]
+        return [i.get('decimals', i.get('wrapped_decimals')) for i in pool_data['coins']]
     return [pool_data['coins'][0]['decimals']] + [i['decimals'] for i in base_pool_data['coins']]
 
 
 @pytest.fixture(scope="module")
 def wrapped_decimals(pool_data):
     # number of decimal places for each wrapped coin in the active pool
-    yield [i.get('wrapped_decimals', i['decimals']) for i in pool_data['coins']]
+    yield [i.get('wrapped_decimals', i.get('decimals')) for i in pool_data['coins']]
 
 
 @pytest.fixture(scope="module")

@@ -77,6 +77,7 @@ def registry(
     swap,
     pool_token,
     n_coins,
+    underlying_decimals,
     wrapped_coins,
     wrapped_decimals,
     pool_data,
@@ -98,20 +99,20 @@ def registry(
             ZERO_ADDRESS,
             rate_sig,
             pack_values(wrapped_decimals),
-            pack_values([i['decimals'] for i in pool_data['coins']]),
+            pack_values(underlying_decimals),
             has_initial_A,
             is_v1,
             {'from': alice}
         )
     else:
-        use_rates = [i['wrapped'] for i in pool_data['coins']] + [False] * (8 - n_coins)
+        use_rates = ['wrapped_decimals' in i for i in pool_data['coins']] + [False] * (8 - n_coins)
         registry.add_pool_without_underlying(
             swap,
             n_coins,
             pool_token,
             ZERO_ADDRESS,
             rate_sig,
-            pack_values([i['decimals'] for i in pool_data['coins']]),
+            pack_values(underlying_decimals),
             pack_values(use_rates),
             has_initial_A,
             is_v1,

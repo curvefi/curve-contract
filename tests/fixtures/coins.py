@@ -6,6 +6,8 @@ from brownie.convert import to_address
 
 from conftest import WRAPPED_COIN_METHODS
 
+ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
+
 _holders = {}
 
 
@@ -99,6 +101,23 @@ class _MintableTestToken(Contract):
         raise ValueError(f"Insufficient tokens available to mint {self.name()}")
 
 
+def _deploy_wrapped(project, alice, pool_data, idx, underlying):
+    coin_data = pool_data['coins'][idx]
+    fn_names = WRAPPED_COIN_METHODS[pool_data['wrapped_contract']]
+    deployer = getattr(project, pool_data['wrapped_contract'])
+
+    decimals = coin_data['wrapped_decimals']
+    name = coin_data.get("name", f"Coin {idx}")
+    symbol = coin_data.get("name", f"C{idx}")
+    contract = deployer.deploy(name, symbol, decimals, underlying, {'from': alice})
+    for target, attr in fn_names.items():
+        setattr(contract, target, getattr(contract, attr))
+    if coin_data.get("withdrawal_fee"):
+        contract._set_withdrawal_fee(coin_data["withdrawal_fee"], {'from': alice})
+
+    return contract
+
+
 def _wrapped(project, alice, pool_data, underlying_coins, is_forked):
     coins = []
 
@@ -107,7 +126,7 @@ def _wrapped(project, alice, pool_data, underlying_coins, is_forked):
 
     if is_forked:
         for i, coin_data in enumerate(pool_data['coins']):
-            if not coin_data['wrapped']:
+            if not coin_data.get('wrapped_decimals'):
                 coins.append(underlying_coins[i])
             else:
                 coins.append(_MintableTestToken(coin_data['wrapped_address'], pool_data))
@@ -117,22 +136,15 @@ def _wrapped(project, alice, pool_data, underlying_coins, is_forked):
     deployer = getattr(project, pool_data['wrapped_contract'])
     for i, coin_data in enumerate(pool_data['coins']):
         underlying = underlying_coins[i]
-        if not coin_data['wrapped']:
+        if not coin_data.get('wrapped_decimals') or not coin_data.get('decimals'):
             coins.append(underlying)
         else:
-            decimals = coin_data['wrapped_decimals']
-            name = coin_data.get("name", f"Coin {i}")
-            symbol = coin_data.get("name", f"C{i}")
-            contract = deployer.deploy(name, symbol, decimals, underlying, {'from': alice})
-            for target, attr in fn_names.items():
-                setattr(contract, target, getattr(contract, attr))
-            if coin_data.get("withdrawal_fee"):
-                contract._set_withdrawal_fee(coin_data["withdrawal_fee"], {'from': alice})
+            contract = _deploy_wrapped(project, alice, pool_data, i, underlying)
             coins.append(contract)
     return coins
 
 
-def _underlying(alice, pool_data, is_forked, base_pool_token):
+def _underlying(alice, project, pool_data, is_forked, base_pool_token):
     coins = []
 
     if is_forked:
@@ -143,9 +155,12 @@ def _underlying(alice, pool_data, is_forked, base_pool_token):
             if coin_data.get("base_pool_token"):
                 coins.append(base_pool_token)
                 continue
-            decimals = coin_data['decimals']
-            deployer = ERC20MockNoReturn if coin_data['tethered'] else ERC20Mock
-            contract = deployer.deploy(f"Underlying Coin {i}", f"UC{i}", decimals, {'from': alice})
+            if not coin_data.get('decimals'):
+                contract = _deploy_wrapped(project, alice, pool_data, i, ZERO_ADDRESS)
+            else:
+                decimals = coin_data['decimals']
+                deployer = ERC20MockNoReturn if coin_data['tethered'] else ERC20Mock
+                contract = deployer.deploy(f"Underlying Coin {i}", f"UC{i}", decimals, {'from': alice})
             coins.append(contract)
 
     return coins
@@ -160,12 +175,12 @@ def _pool_token(project, alice, pool_data):
 # private fixtures used for setup in other fixtures - do not use in tests!
 
 @pytest.fixture(scope="module")
-def _underlying_coins(alice, pool_data, is_forked, base_pool_token, _add_base_pool_liquidity):
-    return _underlying(alice, pool_data, is_forked, base_pool_token)
+def _underlying_coins(alice, project, pool_data, is_forked, base_pool_token, _add_base_pool_liquidity):
+    return _underlying(alice, project, pool_data, is_forked, base_pool_token)
 
 
 @pytest.fixture(scope="module")
-def _base_coins(alice, base_pool_data, is_forked):
+def _base_coins(alice, project, base_pool_data, is_forked):
     if base_pool_data is None:
         return []
-    return _underlying(alice, base_pool_data, is_forked, None)
+    return _underlying(alice, project, base_pool_data, is_forked, None)
