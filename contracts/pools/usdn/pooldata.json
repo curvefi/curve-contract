@@ -18,13 +18,11 @@
             "name": "USDN",
             "decimals": 18,
             "tethered": false,
-            "wrapped": false,
             "underlying_address": "0x674C6Ad92Fd080e4004b2312b45f796a192D27a0"
         },
         {
             "name": "3CRV",
             "decimals": 18,
-            "wrapped": false,
             "base_pool_token": true,
             "underlying_address": "0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490"
         }
