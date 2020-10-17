@@ -1,4 +1,4 @@
-# @version 0.2.5
+# @version 0.2.7
 """
 @title "Zap" Depositer for Curve tBTC pool
 @author Curve.Fi
@@ -25,7 +25,7 @@ interface CurveBase:
     def remove_liquidity_imbalance(amounts: uint256[BASE_N_COINS], max_burn_amount: uint256): nonpayable
     def calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> uint256: view
     def calc_token_amount(amounts: uint256[BASE_N_COINS], deposit: bool) -> uint256: view
-    def coins(i: uint256) -> address: view
+    def coins(i: int128) -> address: view
     def fee() -> uint256: view
 
 
@@ -62,7 +62,7 @@ def __init__(_pool: address, _token: address):
     self.base_pool = _base_pool
 
     for i in range(N_COINS):
-        coin: address = CurveMeta(_pool).coins(convert(i, uint256))
+        coin: address = CurveMeta(_pool).coins(i)
         self.coins[i] = coin
         # approve coins for infinite transfers
         _response: Bytes[32] = raw_call(
@@ -78,7 +78,7 @@ def __init__(_pool: address, _token: address):
             assert convert(_response, bool)
 
     for i in range(BASE_N_COINS):
-        coin: address = CurveBase(_base_pool).coins(convert(i, uint256))
+        coin: address = CurveBase(_base_pool).coins(i)
         self.base_coins[i] = coin
         # approve underlying coins for infinite transfers
         _response: Bytes[32] = raw_call(

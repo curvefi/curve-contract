@@ -1,4 +1,4 @@
-# @version 0.2.5
+# @version 0.2.7
 """
 @title Curve tBTC Metapool
 @author Curve.Fi
@@ -14,7 +14,7 @@ interface CurveToken:
     def burnFrom(_to: address, _value: uint256) -> bool: nonpayable
 
 interface Curve:
-    def coins(i: uint256) -> address: view
+    def coins(i: int128) -> address: view
     def get_virtual_price() -> uint256: view
     def calc_token_amount(amounts: uint256[BASE_N_COINS], deposit: bool) -> uint256: view
     def calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> uint256: view
@@ -182,7 +182,7 @@ def __init__(
     self.base_virtual_price = Curve(_base_pool).get_virtual_price()
     self.base_cache_updated = block.timestamp
     for i in range(BASE_POOL_COINS):
-        _base_coin: address = Curve(_base_pool).coins(convert(i, uint256))
+        _base_coin: address = Curve(_base_pool).coins(i)
         self.base_coins[i] = _base_coin
 
         # approve underlying coins for infinite transfers
