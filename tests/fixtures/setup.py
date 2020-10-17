@@ -76,7 +76,7 @@ def _add_base_pool_liquidity(charlie, base_swap, _base_coins, base_pool_data):
     if base_pool_data is None:
         return
 
-    decimals = [i['decimals'] for i in base_pool_data['coins']]
+    decimals = [i.get('decimals', i.get('wrapped_decimals'))for i in base_pool_data['coins']]
     initial_amounts = [2 * 10**(i+6) for i in decimals]
     _mint(charlie, _base_coins, initial_amounts, [], [])
     _approve(charlie, base_swap, _base_coins)
