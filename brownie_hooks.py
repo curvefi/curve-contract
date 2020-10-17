@@ -47,12 +47,7 @@ def brownie_load_source(path, source):
         swap_dir = next(contracts_dir.glob(f"**/{pool_data['base_pool_contract']}.vy")).parent
         data_path = swap_dir.joinpath("pooldata.json")
         pool_data = _load_pool_data(data_path)
-
-        replacements.update({
-            '___BASE_N_COINS___': pool_data['n_coins'],
-            '___BASE_PRECISION_MUL___': pool_data['precision_mul'],
-            '___BASE_RATES___': pool_data['rates'],
-        })
+        replacements['___BASE_N_COINS___'] = pool_data['n_coins']
 
     for k, v in replacements.items():
         source = source.replace(k, str(v))
