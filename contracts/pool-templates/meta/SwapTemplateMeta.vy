@@ -105,11 +105,7 @@ FEE_DENOMINATOR: constant(uint256) = 10 ** 10
 PRECISION: constant(uint256) = 10 ** 18  # The precision to convert to
 PRECISION_MUL: constant(uint256[N_COINS]) = ___PRECISION_MUL___
 RATES: constant(uint256[N_COINS]) = ___RATES___
-
 BASE_N_COINS: constant(int128) = ___BASE_N_COINS___
-N_ALL_COINS: constant(int128) = N_COINS + BASE_N_COINS - 1
-BASE_PRECISION_MUL: constant(uint256[BASE_N_COINS]) = ___BASE_PRECISION_MUL___
-BASE_RATES: constant(uint256[BASE_N_COINS]) = ___BASE_RATES___
 
 # An asset which may have a transfer fee (USDT)
 FEE_ASSET: constant(address) = 0xdAC17F958D2ee523a2206206994597C13D831ec7
