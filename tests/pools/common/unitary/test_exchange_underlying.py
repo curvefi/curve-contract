@@ -51,13 +51,15 @@ def test_fees(
     wrapped_decimals,
     set_fees,
     get_admin_balances,
+    base_amount,
     n_coins,
     is_metapool,
 ):
     if fee or admin_fee:
         set_fees(10**10 * fee, 10**10 * admin_fee)
 
-    amount = 10000 * 10**underlying_decimals[sending]
+
+    amount = (base_amount // 100) * 10**underlying_decimals[sending]
     underlying_coins[sending]._mint_for_testing(bob, amount, {'from': bob})
     swap.exchange_underlying(sending, receiving, amount, 0, {'from': bob})
 

@@ -4,15 +4,15 @@ import pytest
 pytestmark = pytest.mark.usefixtures("add_initial_liquidity", "mint_bob", "approve_bob")
 
 
-def test_add_liquidity(bob, swap, wrapped_coins, pool_token, initial_amounts, n_coins):
+def test_add_liquidity(bob, swap, wrapped_coins, pool_token, initial_amounts, base_amount, n_coins):
     swap.add_liquidity(initial_amounts, 0, {'from': bob})
 
     for coin, amount in zip(wrapped_coins, initial_amounts):
         assert coin.balanceOf(bob) == 0
         assert coin.balanceOf(swap) == amount * 2
 
-    assert pool_token.balanceOf(bob) == n_coins * 10**24
-    assert pool_token.totalSupply() == n_coins * 10**24 * 2
+    assert pool_token.balanceOf(bob) == n_coins * 10**18 * base_amount
+    assert pool_token.totalSupply() == n_coins * 10**18 * base_amount * 2
 
 
 def test_add_liquidity_with_slippage(bob, swap, pool_token, wrapped_decimals, n_coins):
@@ -25,7 +25,7 @@ def test_add_liquidity_with_slippage(bob, swap, pool_token, wrapped_decimals, n_
 
 
 @pytest.mark.itercoins("idx")
-def test_add_one_coin(bob, swap, wrapped_coins, pool_token, initial_amounts, idx, n_coins):
+def test_add_one_coin(bob, swap, wrapped_coins, pool_token, initial_amounts, base_amount, idx, n_coins):
     amounts = [0] * n_coins
     amounts[idx] = initial_amounts[idx]
     swap.add_liquidity(amounts, 0, {'from': bob})
@@ -34,7 +34,7 @@ def test_add_one_coin(bob, swap, wrapped_coins, pool_token, initial_amounts, idx
         assert coin.balanceOf(bob) == initial_amounts[i] - amounts[i]
         assert coin.balanceOf(swap) == initial_amounts[i] + amounts[i]
 
-    assert 0.999 < pool_token.balanceOf(bob) / 10**24 < 1
+    assert 0.999 < pool_token.balanceOf(bob) / (10**18 * base_amount) < 1
 
 
 def test_insufficient_balance(charlie, swap, wrapped_decimals):

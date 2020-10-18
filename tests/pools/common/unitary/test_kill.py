@@ -36,7 +36,7 @@ def test_unkill_only_owner(bob, swap):
         swap.unkill_me({'from': bob})
 
 
-def test_remove_liquidity(alice, swap, wrapped_coins, initial_amounts, n_coins):
+def test_remove_liquidity(alice, swap, wrapped_coins, initial_amounts, base_amount, n_coins):
     for coin, amount in zip(wrapped_coins, initial_amounts):
         coin._mint_for_testing(alice, amount, {'from': alice})
         coin.approve(swap, 2**256-1, {'from': alice})
@@ -44,7 +44,7 @@ def test_remove_liquidity(alice, swap, wrapped_coins, initial_amounts, n_coins):
     swap.add_liquidity(initial_amounts, 0, {'from': alice})
 
     swap.kill_me({'from': alice})
-    swap.remove_liquidity(n_coins * 10**24, [0] * n_coins, {'from': alice})
+    swap.remove_liquidity(n_coins * 10**18 * base_amount, [0] * n_coins, {'from': alice})
 
 
 def test_remove_liquidity_imbalance(alice, swap, initial_amounts, n_coins):

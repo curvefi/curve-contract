@@ -7,9 +7,9 @@ def setup(alice, bob, pool_token, add_initial_liquidity, approve_zap):
 
 
 @pytest.mark.parametrize("divisor", [2, 7, 31337])
-def test_lp_token_balances(bob, zap, pool_token, divisor, initial_amounts_underlying, n_coins):
+def test_lp_token_balances(bob, zap, pool_token, divisor, initial_amounts_underlying, base_amount, n_coins):
     amounts = [i // divisor for i in initial_amounts_underlying]
-    max_burn = (n_coins * 10**24) // divisor + 1
+    max_burn = (n_coins * 10**18 * base_amount) // divisor + 1
 
     initial_balance = pool_token.balanceOf(bob)
     zap.remove_liquidity_imbalance(amounts, max_burn, {'from': bob})
@@ -32,11 +32,12 @@ def test_wrapped_balances(
     pool_token,
     initial_amounts,
     initial_amounts_underlying,
+    base_amount,
     divisor,
     n_coins,
 ):
     amounts = [i // divisor for i in initial_amounts_underlying]
-    max_burn = (n_coins * 10**24) // divisor
+    max_burn = (n_coins * 10**18 * base_amount) // divisor
     zap.remove_liquidity_imbalance(amounts, max_burn + 1, {'from': bob})
 
     for coin, initial in zip(wrapped_coins, initial_amounts):
@@ -55,6 +56,7 @@ def test_underlying_balances(
     wrapped_coins,
     pool_token,
     initial_amounts_underlying,
+    base_amount,
     divisor,
     idx,
     is_inclusive,
@@ -66,7 +68,7 @@ def test_underlying_balances(
     else:
         amounts = [0] * len(initial_amounts_underlying)
         amounts[idx] = initial_amounts_underlying[idx] // divisor
-    max_burn = (n_coins * 10**24) // divisor
+    max_burn = (n_coins * 10**18 * base_amount) // divisor
     zap.remove_liquidity_imbalance(amounts, max_burn + 1, {'from': bob})
 
     for coin, amount, initial in zip(underlying_coins, amounts, initial_amounts_underlying):
