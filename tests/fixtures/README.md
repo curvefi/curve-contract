@@ -55,7 +55,8 @@ Data fixtures for accessing information about the pool currently being tested.
 
 * `underlying_decimals`: A list of decimal values for each deployment in `underlying_coins`.
 * `wrapped_decimals`: A list of decimal values for each deployment in `wrapped_coins`.
-* `initial_amounts`: A list values equivalent to $1,000,000 for each deployment in `wrapped_coins`. Used for minting and providing initial liquidity.
+* `base_amount`: The base amount of each coin that is minted when providing initial liquidity, given without any decimal places.
+* `initial_amounts`: A list of values equivalent to `base_amount * 10**decimals` for each deployment in `wrapped_coins`. Used for minting and providing initial liquidity.
 * `n_coins`: The number of coins in the active `swap` deployment.
 
 ### `setup.py`
