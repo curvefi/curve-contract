@@ -25,5 +25,8 @@
             "base_pool_token": true,
             "underlying_address": "0x075b1bb99792c9E1041bA13afEf80C91a1e70fB3"
         }
-    ]
+    ],
+    "testing": {
+        "initial_amount": 100
+    }
 }
