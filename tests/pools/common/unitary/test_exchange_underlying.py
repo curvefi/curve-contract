@@ -48,6 +48,7 @@ def test_fees(
     fee,
     admin_fee,
     underlying_decimals,
+    wrapped_decimals,
     set_fees,
     get_admin_balances,
     n_coins,
@@ -66,7 +67,7 @@ def test_fees(
     else:
         admin_idx = min(n_coins-1, receiving)
         out_amount = amount / 10**underlying_decimals[sending]  # Basing on price 1.0
-        expected_admin_fee = 10**underlying_decimals[admin_idx] * fee * admin_fee * out_amount
+        expected_admin_fee = 10**wrapped_decimals[admin_idx] * fee * admin_fee * out_amount
         assert expected_admin_fee / admin_fees[admin_idx] == approx(1, rel=1e-3)
 
 
