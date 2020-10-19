@@ -22,7 +22,7 @@ Curve MUSD metapool utilizes the supports swaps between the following assets:
 
 Direct swaps are possible between MUSD and the Curve tri-pool LP token.
 
-* `MUSD`: [0xe2f2a5C287993345a840Db3B0845fbC70f5935a5](https://etherscan.io/address/0x1c48f86ae57291f7686349f12601910bd8d470bb)
+* `MUSD`: [0xe2f2a5C287993345a840Db3B0845fbC70f5935a5](https://etherscan.io/address/0xe2f2a5C287993345a840Db3B0845fbC70f5935a5)
 * `3CRV`: [0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490](https://etherscan.io/address/0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490)
 
 ## Base Pool coins
