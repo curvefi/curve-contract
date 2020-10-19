@@ -124,7 +124,7 @@ fee: public(uint256)  # fee * 1e10
 admin_fee: public(uint256)  # admin_fee * 1e10
 
 owner: public(address)
-token: CurveToken
+token: public(CurveToken)
 
 # Token corresponding to the pool is always the last one
 BASE_POOL_COINS: constant(int128) = 3

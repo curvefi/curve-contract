@@ -38,7 +38,7 @@ decimals: public(uint256)
 balanceOf: public(HashMap[address, uint256])
 allowances: HashMap[address, HashMap[address, uint256]]
 total_supply: uint256
-minter: address
+minter: public(address)
 
 
 @external

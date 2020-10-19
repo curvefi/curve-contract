@@ -114,7 +114,7 @@ fee: public(uint256)  # fee * 1e10
 admin_fee: public(uint256)  # admin_fee * 1e10
 
 owner: public(address)
-lp_token: address
+lp_token: public(address)
 
 A_PRECISION: constant(uint256) = 100
 initial_A: public(uint256)
