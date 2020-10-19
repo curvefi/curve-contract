@@ -1,4 +1,4 @@
-# @version 0.2.5
+# @version 0.2.7
 """
 @title Curve ETH/sETH StableSwap
 @author Curve.Fi
