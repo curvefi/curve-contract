@@ -114,14 +114,15 @@ def test_number_always_go_up(
     underlying_coins,
     wrapped_coins,
     wrapped_decimals,
+    base_amount,
     set_fees,
 ):
     set_fees(10**7, 0)
 
     for underlying, wrapped in zip(underlying_coins, wrapped_coins):
-        underlying._mint_for_testing(alice, 10**24, {'from': alice})
+        underlying._mint_for_testing(alice, 10**18 * base_amount, {'from': alice})
         if underlying != wrapped:
-            wrapped._mint_for_testing(alice, 10**24, {'from': alice})
+            wrapped._mint_for_testing(alice, 10**18 * base_amount, {'from': alice})
 
     state_machine(
         StateMachine,

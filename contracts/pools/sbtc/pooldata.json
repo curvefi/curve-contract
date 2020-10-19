@@ -20,5 +20,8 @@
             "tethered": false,
             "underlying_address": "0xfe18be6b3bd88a2d2a7f928d00292e7a9963cfc6"
         }
-    ]
+    ],
+    "testing": {
+        "initial_amount": 1000
+    }
 }

@@ -4,11 +4,11 @@ import pytest
 pytestmark = pytest.mark.usefixtures("add_initial_liquidity", "mint_bob", "approve_zap")
 
 
-def test_lp_token_balances(bob, zap, swap, pool_token, base_pool_token, initial_amounts_underlying, n_coins):
+def test_lp_token_balances(bob, zap, swap, pool_token, base_pool_token, initial_amounts_underlying, base_amount, n_coins):
     initial_supply = pool_token.totalSupply()
     zap.add_liquidity(initial_amounts_underlying, 0, {'from': bob})
 
-    assert 0.9999 < pool_token.balanceOf(bob) / (n_coins * 10**24) <= 1
+    assert 0.9999 < pool_token.balanceOf(bob) / (n_coins * 10**18 * base_amount) <= 1
     assert 0.9999 < (pool_token.totalSupply() / 2) / initial_supply <= 1
 
 

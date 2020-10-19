@@ -32,12 +32,12 @@ def test_amount_received(chain, alice, swap, wrapped_coins, wrapped_decimals, id
 
 @pytest.mark.itercoins("idx")
 @pytest.mark.parametrize("divisor", [1, 5, 42])
-def test_lp_token_balance(alice, swap, pool_token, idx, divisor, n_coins):
+def test_lp_token_balance(alice, swap, pool_token, idx, divisor, n_coins, base_amount):
     amount = pool_token.balanceOf(alice) // divisor
 
     swap.remove_liquidity_one_coin(amount, idx, 0, {'from': alice})
 
-    assert pool_token.balanceOf(alice) == n_coins * 10**24 - amount
+    assert pool_token.balanceOf(alice) == n_coins * 10**18 * base_amount - amount
 
 
 @pytest.mark.itercoins("idx")

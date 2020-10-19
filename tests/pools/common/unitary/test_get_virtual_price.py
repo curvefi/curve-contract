@@ -48,12 +48,12 @@ def test_remove_one_coin(alice, swap, pool_token, idx):
 
 
 @pytest.mark.itercoins("idx")
-def test_remove_imbalance(alice, swap, wrapped_coins, pool_token, idx, initial_amounts, n_coins):
+def test_remove_imbalance(alice, swap, wrapped_coins, pool_token, idx, initial_amounts, base_amount, n_coins):
     amounts = [i//2 for i in initial_amounts]
     amounts[idx] = 0
 
     virtual_price = swap.get_virtual_price()
-    swap.remove_liquidity_imbalance(amounts, n_coins*10**24, {'from': alice})
+    swap.remove_liquidity_imbalance(amounts, n_coins*10**18 * base_amount, {'from': alice})
 
     assert swap.get_virtual_price() > virtual_price
 

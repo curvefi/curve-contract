@@ -72,16 +72,18 @@ def test_underlying_balances(
 
 
 @pytest.mark.itercoins("idx")
-def test_below_min_amount(alice, zap, initial_amounts_underlying, idx):
+def test_below_min_amount(alice, zap, initial_amounts_underlying, base_amount, idx):
     n_coins = len(initial_amounts_underlying)
     min_amount = initial_amounts_underlying.copy()
     min_amount[idx] += 1
 
+    amount = n_coins * 10**18 * base_amount
     with brownie.reverts():
-        zap.remove_liquidity(n_coins * 10**24, min_amount, {'from': alice})
+        zap.remove_liquidity(amount, min_amount, {'from': alice})
 
 
-def test_amount_exceeds_balance(alice, zap, underlying_coins):
+def test_amount_exceeds_balance(alice, zap, underlying_coins, base_amount):
     n_coins = len(underlying_coins)
+    amount = n_coins * 10** 18 * base_amount + 1
     with brownie.reverts():
-        zap.remove_liquidity(n_coins * 10**24 + 1, [0] * n_coins, {'from': alice})
+        zap.remove_liquidity(amount, [0] * n_coins, {'from': alice})

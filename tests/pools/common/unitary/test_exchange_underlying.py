@@ -48,15 +48,18 @@ def test_fees(
     fee,
     admin_fee,
     underlying_decimals,
+    wrapped_decimals,
     set_fees,
     get_admin_balances,
+    base_amount,
     n_coins,
     is_metapool,
 ):
     if fee or admin_fee:
         set_fees(10**10 * fee, 10**10 * admin_fee)
 
-    amount = 10000 * 10**underlying_decimals[sending]
+
+    amount = (base_amount // 100) * 10**underlying_decimals[sending]
     underlying_coins[sending]._mint_for_testing(bob, amount, {'from': bob})
     swap.exchange_underlying(sending, receiving, amount, 0, {'from': bob})
 
@@ -66,7 +69,7 @@ def test_fees(
     else:
         admin_idx = min(n_coins-1, receiving)
         out_amount = amount / 10**underlying_decimals[sending]  # Basing on price 1.0
-        expected_admin_fee = 10**underlying_decimals[admin_idx] * fee * admin_fee * out_amount
+        expected_admin_fee = 10**wrapped_decimals[admin_idx] * fee * admin_fee * out_amount
         assert expected_admin_fee / admin_fees[admin_idx] == approx(1, rel=1e-3)
 
 
