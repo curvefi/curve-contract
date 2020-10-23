@@ -20,6 +20,7 @@ Each subdirectory holds contracts and other files specific to a single Curve poo
 * [`sbtc`](sbtc): [sBTC pool](https://www.curve.fi/sbtc)
 * [`snow`](snow): [Snow pool](https://www.curve.fi/snow), for swaps between [yVault](https://feel-the-yearn.app/vaults) tokens
 * [`susd`](susd): [sUSD pool](https://www.curve.fi/susdv2)
+* [`tbtc`](tbtc): [tBTC metapool](https://www.curve.fi/tbtc)
 * [`usdk`](usdk): [USDK metapool](https://www.curve.fi/usdk)
 * [`usdn`](usdn): [USDN metapool](https://www.curve.fi/usdn)
 * [`usdt`](usdt): [USDT pool](https://www.curve.fi/usdt), with lending on [Compound](https://compound.finance/)
@@ -53,17 +54,20 @@ Each subdirectory holds contracts and other files specific to a single Curve poo
     "coins": [
         {
             // required fields
-            "decimals": 18,               // number of decimal places for the underlying coin
+            "decimals": 18,               // number of decimal places for the underlying coin - omit if no underlying
+            "wrapped_decimals": 18,       // decimal places for the wrapped coin - omit if no wrapping
             "tethered": false,            // does the token contract return `None` on a successful transfer/approve?
-            "wrapped": true,              // is wrapping used for this coin?
-            "wrapped_decimals": 18,       // decimal places for the wrapped coin - can be omitted if wrapped == false
             // optional fields
             "name": "",                   // underlying coin name
             "withdrawal_fee": 0,          // fee applied when converting wrapped to underlying, expressed in bps
             "underlying_address": "0x00", // underlying coin mainnet deployment address, used in forked tests
             "wrapped_address": "0x00"     // wrapped coin mainnet deployment address
         },
-    ]
+    ],
+    // optional settings used in unit tests
+    "testing": {
+        "initial_amount": 100             // amount of each coin to be added as initial liquidity
+    }
 }
 ```
 
@@ -82,12 +86,10 @@ The `pooldata.json` for a metapool is similar to that of a regular pool:
             // the first coin in the metapool is an unwrapped stablecoin
             "decimals": 18,
             "tethered": false,
-            "wrapped": false
         },
         {
             // the second coin in the metapool is the LP token from the base pool
             "decimals": 18,
-            "wrapped": false,
             "base_pool_token": true
         }
     ]
