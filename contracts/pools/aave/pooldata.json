@@ -1,0 +1,31 @@
+{
+    "lp_contract": "CurveTokenV2",
+    "wrapped_contract": "ATokenMock",
+    "coins": [
+        {
+            "name": "DAI",
+            "decimals": 18,
+            "wrapped_decimals": 18,
+            "tethered": false,
+            "underlying_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+            "wrapped_address": "0xfC1E690f61EFd961294b3e1Ce3313fBD8aa4f85d"
+        },
+        {
+            "name": "USDC",
+            "decimals": 6,
+            "wrapped_decimals": 6,
+            "tethered": false,
+            "underlying_address": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+            "wrapped_address": "0x9bA00D6856a4eDF4665BcA2C2309936572473B7E"
+
+        },
+        {
+            "name": "USDT",
+            "decimals": 6,
+            "wrapped_decimals": 6,
+            "tethered": true,
+            "underlying_address": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+            "wrapped_address": "0x71fc860F7D3A592A4a98740e39dB31d25db65ae8"
+        }
+    ]
+}
