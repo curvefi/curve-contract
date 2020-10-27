@@ -45,7 +45,9 @@ def __init__(
     self.symbol = _symbol
     self.decimals = _decimals
     self.underlying_token = _underlying_token
-    self.exchangeRateStored = 10 ** 18
+
+    _udecimals: uint256 = ERC20Mock(_underlying_token).decimals()
+    self.exchangeRateStored = 10**(18 + _udecimals -_decimals)
     self.accrualBlockNumber = block.number
 
 
@@ -104,7 +106,7 @@ def mint(mintAmount: uint256) -> uint256:
         ),
         max_outsize=32,
     )
-    value: uint256 = mintAmount * 10 ** 18 / self.exchangeRateStored
+    value: uint256 = mintAmount * 10**18 / self.exchangeRateStored
     self.total_supply += value
     self.balanceOf[msg.sender] += value
     return 0
@@ -118,7 +120,7 @@ def redeem(redeemTokens: uint256) -> uint256:
      @param redeemTokens The number of cTokens to redeem into underlying
      @return uint 0=success, otherwise a failure
     """
-    _value: uint256 = redeemTokens * self.exchangeRateStored / 10 ** 18
+    value: uint256 = redeemTokens * self.exchangeRateStored / 10**18
     self.balanceOf[msg.sender] -= redeemTokens
     self.total_supply -= redeemTokens
     _response: Bytes[32] = raw_call(
@@ -126,7 +128,7 @@ def redeem(redeemTokens: uint256) -> uint256:
         concat(
             method_id("transfer(address,uint256)"),
             convert(msg.sender, bytes32),
-            convert(_value, bytes32),
+            convert(value, bytes32),
         ),
         max_outsize=32,
     )
@@ -137,47 +139,31 @@ def redeem(redeemTokens: uint256) -> uint256:
 
 
 @external
-def redeemUnderlying(redeemAmount: uint256) -> uint256:
-    """
-     @notice Sender redeems cTokens in exchange for a specified amount of underlying asset
-     @dev Accrues interest whether or not the operation succeeds, unless reverted
-     @param redeemAmount The amount of underlying to redeem
-     @return uint 0=success, otherwise a failure
-    """
-    _value: uint256 = redeemAmount * 10 ** 18 / self.exchangeRateStored
-    self.balanceOf[msg.sender] -= _value
-    self.total_supply -= _value
-    _response: Bytes[32] = raw_call(
-        self.underlying_token,
-        concat(
-            method_id("transfer(address,uint256)"),
-            convert(msg.sender, bytes32),
-            convert(_value, bytes32),
-        ),
-        max_outsize=32,
-    )
-    if len(_response) != 0:
-        assert convert(_response, bool)
-    return 0
+def exchangeRateCurrent() -> uint256:
+    # Simulate blockchain write
+    rate: uint256 = self.exchangeRateStored
+    self.exchangeRateStored = rate
+
+    return rate
 
 
 @external
 def set_exchange_rate(rate: uint256):
     self.exchangeRateStored = rate
 
+    expected: uint256 = self.total_supply * self.exchangeRateStored / 10**18
+    actual: uint256 = ERC20(self.underlying_token).balanceOf(self)
 
-@external
-def exchangeRateCurrent() -> uint256:
-    rate: uint256 = self.exchangeRateStored
-    self.exchangeRateStored = rate  # Simulate blockchain write
-    return rate
+    if expected > actual:
+        # make sure we have enough of the underlying asset based on the rate change
+        ERC20Mock(self.underlying_token)._mint_for_testing(self, expected - actual)
 
 
 @external
 def _mint_for_testing(_target: address, _value: uint256) -> bool:
-    _udecimals: uint256 = ERC20Mock(self.underlying_token).decimals()
-    _underlying_value: uint256 = 2 * _value * 10 ** _udecimals / 10 ** self.decimals
-    ERC20Mock(self.underlying_token)._mint_for_testing(self, _underlying_value)
+    underlying_value: uint256 = _value * self.exchangeRateStored / 10**18
+
+    ERC20Mock(self.underlying_token)._mint_for_testing(self, underlying_value)
     self.total_supply += _value
     self.balanceOf[_target] += _value
     log Transfer(ZERO_ADDRESS, _target, _value)
