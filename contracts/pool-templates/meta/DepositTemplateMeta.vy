@@ -41,7 +41,7 @@ N_ALL_COINS: constant(int128) = N_COINS + BASE_N_COINS - 1
 FEE_ASSET: constant(address) = 0xdAC17F958D2ee523a2206206994597C13D831ec7
 
 FEE_DENOMINATOR: constant(uint256) = 10 ** 10
-FEE_IMPRECISION: constant(uint256) = 25 * 10 ** 8  # % of the fee
+FEE_IMPRECISION: constant(uint256) = 100 * 10 ** 8  # % of the fee
 
 
 pool: public(address)

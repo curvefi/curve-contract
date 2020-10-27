@@ -34,11 +34,11 @@ MAX_COIN: constant(int128) = N_COINS-1
 BASE_N_COINS: constant(int128) = 3
 N_ALL_COINS: constant(int128) = N_COINS + BASE_N_COINS - 1
 
-# An asset shich may have a transfer fee (USDT)
+# An asset which may have a transfer fee (USDT)
 FEE_ASSET: constant(address) = 0xEB4C2781e4ebA804CE9a9803C67d0893436bB27D
 
 FEE_DENOMINATOR: constant(uint256) = 10 ** 10
-FEE_IMPRECISION: constant(uint256) = 25 * 10 ** 8  # % of the fee
+FEE_IMPRECISION: constant(uint256) = 100 * 10 ** 8  # % of the fee
 
 
 pool: public(address)
@@ -258,7 +258,8 @@ def remove_liquidity_imbalance(amounts: uint256[N_ALL_COINS], max_burn_amount: u
     """
     @notice Withdraw coins from the pool in an imbalanced amount
     @param amounts List of amounts of underlying coins to withdraw
-    @param max_burn_amount Maximum amount of LP token to burn in the withdrawal
+    @param max_burn_amount Maximum amount of LP token to burn in the withdrawal.
+                           This value cannot exceed the caller's LP token balance.
     @return Actual amount of the LP token burned in the withdrawal
     """
     _base_pool: address = self.base_pool
