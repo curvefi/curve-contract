@@ -3,7 +3,7 @@ import pytest
 from brownie import chain
 from brownie.test import strategy
 
-pytestmark = pytest.mark.usefixtures("add_initial_liquidity")
+pytestmark = [pytest.mark.usefixtures("add_initial_liquidity"), pytest.mark.skip_pool("compound")]
 
 
 class StateMachine:

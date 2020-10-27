@@ -50,9 +50,8 @@ def test_simulated_exchange(
 
             underlying.approve(wrapped, amount, {'from': alice})
             wrapped.mint(amount, {'from': alice})
-            # amount = amount * 10 ** 18 // rate
 
-        assert wrapped.balanceOf(alice) >= amount
+        amount = wrapped.balanceOf(alice)
         initial_liquidity.append(amount // 10)
         wrapped.approve(swap, amount // 10, {'from': alice})
 
