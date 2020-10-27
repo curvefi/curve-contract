@@ -18,6 +18,7 @@ Test cases for Curve pools.
 
 * Tests are organized by general category, then split between unitary and integration tests.
 * Common tests for all pools are located in [`tests/pools/common`](pools/common), for zaps in [`tests/zaps/common`](zaps/common).
+* Common metapool tests are located at [`tests/pools/meta`](pools/meta), for zaps in [`tests/zaps/meta`](zaps/meta).
 * Valid pool names are the names of the subdirectories within [`contracts/pools`](../contracts/pools).
 * For pool templates, prepend `template-` to the subdirectory names within [`contracts/pool-templates`](../contracts/pool-templates). For example, the base template is `template-base`.
 
@@ -29,13 +30,21 @@ To run the entire suite:
 brownie test
 ```
 
-To run tests on a specific pool:
+Note that this executes over 10,000 tests and may take a significant amount of time to finish.
+
+### Test Collection Filters
+
+The test suite is divided into several logical categories. Tests may be filtered using one or more flags:
+
+* `--pool <POOL NAME>`: only run tests against a specific pool
+* `--integration`: only run integration tests (tests within an `integration/` subdirectory)
+* `--unitary`: only run unit tests (tests NOT found in an `integration/` subdirectory)
+
+For example, to only run the unit tests for 3pool:
 
 ```bash
-pytest tests --pool <POOL NAME>
+brownie test --pool 3pool --unitary
 ```
-
-You can optionally include the `--coverage` flag to view a coverage report upon completion of the tests.
 
 ## Testing against a forked mainnet
 
