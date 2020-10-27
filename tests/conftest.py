@@ -251,6 +251,13 @@ def pytest_collection_modifyitems(config, items):
     config.pluginmanager.get_plugin("terminalreporter")._numcollected = len(items)
 
 
+@pytest.hookimpl(trylast=True)
+def pytest_sessionfinish(session, exitstatus):
+    if exitstatus == pytest.ExitCode.NO_TESTS_COLLECTED:
+        # because of how tests are filtered in the CI, we treat "no tests collected" as passing
+        session.exitstatus = pytest.ExitCode.OK
+
+
 # isolation setup
 
 @pytest.fixture(autouse=True)
