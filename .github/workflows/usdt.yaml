@@ -19,8 +19,14 @@ env:
 
 jobs:
 
-  unitary-pool:
+  test:
     runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [pools, zaps]
+        type: [unitary, integration]
 
     steps:
     - uses: actions/checkout@v2
@@ -50,70 +56,4 @@ jobs:
         pip install -r requirements.txt
 
     - name: Run Tests
-      run: brownie test tests/pools/common/unitary --pool ${{ env.pool }}
-
-  integration:
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v2
-
-    - name: Cache Compiler Installations
-      uses: actions/cache@v2
-      with:
-        path: |
-          ~/.solcx
-          ~/.vvm
-        key: compiler-cache
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v1
-
-    - name: Install Ganache
-      run: npm install
-
-    - name: Setup Python 3.8
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.8
-
-    - name: Install Requirements
-      run: |
-        pip install wheel
-        pip install -r requirements.txt
-
-    - name: Run Tests
-      run: pytest tests/pools/common/integration --pool ${{ env.pool }}
-
-  unitary-zap:
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v2
-
-    - name: Cache Compiler Installations
-      uses: actions/cache@v2
-      with:
-        path: |
-          ~/.solcx
-          ~/.vvm
-        key: compiler-cache
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v1
-
-    - name: Install Ganache
-      run: npm install
-
-    - name: Setup Python 3.8
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.8
-
-    - name: Install Requirements
-      run: |
-        pip install wheel
-        pip install -r requirements.txt
-
-    - name: Run Tests
-      run: brownie test tests/zaps/common --pool ${{ env.pool }}
+      run: brownie test tests/${{ matrix.target }} --pool ${{ env.pool }} --${{ matrix.type }}

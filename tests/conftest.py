@@ -37,6 +37,8 @@ _pooldata = {}
 
 def pytest_addoption(parser):
     parser.addoption("--pool", help="comma-separated list of pools to target",)
+    parser.addoption("--unitary", action="store_true", help="only run unit tests")
+    parser.addoption("--integration", action="store_true", help="only run integration tests")
 
 
 def pytest_configure(config):
@@ -93,6 +95,46 @@ def pytest_sessionstart():
             data["base_pool"] = base_data
 
 
+def pytest_ignore_collect(path, config):
+    project = get_loaded_projects()[0]
+    path = Path(path).relative_to(project._path)
+    path_parts = path.parts[1:-1]
+
+    if path.is_dir():
+        return None
+
+    # always collect fixtures
+    if path_parts[:1] == ("fixtures",):
+        return None
+
+    # with the `--unitary` flag, skip any tests in an `integration` subdirectory
+    if config.getoption("unitary") and "integration" in path_parts:
+        return True
+
+    # with the `--integration` flag, skip any tests NOT in an `integration` subdirectory
+    if config.getoption("integration") and "integration" not in path_parts:
+        return True
+
+    if config.getoption("pool") and path_parts:
+        # with a specific pool targeted, only run pool and zap tests
+        if path_parts[0] not in ("pools", "zaps"):
+            return True
+
+        # always run common tests
+        if path_parts[1] == "common":
+            return None
+
+        target_pools = config.getoption("pool").split(',')
+
+        # only include metapool tests if at least one targeted pool is a metapool
+        if path_parts[1] == "meta":
+            return next((None for i in target_pools if _pooldata[i].get("base_pool")), True)
+
+        # filter other pool-specific folders
+        if path_parts[1] not in target_pools:
+            return True
+
+
 def pytest_generate_tests(metafunc):
     project = get_loaded_projects()[0]
     itercoins_bound = max(len(i['coins']) for i in _pooldata.values())
@@ -101,18 +143,21 @@ def pytest_generate_tests(metafunc):
         # parametrize `pool_data`
         test_path = Path(metafunc.definition.fspath).relative_to(project._path)
         if test_path.parts[1] in ("pools", "zaps"):
-            # parametrize common pool/zap tests to run against all pools
-            if test_path.parts[2] == "common":
+            if test_path.parts[2] in ("common", "meta"):
+                # parametrize common pool/zap tests to run against all pools
                 if metafunc.config.getoption("pool"):
                     params = metafunc.config.getoption("pool").split(',')
                 else:
                     params = list(_pooldata)
-                if test_path.parts[1] == "zaps":
-                    # for zap tests, filter by pools that have a Deposit contract
-                    params = [i for i in params if _pooldata[i].get("zap_contract")]
+                if test_path.parts[2] == "meta":
+                    params = [i for i in params if _pooldata[i].get("base_pool")]
             else:
                 # run targetted pool/zap tests against only the specific pool
                 params = [test_path.parts[2]]
+
+            if test_path.parts[1] == "zaps":
+                # for zap tests, filter by pools that have a Deposit contract
+                params = [i for i in params if _pooldata[i].get("zap_contract")]
         else:
             # pool tests outside `tests/pools` or `tests/zaps` will only run when
             # a target pool is explicitly declared
@@ -204,6 +249,13 @@ def pytest_collection_modifyitems(config, items):
 
     # hacky magic to ensure the correct number of tests is shown in collection report
     config.pluginmanager.get_plugin("terminalreporter")._numcollected = len(items)
+
+
+@pytest.hookimpl(trylast=True)
+def pytest_sessionfinish(session, exitstatus):
+    if exitstatus == pytest.ExitCode.NO_TESTS_COLLECTED:
+        # because of how tests are filtered in the CI, we treat "no tests collected" as passing
+        session.exitstatus = pytest.ExitCode.OK
 
 
 # isolation setup

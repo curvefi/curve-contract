@@ -1,7 +1,10 @@
 import itertools
 import pytest
 
-pytestmark = pytest.mark.usefixtures("mint_alice", "approve_alice", "mint_bob", "approve_bob")
+
+@pytest.fixture(scope="module", autouse=True)
+def setup(mint_alice, approve_alice, mint_bob, approve_bob, set_fees):
+    set_fees(4000000, 5000000000, include_meta=True)
 
 
 def test_swap_gas(
