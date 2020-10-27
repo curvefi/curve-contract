@@ -20,19 +20,26 @@ def get_admin_balances(swap, wrapped_coins):
     yield _get_admin_balances
 
 
-@pytest.fixture(scope="module")
-def set_fees(chain, alice, swap):
-    def _set_fees(fee, admin_fee):
-        if hasattr(swap, "commit_new_fee"):
-            swap.commit_new_fee(fee, admin_fee, {'from': alice})
-            chain.sleep(86400*3)
-            swap.apply_new_fee({'from': alice})
-        else:
-            swap.commit_new_parameters(360 * 2, fee, admin_fee, {'from': alice})
-            chain.sleep(86400*3)
-            swap.apply_new_parameters({'from': alice})
+def _set_fees(chain, swap, owner, fee, admin_fee):
+    if hasattr(swap, "commit_new_fee"):
+        swap.commit_new_fee(fee, admin_fee, {'from': owner})
+        chain.sleep(86400*3)
+        swap.apply_new_fee({'from': owner})
+    else:
+        swap.commit_new_parameters(360 * 2, fee, admin_fee, {'from': owner})
+        chain.sleep(86400*3)
+        swap.apply_new_parameters({'from': owner})
 
-    yield _set_fees
+
+
+@pytest.fixture(scope="module")
+def set_fees(chain, alice, charlie, swap, base_swap):
+    def _set_fee_fixture_fn(fee, admin_fee, include_meta=False):
+        _set_fees(chain, swap, alice, fee, admin_fee)
+        if base_swap and include_meta:
+            _set_fees(chain, base_swap, charlie, fee, admin_fee)
+
+    yield _set_fee_fixture_fn
 
 
 @pytest.fixture(scope="session")
