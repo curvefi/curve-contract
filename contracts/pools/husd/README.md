@@ -10,7 +10,7 @@
 ## Deployments
 
 * [`CurveContractV2`](../../tokens/CurveTokenV2.vy): [0x5B5CFE992AdAC0C9D48E05854B2d91C73a003858](https://etherscan.io/address/0x5B5CFE992AdAC0C9D48E05854B2d91C73a003858)
-* [`DepositHUSD`](DepositHUSD.vy): [0x0a53FaDa2d943057C47A301D25a4D9b3B8e01e8E](https://etherscan.io/address/0x0a53FaDa2d943057C47A301D25a4D9b3B8e01e8E)
+* [`DepositHUSD`](DepositHUSD.vy): [0x09672362833d8f703D5395ef3252D4Bfa51c15ca](https://etherscan.io/address/0x09672362833d8f703D5395ef3252D4Bfa51c15ca)
 * [`LiquidityGauge`](../../gauges/LiquidityGauge.vy): [0x2db0E83599a91b508Ac268a6197b8B14F5e72840](https://etherscan.io/address/0x2db0E83599a91b508Ac268a6197b8B14F5e72840)
 * [`StableSwapHUSD`](StableSwapHUSD.vy): [0x3eF6A01A0f81D6046290f3e2A8c5b843e738E604](https://etherscan.io/address/0x3eF6A01A0f81D6046290f3e2A8c5b843e738E604)
 

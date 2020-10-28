@@ -10,7 +10,7 @@
 ## Deployments
 
 * [`CurveContractV2`](../../tokens/CurveTokenV2.vy): [0x64eda51d3Ad40D56b9dFc5554E06F94e1Dd786Fd](https://etherscan.io/address/0x64eda51d3Ad40D56b9dFc5554E06F94e1Dd786Fd)
-* [`DepositTBTC`](DepositTBTC.vy): [0x74Bd76482DC067FB5206499Efe19c16CCa62E9D3](https://etherscan.io/address/0x74Bd76482DC067FB5206499Efe19c16CCa62E9D3)
+* [`DepositTBTC`](DepositTBTC.vy): [0xaa82ca713D94bBA7A89CEAB55314F9EfFEdDc78c](https://etherscan.io/address/0xaa82ca713D94bBA7A89CEAB55314F9EfFEdDc78c)
 * [`LiquidityGaugeReward`](../../gauges/LiquidityGaugeReward.vy): [0x6828bcF74279eE32f2723eC536c22c51Eed383C6](https://etherscan.io/address/0x6828bcF74279eE32f2723eC536c22c51Eed383C6)
 * [`StableSwapTBTC`](StableSwapTBTC.vy): [0xC25099792E9349C7DD09759744ea681C7de2cb66](https://etherscan.io/address/0xC25099792E9349C7DD09759744ea681C7de2cb66)
 

@@ -10,7 +10,7 @@
 ## Deployments
 
 * [`CurveContractV2`](../../tokens/CurveTokenV2.vy): [0x97E2768e8E73511cA874545DC5Ff8067eB19B787](https://etherscan.io/address/0x97E2768e8E73511cA874545DC5Ff8067eB19B787)
-* [`DepositUSDK`](DepositUSDK.vy): [0x6600e98b71dabfD4A8Cac03b302B0189Adb86Afb](https://etherscan.io/address/0x6600e98b71dabfD4A8Cac03b302B0189Adb86Afb)
+* [`DepositUSDK`](DepositUSDK.vy): [0xF1f85a74AD6c64315F85af52d3d46bF715236ADc](https://etherscan.io/address/0xF1f85a74AD6c64315F85af52d3d46bF715236ADc)
 * [`LiquidityGauge`](../../gauges/LiquidityGauge.vy): [0xC2b1DF84112619D190193E48148000e3990Bf627](https://etherscan.io/address/0xC2b1DF84112619D190193E48148000e3990Bf627)
 * [`StableSwapUSDK`](StableSwapUSDK.vy): [0x3E01dD8a5E1fb3481F0F589056b428Fc308AF0Fb](https://etherscan.io/address/0x3E01dD8a5E1fb3481F0F589056b428Fc308AF0Fb)
 
