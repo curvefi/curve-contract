@@ -3,7 +3,7 @@
     "lp_contract": "CurveTokenV2",
     "swap_address": "0x8474DdbE98F5aA3179B3B3F5942D724aFcdec9f6",
     "lp_token_address": "0x1AEf73d49Dedc4b1778d0706583995958Dc862e6",
-    "zap_address": "0x78CF256256C8089d68Cde634Cf7cDEFb39286470",
+    "zap_address": "0x803A2B40c5a9BB2B86DD630B274Fa2A9202874C2",
     "lp_constructor": {
         "symbol": "musd3CRV",
         "name": "Curve.fi MUSD/3Crv"
