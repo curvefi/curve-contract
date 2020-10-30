@@ -3,6 +3,7 @@
     "wrapped_contract": "renERC20",
     "swap_address": "0x93054188d876f558f4a66B2EF1d97d16eDf0895B",
     "lp_token_address": "0x49849C98ae39Fff122806C06791Fa73784FB3675",
+    "gauge_addresses": ["0xB1F2cdeC61db658F091671F5f199635aEF202CAC"],
     "coins": [
         {
             "tethered": false,

@@ -3,6 +3,7 @@
     "swap_address": "0xE7a24EF0C5e95Ffb0f6684b813A78F2a3AD7D171",
     "lp_token_address": "0x6D65b498cb23deAba52db31c93Da9BFFb340FB8F",
     "zap_address": "0x1de7f0866e2c4adAC7b457c58Cc25c8688CDa1f2",
+    "gauge_addresses": [],
     "lp_contract": "CurveTokenV2",
     "lp_constructor": {
         "symbol": "LinkUSD3CRV",
