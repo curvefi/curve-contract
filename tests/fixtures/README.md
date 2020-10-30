@@ -35,10 +35,7 @@ Module scoped contract deployment fixtures.
 
 All deployment fixtures are [parametrized](https://docs.pytest.org/en/stable/parametrize.html) to work with every pool in [`contracts/pools`](../../contracts/pools). To add a new pool to the test suite, create a `pooldata.json` in the same subdirectory. You can read about the structure of this JSON file [here](../../contracts/pools/README.md).
 
-* `gauge_controller`: [`GaugeControllerMock`](../../contrcts/testing/GaugeControllerMock.vy) deployment.
-* `registry`: [`Registry`](../../contracts/testing/Registry.vy) deployment, with the active pool added.
 * `swap`: [`StableSwap`](../../contracts/pool-templates) deployment for the pool being tested.
-
 * `zap`: [`Deposit`](../../contracts/pool-templates) deployment for the pool being tested.
 
 ### `functions.py`
