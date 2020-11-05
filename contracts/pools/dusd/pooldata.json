@@ -3,7 +3,7 @@
     "swap_address": "0x8038C01A0390a8c547446a0b2c18fc9aEFEcc10c",
     "lp_token_address": "0x3a664Ab939FD8482048609f652f9a0B0677337B9",
     "zap_address": "0x61E10659fe3aa93d036d099405224E4Ac24996d0",
-    "gauge_addresses": [],
+    "gauge_addresses": ["0xAEA6c312f4b3E04D752946d329693F7293bC2e6D"],
     "lp_contract": "CurveTokenV2",
     "lp_constructor": {
         "symbol": "dusd3CRV",

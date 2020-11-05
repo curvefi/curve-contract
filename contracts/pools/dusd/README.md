@@ -11,7 +11,7 @@
 
 * [`CurveContractV2`](../../tokens/CurveTokenV2.vy): [0x3a664Ab939FD8482048609f652f9a0B0677337B9](https://etherscan.io/address/0x3a664Ab939FD8482048609f652f9a0B0677337B9)
 * [`DepositDUSD`](DepositDUSD.vy): [0x61E10659fe3aa93d036d099405224E4Ac24996d0](https://etherscan.io/address/0x61E10659fe3aa93d036d099405224E4Ac24996d0)
-<!-- * [`LiquidityGauge`](../../gauges/LiquidityGauge.vy): [](https://etherscan.io/address/) -->
+* [`LiquidityGaugeReward`](../../gauges/LiquidityGaugeReward.vy): [0xAEA6c312f4b3E04D752946d329693F7293bC2e6D](https://etherscan.io/address/0xAEA6c312f4b3E04D752946d329693F7293bC2e6D)
 * [`StableSwapDUSD`](StableSwapDUSD.vy): [0x8038C01A0390a8c547446a0b2c18fc9aEFEcc10c](https://etherscan.io/address/0x8038C01A0390a8c547446a0b2c18fc9aEFEcc10c)
 
 ## Stablecoins
