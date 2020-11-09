@@ -830,6 +830,27 @@ def ramp_A(_future_A: uint256, _future_time: uint256):
 
     log RampA(_initial_A, _future_A_p, block.timestamp, _future_time)
 
+@external
+def ramp_A_deferred(_future_A: uint256, _future_time: uint256, _initial_time: uint256):
+    assert msg.sender == self.owner  # dev: only owner
+    assert _initial_time >= self.initial_A_time + MIN_RAMP_TIME
+    assert _future_time >= _initial_time + MIN_RAMP_TIME  # dev: insufficient time
+
+    _initial_A: uint256 = self._A()
+    _future_A_p: uint256 = _future_A * A_PRECISION
+
+    assert _future_A > 0 and _future_A < MAX_A
+    if _future_A_p < _initial_A:
+        assert _future_A_p * MAX_A_CHANGE >= _initial_A
+    else:
+        assert _future_A_p <= _initial_A * MAX_A_CHANGE
+
+    self.initial_A = _initial_A
+    self.future_A = _future_A_p
+    self.initial_A_time = _initial_time
+    self.future_A_time = _future_time
+
+    log RampA(_initial_A, _future_A_p, _initial_time, _future_time)
 
 @external
 def stop_ramp_A():
