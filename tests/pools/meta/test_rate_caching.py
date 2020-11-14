@@ -1,10 +1,7 @@
 import pytest
 
 
-pytestmark = [
-    pytest.mark.skip_pool("busd", "compound", "hbtc", "pax", "ren", "sbtc", "susd", "usdt", "y"),
-    pytest.mark.usefixtures("add_initial_liquidity"),
-]
+pytestmark = pytest.mark.usefixtures("add_initial_liquidity")
 
 
 def test_virtual_price(chain, bob, swap, initial_amounts, n_coins):
