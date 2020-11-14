@@ -13,8 +13,8 @@ _holders = {}
 # public fixtures - these can be used when testing
 
 @pytest.fixture(scope="module")
-def wrapped_coins(project, alice, pool_data, _underlying_coins, is_forked):
-    return _wrapped(project, alice, pool_data, _underlying_coins, is_forked)
+def wrapped_coins(project, alice, pool_data, _underlying_coins, is_forked, aave_lending_pool):
+    return _wrapped(project, alice, pool_data, _underlying_coins, is_forked, aave_lending_pool)
 
 
 @pytest.fixture(scope="module")
@@ -109,7 +109,7 @@ class _MintableTestToken(Contract):
         raise ValueError(f"Insufficient tokens available to mint {self.name()}")
 
 
-def _deploy_wrapped(project, alice, pool_data, idx, underlying):
+def _deploy_wrapped(project, alice, pool_data, idx, underlying, aave_lending_pool):
     coin_data = pool_data['coins'][idx]
     fn_names = WRAPPED_COIN_METHODS[pool_data['wrapped_contract']]
     deployer = getattr(project, pool_data['wrapped_contract'])
@@ -117,7 +117,12 @@ def _deploy_wrapped(project, alice, pool_data, idx, underlying):
     decimals = coin_data['wrapped_decimals']
     name = coin_data.get("name", f"Coin {idx}")
     symbol = coin_data.get("name", f"C{idx}")
-    contract = deployer.deploy(name, symbol, decimals, underlying, {'from': alice})
+
+    if pool_data['wrapped_contract'] == "ATokenMock":
+        contract = deployer.deploy(name, symbol, decimals, underlying, aave_lending_pool, {'from': alice})
+    else:
+        contract = deployer.deploy(name, symbol, decimals, underlying, {'from': alice})
+
     for target, attr in fn_names.items():
         if target != attr:
             setattr(contract, target, getattr(contract, attr))
@@ -127,7 +132,7 @@ def _deploy_wrapped(project, alice, pool_data, idx, underlying):
     return contract
 
 
-def _wrapped(project, alice, pool_data, underlying_coins, is_forked):
+def _wrapped(project, alice, pool_data, underlying_coins, is_forked, aave_lending_pool):
     coins = []
 
     if not pool_data.get("wrapped_contract"):
@@ -146,7 +151,7 @@ def _wrapped(project, alice, pool_data, underlying_coins, is_forked):
         if not coin_data.get('wrapped_decimals') or not coin_data.get('decimals'):
             coins.append(underlying)
         else:
-            contract = _deploy_wrapped(project, alice, pool_data, i, underlying)
+            contract = _deploy_wrapped(project, alice, pool_data, i, underlying, aave_lending_pool)
             coins.append(contract)
     return coins
 
@@ -169,7 +174,7 @@ def _underlying(alice, project, pool_data, is_forked, base_pool_token):
                 coins.append(base_pool_token)
                 continue
             if not coin_data.get('decimals'):
-                contract = _deploy_wrapped(project, alice, pool_data, i, ZERO_ADDRESS)
+                contract = _deploy_wrapped(project, alice, pool_data, i, ZERO_ADDRESS, ZERO_ADDRESS)
             else:
                 decimals = coin_data['decimals']
                 deployer = ERC20MockNoReturn if coin_data['tethered'] else ERC20Mock

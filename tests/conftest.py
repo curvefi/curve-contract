@@ -10,6 +10,10 @@ from brownie._config import CONFIG
 # functions in wrapped methods are renamed to simplify common tests
 
 WRAPPED_COIN_METHODS = {
+    "ATokenMock": {
+        "get_rate": "_get_rate",
+        "mint": "mint"
+    },
     "cERC20": {
         "get_rate": "exchangeRateStored",
         "mint": "mint",
