@@ -446,9 +446,8 @@ def get_y(i: int128, j: int128, x: uint256, xp: uint256[N_COINS]) -> uint256:
 
 
 @view
-@external
-def get_dy(i: int128, j: int128, dx: uint256) -> uint256:
-    # dx and dy in c-units
+@internal
+def _get_dy(i: int128, j: int128, dx: uint256) -> uint256:
     precisions: uint256[N_COINS] = PRECISION_MUL
     xp: uint256[N_COINS] = self._balances()
     for k in range(N_COINS):
@@ -461,6 +460,18 @@ def get_dy(i: int128, j: int128, dx: uint256) -> uint256:
             (xp[i] + x) / 2, (xp[j] + y) / 2, self.fee, self.offpeg_fee_multiplier
         ) * dy / FEE_DENOMINATOR
     return dy - _fee
+
+
+@view
+@external
+def get_dy(i: int128, j: int128, dx: uint256) -> uint256:
+    return self._get_dy(i, j, dx)
+
+
+@view
+@external
+def get_dy_underlying(i: int128, j: int128, dx: uint256) -> uint256:
+    return self._get_dy(i, j, dx)
 
 
 @internal
