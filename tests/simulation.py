@@ -148,13 +148,24 @@ class Curve:
 
     def calc_withdraw_one_coin(self, token_amount, i):
         xp = self.xp()
-        if self.fee:
-            fee = self.fee - self.fee * xp[i] // sum(xp) + 5 * 10 ** 5
-        else:
-            fee = 0
+        xp_reduced = xp
 
         D0 = self.D()
         D1 = D0 - token_amount * D0 // self.tokens
-        dy = xp[i] - self.y_D(i, D1)
+        new_y = self.y_D(i, D1)
 
-        return dy - dy * fee // 10 ** 10
+        fee = self.fee * self.n // (4 * (self.n - 1))
+        for j in range(self.n):
+          dx_expected = 0
+          if j == i:
+            dx_expected = xp[j] * D1 // D0 - new_y
+          else:
+            dx_expected = xp[j] - xp[j] * D1 // D0
+          xp_reduced[j] -= fee * dx_expected // 10 ** 10
+
+        self.x = [x // (p // 10 ** 18) for x, p in zip(xp_reduced, self.p)]
+        dy = xp_reduced[i] - self.y_D(i, D1)
+        self.x = [x // (p // 10 ** 18) for x, p in zip(xp, self.p)]
+        dy_0 = (xp[i] - new_y)
+
+        return dy, dy_0 - dy
