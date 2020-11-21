@@ -1,5 +1,6 @@
 import brownie
 import pytest
+from simulation import Curve
 
 pytestmark = [
     pytest.mark.skip_pool("busd", "compound", "pax", "susd", "usdt", "y"),
@@ -81,3 +82,13 @@ def test_below_zero(alice, swap):
 def test_above_n_coins(alice, swap, wrapped_coins, n_coins):
     with brownie.reverts():
         swap.remove_liquidity_one_coin(1, n_coins, 0, {'from': alice})
+
+@pytest.mark.itercoins("idx")
+def test_against_simulation(alice, swap, n_coins, pool_token, idx):
+    amount = pool_token.balanceOf(alice)
+
+    balances = [swap.balances(i) for i in range(n_coins)]
+    curve_model = Curve(swap.A(), balances, n_coins, tokens=pool_token.totalSupply())
+    expected, _ = curve_model.calc_withdraw_one_coin(amount, idx)
+
+    assert swap.swap.calc_withdraw_one_coin(amount, idx) == expected
