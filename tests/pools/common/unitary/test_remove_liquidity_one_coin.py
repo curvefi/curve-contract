@@ -91,4 +91,4 @@ def test_against_simulation(alice, swap, n_coins, pool_token, idx):
     curve_model = Curve(swap.A(), balances, n_coins, tokens=pool_token.totalSupply())
     expected, _ = curve_model.calc_withdraw_one_coin(amount, idx)
 
-    assert swap.swap.calc_withdraw_one_coin(amount, idx) == expected
+    assert swap.calc_withdraw_one_coin(amount, idx) == expected
