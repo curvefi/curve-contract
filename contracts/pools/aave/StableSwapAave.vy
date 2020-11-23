@@ -160,6 +160,21 @@ def __init__(_coins: address[N_COINS],
     self.lp_token = _pool_token
     self.aave_lending_pool = _aave_lending_pool
 
+    # approve transfer of underlying coin to aave lending pool
+    for coin in _underlying_coins:
+        _response: Bytes[32] = raw_call(
+            coin,
+            concat(
+                method_id("approve(address,uint256)"),
+                convert(_aave_lending_pool, bytes32),
+                convert(MAX_UINT256, bytes32)
+            ),
+            max_outsize=32
+        )
+        if len(_response) != 0:
+            assert convert(_response, bool)
+
+
 
 @view
 @internal
@@ -530,19 +545,6 @@ def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256) -> u
             method_id("transferFrom(address,address,uint256)"),
             convert(msg.sender, bytes32),
             convert(self, bytes32),
-            convert(dx, bytes32)
-        ),
-        max_outsize=32
-    )
-    if len(_response) != 0:
-        assert convert(_response, bool)
-
-    # approve transfer of underlying coin to aave lending pool
-    _response = raw_call(
-        u_coin_i,
-        concat(
-            method_id("approve(address,uint256)"),
-            convert(lending_pool, bytes32),
             convert(dx, bytes32)
         ),
         max_outsize=32
