@@ -5,6 +5,10 @@ interface IERC20 {
     function transferFrom(address, address, uint256) external;
 }
 
+interface aToken {
+    function mint(address _to, uint256 _amount) external;
+}
+
 contract AaveLendingPoolMock {
 
     uint16 public lastReferral;
@@ -26,6 +30,7 @@ contract AaveLendingPoolMock {
         require (aTokens[_reserve] != address(0));
         lastReferral = _referralCode;
         IERC20(_reserve).transferFrom(msg.sender, aTokens[_reserve], _amount);
+        aToken(aTokens[_reserve]).mint(msg.sender, _amount);
     }
 
 }

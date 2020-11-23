@@ -126,6 +126,15 @@ contract ATokenMock {
         emit Transfer(address(0), _to, _amount);
     }
 
+    function mint(uint256 _amount) external {
+        /**
+            Not a part of actual aTokens, added to maintain a common interface across mocks
+         */
+        totalSupply = totalSupply.add(_amount);
+        balances[msg.sender] = balances[msg.sender].add(_amount);
+        emit Transfer(address(0), msg.sender, _amount);
+    }
+
     function _set_pool(address _pool) external {
         pool = _pool;
     }
