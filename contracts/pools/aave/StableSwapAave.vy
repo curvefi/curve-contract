@@ -142,17 +142,19 @@ def __init__(
     _pool_token: address,
     _aave_lending_pool: address,
     _A: uint256,
-    _fee: uint256
+    _fee: uint256,
+    _admin_fee: uint256,
 ):
     """
     @notice Contract constructor
     @param _coins List of wrapped coin addresses
     @param _underlying_coins List of underlying coin addresses
-    @param _curve Pool address
-    @param _token Pool LP token address
+    @param _pool_token Pool LP token address
     @param _aave_lending_pool Aave lending pool address
     @param _A Amplification coefficient multiplied by n * (n - 1)
-    @param _fee Fee to charge for exchanges
+    @param _fee Swap fee expressed as an integer with 1e10 precision
+    @param _admin_fee Percentage of fee taken as an admin fee,
+                      expressed as an integer with 1e10 precision
     """
     for i in range(N_COINS):
         assert _coins[i] != ZERO_ADDRESS
@@ -163,6 +165,7 @@ def __init__(
     self.initial_A = _A * A_PRECISION
     self.future_A = _A * A_PRECISION
     self.fee = _fee
+    self.admin_fee = _admin_fee
     self.owner = msg.sender
     self.kill_deadline = block.timestamp + KILL_DEADLINE_DT
     self.lp_token = _pool_token
@@ -330,7 +333,7 @@ def get_virtual_price() -> uint256:
 @view
 @external
 def calc_token_amount(_amounts: uint256[N_COINS], is_deposit: bool) -> uint256:
-    """"
+    """
     @notice Calculate addition or reduction in token supply from a deposit or withdrawal
     @dev This calculation accounts for slippage, but not fees.
          Needed to prevent front-running, not for precise calculations!
