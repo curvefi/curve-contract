@@ -92,13 +92,14 @@ PRECISION_MUL: constant(uint256[N_COINS]) = [1, 1000000000000, 1000000000000]
 
 # fixed constants
 FEE_DENOMINATOR: constant(uint256) = 10 ** 10
-LENDING_PRECISION: constant(uint256) = 10 ** 18
 PRECISION: constant(uint256) = 10 ** 18  # The precision to convert to
 
 MAX_ADMIN_FEE: constant(uint256) = 10 * 10 ** 9
 MAX_FEE: constant(uint256) = 5 * 10 ** 9
+
 MAX_A: constant(uint256) = 10 ** 6
 MAX_A_CHANGE: constant(uint256) = 10
+A_PRECISION: constant(uint256) = 100
 
 ADMIN_ACTIONS_DELAY: constant(uint256) = 3 * 86400
 MIN_RAMP_TIME: constant(uint256) = 86400
@@ -117,7 +118,6 @@ lp_token: public(address)
 aave_lending_pool: address
 aave_referral: uint256
 
-A_PRECISION: constant(uint256) = 100
 initial_A: public(uint256)
 future_A: public(uint256)
 initial_A_time: public(uint256)
@@ -136,20 +136,28 @@ KILL_DEADLINE_DT: constant(uint256) = 2 * 30 * 86400
 
 
 @external
-def __init__(_coins: address[N_COINS],
-             _underlying_coins: address[N_COINS],
-             _pool_token: address,
-             _aave_lending_pool: address,
-             _A: uint256, _fee: uint256):
+def __init__(
+    _coins: address[N_COINS],
+    _underlying_coins: address[N_COINS],
+    _pool_token: address,
+    _aave_lending_pool: address,
+    _A: uint256,
+    _fee: uint256
+):
     """
-    _coins: Addresses of ERC20 conracts of coins (c-tokens) involved
-    _pool_token: Address of the token representing LP share
-    _A: Amplification coefficient multiplied by n * (n - 1)
-    _fee: Fee to charge for exchanges
+    @notice Contract constructor
+    @param _coins List of wrapped coin addresses
+    @param _underlying_coins List of underlying coin addresses
+    @param _curve Pool address
+    @param _token Pool LP token address
+    @param _aave_lending_pool Aave lending pool address
+    @param _A Amplification coefficient multiplied by n * (n - 1)
+    @param _fee Fee to charge for exchanges
     """
     for i in range(N_COINS):
         assert _coins[i] != ZERO_ADDRESS
         assert _underlying_coins[i] != ZERO_ADDRESS
+
     self.coins = _coins
     self.underlying_coins = _underlying_coins
     self.initial_A = _A * A_PRECISION
@@ -179,13 +187,11 @@ def __init__(_coins: address[N_COINS],
 @view
 @internal
 def _A() -> uint256:
-    """
-    Handle ramping A up or down
-    """
     t1: uint256 = self.future_A_time
     A1: uint256 = self.future_A
 
     if block.timestamp < t1:
+        # handle ramping up and down of A
         A0: uint256 = self.initial_A
         t0: uint256 = self.initial_A_time
         # Expressions in uint256 cannot have negative numbers, thus "if"
@@ -226,6 +232,12 @@ def _dynamic_fee(xpi: uint256, xpj: uint256, _fee: uint256, _feemul: uint256) ->
 @view
 @external
 def dynamic_fee(i: int128, j: int128) -> uint256:
+    """
+    @notice Return the fee for swapping between `i` and `j`
+    @param i Index value for the coin to send
+    @param j Index value of the coin to recieve
+    @return Swap fee expressed as an integer with 1e10 precision
+    """
     precisions: uint256[N_COINS] = PRECISION_MUL
     xpi: uint256 = (ERC20(self.coins[i]).balanceOf(self) - self.admin_balances[i]) * precisions[i]
     xpj: uint256 = (ERC20(self.coins[j]).balanceOf(self) - self.admin_balances[j]) * precisions[j]
@@ -235,6 +247,12 @@ def dynamic_fee(i: int128, j: int128) -> uint256:
 @view
 @external
 def balances(i: int128) -> uint256:
+    """
+    @notice Get the current balance of a coin within the
+            pool, less the accrued admin fees
+    @param i Index value for the coin to query balance of
+    @return Token balance
+    """
     return ERC20(self.coins[i]).balanceOf(self) - self.admin_balances[i]
 
 
@@ -298,8 +316,9 @@ def get_D_precisions(coin_balances: uint256[N_COINS], amp: uint256) -> uint256:
 @external
 def get_virtual_price() -> uint256:
     """
-    Returns portfolio virtual price (for calculating profit)
-    scaled up by 1e18
+    @notice The current virtual price of the pool LP token
+    @dev Useful for calculating profits
+    @return LP token virtual price normalized to 1e18
     """
     D: uint256 = self.get_D_precisions(self._balances(), self._A())
     # D is in the units similar to DAI (e.g. converted to precision 1e18)
@@ -310,25 +329,27 @@ def get_virtual_price() -> uint256:
 
 @view
 @external
-def calc_token_amount(amounts: uint256[N_COINS], deposit: bool) -> uint256:
-    """
-    Simplified method to calculate addition or reduction in token supply at
-    deposit or withdrawal without taking fees into account (but looking at
-    slippage).
-    Needed to prevent front-running, not for precise calculations!
+def calc_token_amount(amounts: uint256[N_COINS], is_deposit: bool) -> uint256:
+    """"
+    @notice Calculate addition or reduction in token supply from a deposit or withdrawal
+    @dev This calculation accounts for slippage, but not fees.
+         Needed to prevent front-running, not for precise calculations!
+    @param amounts Amount of each coin being deposited
+    @param is_deposit set True for deposits, False for withdrawals
+    @return Expected amount of LP tokens received
     """
     coin_balances: uint256[N_COINS] = self._balances()
     amp: uint256 = self._A()
     D0: uint256 = self.get_D_precisions(coin_balances, amp)
     for i in range(N_COINS):
-        if deposit:
+        if is_deposit:
             coin_balances[i] += amounts[i]
         else:
             coin_balances[i] -= amounts[i]
     D1: uint256 = self.get_D_precisions(coin_balances, amp)
     token_amount: uint256 = ERC20(self.lp_token).totalSupply()
     diff: uint256 = 0
-    if deposit:
+    if is_deposit:
         diff = D1 - D0
     else:
         diff = D0 - D1
@@ -338,7 +359,14 @@ def calc_token_amount(amounts: uint256[N_COINS], deposit: bool) -> uint256:
 @external
 @nonreentrant('lock')
 def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256, _use_underlying: bool = False) -> uint256:
-    # Amounts is amounts of a-tokens
+    """
+    @notice Deposit coins into the pool
+    @param amounts List of amounts of coins to deposit
+    @param min_mint_amount Minimum amount of LP tokens to mint from the deposit
+    @param _use_underlying If True, deposit underlying assets instead of aTokens
+    @return Amount of LP tokens received by depositing
+    """
+
     assert not self.is_killed  # dev: is killed
 
     # Initial invariant
@@ -553,6 +581,15 @@ def _exchange(i: int128, j: int128, dx: uint256) -> uint256:
 @external
 @nonreentrant('lock')
 def exchange(i: int128, j: int128, dx: uint256, min_dy: uint256) -> uint256:
+    """
+    @notice Perform an exchange between two coins
+    @dev Index values can be found via the `coins` public getter method
+    @param i Index value for the coin to send
+    @param j Index valie of the coin to recieve
+    @param dx Amount of `i` being exchanged
+    @param min_dy Minimum amount of `j` to receive
+    @return Actual amount of `j` received
+    """
     dy: uint256 = self._exchange(i, j, dx)
     assert dy >= min_dy, "Exchange resulted in fewer coins than expected"
 
@@ -567,6 +604,15 @@ def exchange(i: int128, j: int128, dx: uint256, min_dy: uint256) -> uint256:
 @external
 @nonreentrant('lock')
 def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256) -> uint256:
+    """
+    @notice Perform an exchange between two underlying coins
+    @dev Index values can be found via the `underlying_coins` public getter method
+    @param i Index value for the underlying coin to send
+    @param j Index valie of the underlying coin to recieve
+    @param dx Amount of `i` being exchanged
+    @param min_dy Minimum amount of `j` to receive
+    @return Actual amount of `j` received
+    """
     dy: uint256 = self._exchange(i, j, dx)
     assert dy >= min_dy, "Exchange resulted in fewer coins than expected"
 
@@ -612,7 +658,14 @@ def remove_liquidity(
     _min_amounts: uint256[N_COINS],
     _use_underlying: bool = False,
 ) -> uint256[N_COINS]:
-
+    """
+    @notice Withdraw coins from the pool
+    @dev Withdrawal amounts are based on current deposit ratios
+    @param _amount Quantity of LP tokens to burn in the withdrawal
+    @param _min_amounts Minimum amounts of underlying coins to receive
+    @param _use_underlying If True, withdraw underlying assets instead of aTokens
+    @return List of amounts of coins that were withdrawn
+    """
     amounts: uint256[N_COINS] = self._balances()
     total_supply: uint256 = ERC20(self.lp_token).totalSupply()
     CurveToken(self.lp_token).burnFrom(msg.sender, _amount)  # dev: insufficient funds
@@ -643,7 +696,13 @@ def remove_liquidity_imbalance(
     max_burn_amount: uint256,
     _use_underlying: bool = False
 ) -> uint256:
-
+    """
+    @notice Withdraw coins from the pool in an imbalanced amount
+    @param amounts List of amounts of underlying coins to withdraw
+    @param max_burn_amount Maximum amount of LP token to burn in the withdrawal
+    @param _use_underlying If True, withdraw underlying assets instead of aTokens
+    @return Actual amount of the LP token burned in the withdrawal
+    """
     assert not self.is_killed  # dev: is killed
 
     amp: uint256 = self._A()
@@ -792,19 +851,36 @@ def _calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> uint256:
 @view
 @external
 def calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> uint256:
+    """
+    @notice Calculate the amount received when withdrawing a single coin
+    @dev Result is the same for underlying or wrapped asset withdrawals
+    @param _token_amount Amount of LP tokens to burn in the withdrawal
+    @param i Index value of the coin to withdraw
+    @return Amount of coin received
+    """
     return self._calc_withdraw_one_coin(_token_amount, i)
 
 
 @external
 @nonreentrant('lock')
-def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_uamount: uint256, _use_underlying: bool = False):
+def remove_liquidity_one_coin(
+    _token_amount: uint256,
+    i: int128,
+    _min_amount: uint256,
+    _use_underlying: bool = False
+) -> uint256:
     """
-    Remove _amount of liquidity all in a form of coin i
+    @notice Withdraw a single coin from the pool
+    @param _token_amount Amount of LP tokens to burn in the withdrawal
+    @param i Index value of the coin to withdraw
+    @param _min_amount Minimum amount of coin to receive
+    @param _use_underlying If True, withdraw underlying assets instead of aTokens
+    @return Amount of coin received
     """
     assert not self.is_killed  # dev: is killed
 
     dy: uint256 = self._calc_withdraw_one_coin(_token_amount, i)
-    assert dy >= min_uamount, "Not enough coins removed"
+    assert dy >= _min_amount, "Not enough coins removed"
 
     CurveToken(self.lp_token).burnFrom(msg.sender, _token_amount)  # dev: insufficient funds
 
@@ -815,8 +891,11 @@ def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_uamount: ui
 
     log RemoveLiquidityOne(msg.sender, _token_amount, dy)
 
+    return dy
+
 
 ### Admin functions ###
+
 @external
 def ramp_A(_future_A: uint256, _future_time: uint256):
     assert msg.sender == self.owner  # dev: only owner
