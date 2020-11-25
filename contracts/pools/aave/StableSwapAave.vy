@@ -329,12 +329,12 @@ def get_virtual_price() -> uint256:
 
 @view
 @external
-def calc_token_amount(amounts: uint256[N_COINS], is_deposit: bool) -> uint256:
+def calc_token_amount(_amounts: uint256[N_COINS], is_deposit: bool) -> uint256:
     """"
     @notice Calculate addition or reduction in token supply from a deposit or withdrawal
     @dev This calculation accounts for slippage, but not fees.
          Needed to prevent front-running, not for precise calculations!
-    @param amounts Amount of each coin being deposited
+    @param _amounts Amount of each coin being deposited
     @param is_deposit set True for deposits, False for withdrawals
     @return Expected amount of LP tokens received
     """
@@ -343,9 +343,9 @@ def calc_token_amount(amounts: uint256[N_COINS], is_deposit: bool) -> uint256:
     D0: uint256 = self.get_D_precisions(coin_balances, amp)
     for i in range(N_COINS):
         if is_deposit:
-            coin_balances[i] += amounts[i]
+            coin_balances[i] += _amounts[i]
         else:
-            coin_balances[i] -= amounts[i]
+            coin_balances[i] -= _amounts[i]
     D1: uint256 = self.get_D_precisions(coin_balances, amp)
     token_amount: uint256 = ERC20(self.lp_token).totalSupply()
     diff: uint256 = 0
@@ -358,11 +358,11 @@ def calc_token_amount(amounts: uint256[N_COINS], is_deposit: bool) -> uint256:
 
 @external
 @nonreentrant('lock')
-def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256, _use_underlying: bool = False) -> uint256:
+def add_liquidity(_amounts: uint256[N_COINS], _min_mint_amount: uint256, _use_underlying: bool = False) -> uint256:
     """
     @notice Deposit coins into the pool
-    @param amounts List of amounts of coins to deposit
-    @param min_mint_amount Minimum amount of LP tokens to mint from the deposit
+    @param _amounts List of amounts of coins to deposit
+    @param _min_mint_amount Minimum amount of LP tokens to mint from the deposit
     @param _use_underlying If True, deposit underlying assets instead of aTokens
     @return Amount of LP tokens received by depositing
     """
@@ -380,8 +380,8 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256, _use_unde
     new_balances: uint256[N_COINS] = old_balances
     for i in range(N_COINS):
         if token_supply == 0:
-            assert amounts[i] != 0  # dev: initial deposit requires all coins
-        new_balances[i] = old_balances[i] + amounts[i]
+            assert _amounts[i] != 0  # dev: initial deposit requires all coins
+        new_balances[i] = old_balances[i] + _amounts[i]
 
     # Invariant after change
     D1: uint256 = self.get_D_precisions(new_balances, amp)
@@ -418,7 +418,7 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256, _use_unde
     else:
         mint_amount = token_supply * (D2 - D0) / D0
 
-    assert mint_amount >= min_mint_amount, "Slippage screwed you"
+    assert mint_amount >= _min_mint_amount, "Slippage screwed you"
 
     # Take coins from the sender
     if _use_underlying:
@@ -427,7 +427,7 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256, _use_unde
 
         # Take coins from the sender
         for i in range(N_COINS):
-            amount: uint256 = amounts[i]
+            amount: uint256 = _amounts[i]
             if amount != 0:
                 coin: address = self.underlying_coins[i]
                 # transfer underlying coin from msg.sender to self
@@ -456,14 +456,14 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256, _use_unde
                 )
     else:
         for i in range(N_COINS):
-            amount: uint256 = amounts[i]
+            amount: uint256 = _amounts[i]
             if amount != 0:
                 assert ERC20(self.coins[i]).transferFrom(msg.sender, self, amount) # dev: failed transfer
 
     # Mint pool tokens
     CurveToken(self.lp_token).mint(msg.sender, mint_amount)
 
-    log AddLiquidity(msg.sender, amounts, fees, D1, token_supply + mint_amount)
+    log AddLiquidity(msg.sender, _amounts, fees, D1, token_supply + mint_amount)
 
     return mint_amount
 
@@ -692,14 +692,14 @@ def remove_liquidity(
 @external
 @nonreentrant('lock')
 def remove_liquidity_imbalance(
-    amounts: uint256[N_COINS],
-    max_burn_amount: uint256,
+    _amounts: uint256[N_COINS],
+    _max_burn_amount: uint256,
     _use_underlying: bool = False
 ) -> uint256:
     """
     @notice Withdraw coins from the pool in an imbalanced amount
-    @param amounts List of amounts of underlying coins to withdraw
-    @param max_burn_amount Maximum amount of LP token to burn in the withdrawal
+    @param _amounts List of amounts of underlying coins to withdraw
+    @param _max_burn_amount Maximum amount of LP token to burn in the withdrawal
     @param _use_underlying If True, withdraw underlying assets instead of aTokens
     @return Actual amount of the LP token burned in the withdrawal
     """
@@ -710,7 +710,7 @@ def remove_liquidity_imbalance(
     D0: uint256 = self.get_D_precisions(old_balances, amp)
     new_balances: uint256[N_COINS] = old_balances
     for i in range(N_COINS):
-        new_balances[i] -= amounts[i]
+        new_balances[i] -= _amounts[i]
     D1: uint256 = self.get_D_precisions(new_balances, amp)
     ys: uint256 = (D0 + D1) / N_COINS
 
@@ -738,7 +738,7 @@ def remove_liquidity_imbalance(
 
     token_amount: uint256 = (D0 - D2) * token_supply / D0
     assert token_amount != 0  # dev: zero tokens burned
-    assert token_amount <= max_burn_amount, "Slippage screwed you"
+    assert token_amount <= _max_burn_amount, "Slippage screwed you"
 
     CurveToken(lp_token).burnFrom(msg.sender, token_amount)  # dev: insufficient funds
 
@@ -747,14 +747,14 @@ def remove_liquidity_imbalance(
         lending_pool = self.aave_lending_pool
 
     for i in range(N_COINS):
-        amount: uint256 = amounts[i]
+        amount: uint256 = _amounts[i]
         if amount != 0:
             if _use_underlying:
                 LendingPool(lending_pool).withdraw(self.underlying_coins[i], amount, msg.sender)
             else:
                 assert ERC20(self.coins[i]).transfer(msg.sender, amount)
 
-    log RemoveLiquidityImbalance(msg.sender, amounts, fees, D1, token_supply - token_amount)
+    log RemoveLiquidityImbalance(msg.sender, _amounts, fees, D1, token_supply - token_amount)
 
     return token_amount
 
