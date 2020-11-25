@@ -9,8 +9,8 @@
 from vyper.interfaces import ERC20
 
 
-interface aToken:
-    def redeem(_amount: uint256): nonpayable
+interface LendingPool:
+    def withdraw(_underlying_asset: address, _amount: uint256, _receiver: address): nonpayable
 
 interface CurveToken:
     def mint(_to: address, _value: uint256) -> bool: nonpayable
@@ -562,19 +562,8 @@ def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256) -> u
             convert(self.aave_referral, bytes32),
         )
     )
-    aToken(self.coins[j]).redeem(dy)
-
-    _response = raw_call(
-        self.underlying_coins[j],
-        concat(
-            method_id("transfer(address,uint256)"),
-            convert(msg.sender, bytes32),
-            convert(dy, bytes32)
-        ),
-        max_outsize=32
-    )
-    if len(_response) != 0:
-        assert convert(_response, bool)
+    # withdraw `j` underlying from lending pool and transfer to caller
+    LendingPool(lending_pool).withdraw(self.underlying_coins[j], dy, msg.sender)
 
     log TokenExchangeUnderlying(msg.sender, i, dx, j, dy)
 
