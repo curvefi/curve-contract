@@ -337,7 +337,7 @@ def calc_token_amount(amounts: uint256[N_COINS], deposit: bool) -> uint256:
 
 @external
 @nonreentrant('lock')
-def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256) -> uint256:
+def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256, _use_underlying: bool = False) -> uint256:
     # Amounts is amounts of a-tokens
     assert not self.is_killed  # dev: is killed
 
@@ -393,9 +393,44 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256) -> uint25
     assert mint_amount >= min_mint_amount, "Slippage screwed you"
 
     # Take coins from the sender
-    for i in range(N_COINS):
-        if amounts[i] != 0:
-            assert ERC20(self.coins[i]).transferFrom(msg.sender, self, amounts[i]) # dev: failed transfer
+    if _use_underlying:
+        lending_pool: address = self.aave_lending_pool
+        aave_referral: bytes32 = convert(self.aave_referral, bytes32)
+
+        # Take coins from the sender
+        for i in range(N_COINS):
+            amount: uint256 = amounts[i]
+            if amount != 0:
+                coin: address = self.underlying_coins[i]
+                # transfer underlying coin from msg.sender to self
+                _response: Bytes[32] = raw_call(
+                    coin,
+                    concat(
+                        method_id("transferFrom(address,address,uint256)"),
+                        convert(msg.sender, bytes32),
+                        convert(self, bytes32),
+                        convert(amount, bytes32)
+                    ),
+                    max_outsize=32
+                )
+                if len(_response) != 0:
+                    assert convert(_response, bool)
+
+                # deposit to aave lending pool
+                raw_call(
+                    lending_pool,
+                    concat(
+                        method_id("deposit(address,uint256,uint16)"),
+                        convert(coin, bytes32),
+                        convert(amount, bytes32),
+                        aave_referral,
+                    )
+                )
+    else:
+        for i in range(N_COINS):
+            amount: uint256 = amounts[i]
+            if amount != 0:
+                assert ERC20(self.coins[i]).transferFrom(msg.sender, self, amount) # dev: failed transfer
 
     # Mint pool tokens
     CurveToken(self.lp_token).mint(msg.sender, mint_amount)
@@ -572,16 +607,28 @@ def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256) -> u
 
 @external
 @nonreentrant('lock')
-def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS]) -> uint256[N_COINS]:
+def remove_liquidity(
+    _amount: uint256,
+    _min_amounts: uint256[N_COINS],
+    _use_underlying: bool = False,
+) -> uint256[N_COINS]:
+
     amounts: uint256[N_COINS] = self._balances()
     total_supply: uint256 = ERC20(self.lp_token).totalSupply()
     CurveToken(self.lp_token).burnFrom(msg.sender, _amount)  # dev: insufficient funds
 
+    lending_pool: address = ZERO_ADDRESS
+    if _use_underlying:
+        lending_pool = self.aave_lending_pool
+
     for i in range(N_COINS):
         value: uint256 = amounts[i] * _amount / total_supply
-        assert value >= min_amounts[i], "Withdrawal resulted in fewer coins than expected"
+        assert value >= _min_amounts[i], "Withdrawal resulted in fewer coins than expected"
         amounts[i] = value
-        assert ERC20(self.coins[i]).transfer(msg.sender, value)
+        if _use_underlying:
+            LendingPool(lending_pool).withdraw(self.underlying_coins[i], value, msg.sender)
+        else:
+            assert ERC20(self.coins[i]).transfer(msg.sender, value)
 
     fees: uint256[N_COINS] = empty(uint256[N_COINS])
     log RemoveLiquidity(msg.sender, amounts, fees, total_supply - _amount)
@@ -591,7 +638,12 @@ def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS]) -> uint256
 
 @external
 @nonreentrant('lock')
-def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint256) -> uint256:
+def remove_liquidity_imbalance(
+    amounts: uint256[N_COINS],
+    max_burn_amount: uint256,
+    _use_underlying: bool = False
+) -> uint256:
+
     assert not self.is_killed  # dev: is killed
 
     amp: uint256 = self._A()
@@ -630,9 +682,18 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint2
     assert token_amount <= max_burn_amount, "Slippage screwed you"
 
     CurveToken(lp_token).burnFrom(msg.sender, token_amount)  # dev: insufficient funds
+
+    lending_pool: address = ZERO_ADDRESS
+    if _use_underlying:
+        lending_pool = self.aave_lending_pool
+
     for i in range(N_COINS):
-        if amounts[i] != 0:
-            assert ERC20(self.coins[i]).transfer(msg.sender, amounts[i])
+        amount: uint256 = amounts[i]
+        if amount != 0:
+            if _use_underlying:
+                LendingPool(lending_pool).withdraw(self.underlying_coins[i], amount, msg.sender)
+            else:
+                assert ERC20(self.coins[i]).transfer(msg.sender, amount)
 
     log RemoveLiquidityImbalance(msg.sender, amounts, fees, D1, token_supply - token_amount)
 
@@ -736,7 +797,7 @@ def calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> uint256:
 
 @external
 @nonreentrant('lock')
-def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_uamount: uint256):
+def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_uamount: uint256, _use_underlying: bool = False):
     """
     Remove _amount of liquidity all in a form of coin i
     """
@@ -746,7 +807,11 @@ def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_uamount: ui
     assert dy >= min_uamount, "Not enough coins removed"
 
     CurveToken(self.lp_token).burnFrom(msg.sender, _token_amount)  # dev: insufficient funds
-    assert ERC20(self.coins[i]).transfer(msg.sender, dy)
+
+    if _use_underlying:
+        LendingPool(self.aave_lending_pool).withdraw(self.underlying_coins[i], dy, msg.sender)
+    else:
+        assert ERC20(self.coins[i]).transfer(msg.sender, dy)
 
     log RemoveLiquidityOne(msg.sender, _token_amount, dy)
 
