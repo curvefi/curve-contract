@@ -111,7 +111,8 @@ def _deploy_wrapped(project, alice, pool_data, idx, underlying):
     symbol = coin_data.get("name", f"C{idx}")
     contract = deployer.deploy(name, symbol, decimals, underlying, {'from': alice})
     for target, attr in fn_names.items():
-        setattr(contract, target, getattr(contract, attr))
+        if target != attr:
+            setattr(contract, target, getattr(contract, attr))
     if coin_data.get("withdrawal_fee"):
         contract._set_withdrawal_fee(coin_data["withdrawal_fee"], {'from': alice})
 
@@ -132,8 +133,6 @@ def _wrapped(project, alice, pool_data, underlying_coins, is_forked):
                 coins.append(_MintableTestToken(coin_data['wrapped_address'], pool_data))
         return coins
 
-    fn_names = WRAPPED_COIN_METHODS[pool_data['wrapped_contract']]
-    deployer = getattr(project, pool_data['wrapped_contract'])
     for i, coin_data in enumerate(pool_data['coins']):
         underlying = underlying_coins[i]
         if not coin_data.get('wrapped_decimals') or not coin_data.get('decimals'):
