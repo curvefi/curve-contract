@@ -7,6 +7,7 @@ interface IERC20 {
 
 interface aToken {
     function mint(address _to, uint256 _amount) external;
+    function redeem(address _from, address _to, uint256 _amount) external;
 }
 
 contract AaveLendingPoolMock {
@@ -33,4 +34,8 @@ contract AaveLendingPoolMock {
         aToken(aTokens[_reserve]).mint(msg.sender, _amount);
     }
 
+    function withdraw(address asset, uint256 amount, address to) external {
+        require (aTokens[asset] != address(0));
+        aToken(aTokens[asset]).redeem(msg.sender, to, amount);
+    }
 }

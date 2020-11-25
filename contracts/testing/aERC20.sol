@@ -40,6 +40,8 @@ contract ATokenMock {
     uint256 public totalSupply;
 
     address pool;
+
+    // included for compatibility with test suite - always returns 10**18
     uint256 public _get_rate;
 
     address lendingPool;
@@ -112,11 +114,11 @@ contract ATokenMock {
         return true;
     }
 
-    function redeem(uint256 _amount) external {
+    function redeem(address _from, address _to, uint256 _amount) external {
         totalSupply = totalSupply.sub(_amount);
-        balances[msg.sender] = balances[msg.sender].sub(_amount);
-        underlyingToken.transfer(msg.sender, _amount);
-        emit Transfer(msg.sender, address(0), _amount);
+        balances[_from] = balances[_from].sub(_amount);
+        underlyingToken.transfer(_to, _amount);
+        emit Transfer(_from, address(0), _amount);
     }
 
     function mint(address _to, uint256 _amount) external {
@@ -124,15 +126,6 @@ contract ATokenMock {
         totalSupply = totalSupply.add(_amount);
         balances[_to] = balances[_to].add(_amount);
         emit Transfer(address(0), _to, _amount);
-    }
-
-    function mint(uint256 _amount) external {
-        /**
-            Not a part of actual aTokens, added to maintain a common interface across mocks
-         */
-        totalSupply = totalSupply.add(_amount);
-        balances[msg.sender] = balances[msg.sender].add(_amount);
-        emit Transfer(address(0), msg.sender, _amount);
     }
 
     function _set_pool(address _pool) external {
@@ -147,7 +140,6 @@ contract ATokenMock {
         totalSupply = totalSupply.sub(balances[pool]);
         balances[pool] = balances[pool].mul(_rate).div(10**18);
         totalSupply = totalSupply.add(balances[pool]);
-        _get_rate = _rate;
     }
 
     function _mint_for_testing(address _to, uint256 _amount) external {
