@@ -295,7 +295,7 @@ def get_D(xp: uint256[N_COINS], amp: uint256) -> uint256:
         for _x in xp:
             D_P = D_P * D / (_x * N_COINS + 1)  # +1 is to prevent /0
         Dprev = D
-        D = (Ann * S + D_P * N_COINS) * D / ((Ann - 1) * D + (N_COINS + 1) * D_P)
+        D = (Ann * S / A_PRECISION + D_P * N_COINS) * D / ((Ann - A_PRECISION) * D / A_PRECISION + (N_COINS + 1) * D_P)
         # Equality with the precision of 1
         if D > Dprev:
             if D - Dprev <= 1:
@@ -510,8 +510,8 @@ def get_y(i: int128, j: int128, x: uint256, xp: uint256[N_COINS]) -> uint256:
             continue
         S_ += _x
         c = c * D / (_x * N_COINS)
-    c = c * D / (Ann * N_COINS)
-    b: uint256 = S_ + D / Ann  # - D
+    c = c * D * A_PRECISION / (Ann * N_COINS)
+    b: uint256 = S_ + D * A_PRECISION / Ann  # - D
     y: uint256 = D
     for _i in range(255):
         y_prev = y
@@ -792,8 +792,8 @@ def get_y_D(A_: uint256, i: int128, xp: uint256[N_COINS], D: uint256) -> uint256
             continue
         S_ += _x
         c = c * D / (_x * N_COINS)
-    c = c * D / (Ann * N_COINS)
-    b: uint256 = S_ + D / Ann
+    c = c * D * A_PRECISION / (Ann * N_COINS)
+    b: uint256 = S_ + D * A_PRECISION / Ann
     y: uint256 = D
 
     for _i in range(255):
