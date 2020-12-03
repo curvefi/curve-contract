@@ -127,12 +127,11 @@ owner: public(address)
 token: public(CurveToken)
 
 # Token corresponding to the pool is always the last one
-BASE_POOL_COINS: constant(int128) = 3
 BASE_CACHE_EXPIRES: constant(int128) = 10 * 60  # 10 min
 base_pool: public(address)
 base_virtual_price: public(uint256)
 base_cache_updated: public(uint256)
-base_coins: public(address[BASE_POOL_COINS])
+base_coins: public(address[BASE_N_COINS])
 
 A_PRECISION: constant(uint256) = 100
 initial_A: public(uint256)
@@ -185,7 +184,7 @@ def __init__(
     self.base_pool = _base_pool
     self.base_virtual_price = Curve(_base_pool).get_virtual_price()
     self.base_cache_updated = block.timestamp
-    for i in range(BASE_POOL_COINS):
+    for i in range(BASE_N_COINS):
         _base_coin: address = Curve(_base_pool).coins(convert(i, uint256))
         self.base_coins[i] = _base_coin
 
