@@ -27,11 +27,11 @@ contract AaveLendingPoolMock {
     * @param _amount the amount to be deposited
     * @param _referralCode integrators are assigned a referral code and can potentially receive rewards.
     **/
-    function deposit(address _reserve, uint256 _amount, uint16 _referralCode) external payable {
+    function deposit(address _reserve, uint256 _amount, address _receiver, uint16 _referralCode) external payable {
         require (aTokens[_reserve] != address(0));
         lastReferral = _referralCode;
-        IERC20(_reserve).transferFrom(msg.sender, aTokens[_reserve], _amount);
-        aToken(aTokens[_reserve]).mint(msg.sender, _amount);
+        IERC20(_reserve).transferFrom(_receiver, aTokens[_reserve], _amount);
+        aToken(aTokens[_reserve]).mint(_receiver, _amount);
     }
 
     function withdraw(address asset, uint256 amount, address to) external {

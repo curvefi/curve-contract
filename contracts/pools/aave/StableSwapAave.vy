@@ -451,9 +451,10 @@ def add_liquidity(_amounts: uint256[N_COINS], _min_mint_amount: uint256, _use_un
                 raw_call(
                     lending_pool,
                     concat(
-                        method_id("deposit(address,uint256,uint16)"),
+                        method_id("deposit(address,uint256,address,uint16)"),
                         convert(coin, bytes32),
                         convert(amount, bytes32),
+                        convert(self, bytes32),
                         aave_referral,
                     )
                 )
@@ -640,9 +641,10 @@ def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256) -> u
     raw_call(
         lending_pool,
         concat(
-            method_id("deposit(address,uint256,uint16)"),
+            method_id("deposit(address,uint256,address,uint16)"),
             convert(u_coin_i, bytes32),
             convert(dx, bytes32),
+            convert(self, bytes32),
             convert(self.aave_referral, bytes32),
         )
     )
