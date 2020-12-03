@@ -51,14 +51,14 @@ def base_pool_token(project, charlie, base_pool_data, is_forked):
 
 class _MintableTestToken(Contract):
 
-    def __init__(self, address, pool_data):
+    def __init__(self, address, pool_data=None):
         super().__init__(address)
 
         # standardize mint / rate methods
-        if 'wrapped_contract' in pool_data:
+        if pool_data is not None and 'wrapped_contract' in pool_data:
             fn_names = WRAPPED_COIN_METHODS[pool_data['wrapped_contract']]
             for target, attr in fn_names.items():
-                if hasattr(self, attr):
+                if hasattr(self, attr) and target != attr:
                     setattr(self, target, getattr(self, attr))
 
         # get top token holder addresses
@@ -87,6 +87,14 @@ class _MintableTestToken(Contract):
         if self.address == "0x5228a22e72ccC52d415EcFd199F99D0665E7733b":
             # pBTC
             self.mint(target, amount, {'from': self.pNetwork()})
+            return
+        if self.name().startswith("Aave"):
+            underlying = _MintableTestToken(self.UNDERLYING_ASSET_ADDRESS())
+            lending_pool = Contract("0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9")
+
+            underlying._mint_for_testing(target, amount)
+            underlying.approve(lending_pool, amount, {'from': target})
+            lending_pool.deposit(underlying, amount, target, 0, {'from': target})
             return
 
         for address in _holders[self.address].copy():
