@@ -1,4 +1,4 @@
-# @version 0.2.7
+# @version 0.2.8
 """
 @title Curve aPool
 @author Curve.Fi
@@ -688,8 +688,7 @@ def remove_liquidity(
         else:
             assert ERC20(self.coins[i]).transfer(msg.sender, value)
 
-    fees: uint256[N_COINS] = empty(uint256[N_COINS])
-    log RemoveLiquidity(msg.sender, amounts, fees, total_supply - _amount)
+    log RemoveLiquidity(msg.sender, amounts, empty(uint256[N_COINS]), total_supply - _amount)
 
     return amounts
 
