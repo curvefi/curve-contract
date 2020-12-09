@@ -81,8 +81,13 @@ class _MintableTestToken(Contract):
             self.mint(target, amount, {'from': "0x62F31E08e279f3091d9755a09914DF97554eAe0b"})
             return
         if self.address == "0x196f4727526eA7FB1e17b2071B3d8eAA38486988":
+            # RSV
             self.changeMaxSupply(2**128, {'from': self.owner()})
             self.mint(target, amount, {'from': self.minter()})
+            return
+        if self.address == "0x5228a22e72ccC52d415EcFd199F99D0665E7733b":
+            # pBTC
+            self.mint(target, amount, {'from': self.pNetwork()})
             return
 
         for address in _holders[self.address].copy():
