@@ -3,7 +3,7 @@
 @title Curve tBTC Metapool
 @author Curve.Fi
 @license Copyright (c) Curve.Fi, 2020 - all rights reserved
-@dev Utilizes 3Pool to allow swaps between tBTC / DAI / USDC / USDT
+@dev Utilizes sBTC pool to allow swaps between tBTC / rebBTC / wBTC / sBTC
 """
 
 from vyper.interfaces import ERC20

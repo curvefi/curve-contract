@@ -1,4 +1,4 @@
-# curve-contract/contracts/pools/rsv
+# curve-contract/contracts/pools/tbtc
 
 [Curve tBTC metapool](https://www.curve.fi/tbtc), allowing swaps via the Curve [sBTC pool](../sbtc).
 
