@@ -1,0 +1,43 @@
+{
+    "lp_contract": "CurveTokenV3",
+    "wrapped_contract": "IdleToken",
+    "swap_address": "",
+    "lp_token_address": "",
+    "zap_address": "",
+    "gauge_addresses": [""],
+    "lp_constructor": {
+        "symbol": "i3CRV",
+        "name": "Curve.fi idleDAI/idleUSDC/idleUSDT"
+    },
+    "swap_constructor": {
+        "_A": 200,
+        "_fee": 4000000,
+        "_admin_fee": 5000000000
+    },
+    "coins": [
+        {
+            "name": "idleDAI",
+            "decimals": 18,
+            "tethered": false,
+            "wrapped_decimals": 18,
+            "underlying_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+            "wrapped_address": "0x3fe7940616e5bc47b0775a0dccf6237893353bb4"
+        },
+        {
+            "name": "idleUSDC",
+            "decimals": 6,
+            "tethered": false,
+            "wrapped_decimals": 18,
+            "underlying_address": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+            "wrapped_address": "0x5274891bEC421B39D23760c04A6755eCB444797C"
+        },
+        {
+            "name": "idleUSDT",
+            "decimals": 6,
+            "tethered": true,
+            "wrapped_decimals": 18,
+            "underlying_address": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+            "wrapped_address": "0xF34842d05A1c888Ca02769A633DF37177415C2f8"
+        }
+    ]
+}
