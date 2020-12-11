@@ -132,6 +132,9 @@ is_killed: bool
 kill_deadline: uint256
 KILL_DEADLINE_DT: constant(uint256) = 2 * 30 * 86400
 
+reward_tokens: public(address[8])
+reward_claimant: public(address)
+
 
 @external
 def __init__(
@@ -940,3 +943,40 @@ def kill_me():
 def unkill_me():
     assert msg.sender == self.owner  # dev: only owner
     self.is_killed = False
+
+
+@external
+def claim_rewards() -> bool:
+    assert msg.sender == self.reward_claimant
+
+    for i in range(8):
+        token: address = self.reward_tokens[i]
+        if token == ZERO_ADDRESS:
+            break
+        amount: uint256 = ERC20(token).balanceOf(self)
+        if amount > 0:
+            ERC20(token).transfer(msg.sender, amount)
+
+    return True
+
+
+@external
+def set_reward_claimant(_reward_claimant: address):
+    assert msg.sender == self.owner
+    self.reward_claimant = _reward_claimant
+
+
+@external
+def set_rewards(_rewards: address[8]):
+    assert msg.sender == self.owner
+
+    coins: address[N_COINS] = self.coins
+    for i in range(8):
+        token: address = _rewards[i]
+        if token == ZERO_ADDRESS:
+            if self.reward_tokens[i] == ZERO_ADDRESS:
+                break
+            self.reward_tokens[i] = ZERO_ADDRESS
+            continue
+        assert token not in coins
+        self.reward_tokens[i] = token
