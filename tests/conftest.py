@@ -18,6 +18,10 @@ WRAPPED_COIN_METHODS = {
         "get_rate": "exchangeRateStored",
         "mint": "mint",
     },
+    "IdleToken": {
+        "get_rate": "tokenPrice",
+        "mint": "mintIdleToken",
+    },
     "renERC20": {
         "get_rate": "exchangeRateCurrent",
     },
