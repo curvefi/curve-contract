@@ -1,12 +1,10 @@
 # @version 0.2.8
 """
-@title StableSwap
+@title Curve IDLE Pool
 @author Curve.Fi
 @license Copyright (c) Curve.Fi, 2020 - all rights reserved
-@notice Pool implementation with Yearn-style lending
+@notice Pool for swapping between Idle Tokens (IdleDAI, IdleUSDC, IdleUSDT)
 """
-
-from vyper.interfaces import ERC20
 
 # External Contracts
 interface IdleToken:
@@ -14,10 +12,15 @@ interface IdleToken:
     def redeemIdleToken(_amount: uint256) -> uint256: nonpayable
     def tokenPrice() -> uint256: view
 
-
 interface CurveToken:
     def mint(_to: address, _value: uint256) -> bool: nonpayable
     def burnFrom(_to: address, _value: uint256) -> bool: nonpayable
+
+interface ERC20:
+    def transfer(_to: address, _value: uint256): nonpayable
+    def transferFrom(_from: address, _to: address, _value: uint256): nonpayable
+    def totalSupply() -> uint256: view
+    def balanceOf(_addr: address) -> uint256: view
 
 
 # Events
@@ -103,8 +106,6 @@ MAX_A_CHANGE: constant(uint256) = 10
 
 ADMIN_ACTIONS_DELAY: constant(uint256) = 3 * 86400
 MIN_RAMP_TIME: constant(uint256) = 86400
-
-REBALANCE_THRESHOLD: constant(uint256) = 10000 * PRECISION
 
 coins: public(address[N_COINS])
 underlying_coins: public(address[N_COINS])
@@ -327,7 +328,7 @@ def calc_token_amount(amounts: uint256[N_COINS], is_deposit: bool) -> uint256:
 
 @external
 @nonreentrant('lock')
-def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256) -> uint256:
+def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256, _use_underlying: bool = False) -> uint256:
     """
     @notice Deposit coins into the pool
     @param amounts List of amounts of coins to deposit
@@ -346,12 +347,22 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256) -> uint25
     if token_supply != 0:
         D0 = self.get_D_mem(rates, old_balances)
 
+    # Take coins from the sender
+    coin: address = ZERO_ADDRESS
     new_balances: uint256[N_COINS] = old_balances
     for i in range(N_COINS):
+        amount: uint256 = amounts[i]
         if token_supply == 0:
-            assert amounts[i] > 0
-        # balances store amounts of c-tokens
-        new_balances[i] = old_balances[i] + amounts[i]
+            assert amount > 0
+        if amount != 0:
+            if _use_underlying:
+                coin = self.underlying_coins[i]
+            else:
+                coin = self.coins[i]
+                new_balances[i] += amount
+            ERC20(coin).transferFrom(msg.sender, self, amount)
+            if _use_underlying:
+                new_balances[i] += IdleToken(self.coins[i]).mintIdleToken(amount, True, self)
 
     # Invariant after change
     D1: uint256 = self.get_D_mem(rates, new_balances)
@@ -387,11 +398,6 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256) -> uint25
         mint_amount = token_supply * (D2 - D0) / D0
 
     assert mint_amount >= min_mint_amount, "Slippage screwed you"
-
-    # Take coins from the sender
-    for i in range(N_COINS):
-        if amounts[i] != 0:
-            assert ERC20(self.coins[i]).transferFrom(msg.sender, self, amounts[i])
 
     # Mint pool tokens
     CurveToken(_lp_token).mint(msg.sender, mint_amount)
@@ -538,8 +544,8 @@ def exchange(i: int128, j: int128, dx: uint256, min_dy: uint256) -> uint256:
     dy: uint256 = self._exchange(i, j, dx)
     assert dy >= min_dy, "Exchange resulted in fewer coins than expected"
 
-    assert ERC20(self.coins[i]).transferFrom(msg.sender, self, dx)
-    assert ERC20(self.coins[j]).transfer(msg.sender, dy)
+    ERC20(self.coins[i]).transferFrom(msg.sender, self, dx)
+    ERC20(self.coins[j]).transfer(msg.sender, dy)
 
     log TokenExchange(msg.sender, i, dx, j, dy)
 
@@ -559,38 +565,15 @@ def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256) -> u
     @return Actual amount of `j` received
     """
 
-    _response: Bytes[32] = raw_call(
-        self.underlying_coins[i],
-        concat(
-            method_id("transferFrom(address,address,uint256)"),
-            convert(msg.sender, bytes32),
-            convert(self, bytes32),
-            convert(dx, bytes32),
-        ),
-        max_outsize=32,
-    )
-    if len(_response) > 0:
-        assert convert(_response, bool)
+    ERC20(self.underlying_coins[i]).transferFrom(msg.sender, self, dx)
 
-    precisions: uint256[N_COINS] = PRECISION_MUL
-    skip_rebalance: bool = dx * precisions[i] < REBALANCE_THRESHOLD
-    dx_: uint256 = IdleToken(self.coins[i]).mintIdleToken(dx, skip_rebalance, ZERO_ADDRESS)
+    dx_: uint256 = IdleToken(self.coins[i]).mintIdleToken(dx, True, self)
     dy_: uint256 = self._exchange(i, j, dx_)
 
     dy: uint256 = IdleToken(self.coins[j]).redeemIdleToken(dy_)
     assert dy >= min_dy, "Exchange resulted in fewer coins than expected"
 
-    _response = raw_call(
-        self.underlying_coins[j],
-        concat(
-            method_id("transfer(address,uint256)"),
-            convert(msg.sender, bytes32),
-            convert(dy, bytes32),
-        ),
-        max_outsize=32,
-    )
-    if len(_response) > 0:
-        assert convert(_response, bool)
+    ERC20(self.underlying_coins[j]).transfer(msg.sender, dy)
 
     log TokenExchangeUnderlying(msg.sender, i, dx, j, dy)
 
@@ -599,7 +582,7 @@ def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256) -> u
 
 @external
 @nonreentrant('lock')
-def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS]) -> uint256[N_COINS]:
+def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS], _use_underlying: bool = False) -> uint256[N_COINS]:
     """
     @notice Withdraw coins from the pool
     @dev Withdrawal amounts are based on current deposit ratios
@@ -614,10 +597,15 @@ def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS]) -> uint256
     for i in range(N_COINS):
         _balance: uint256 = self.balances[i]
         value: uint256 = _balance * _amount / total_supply
-        assert value >= min_amounts[i], "Withdrawal resulted in fewer coins than expected"
         self.balances[i] = _balance - value
+        if _use_underlying:
+            value = IdleToken(self.coins[i]).redeemIdleToken(value)
+            ERC20(self.underlying_coins[i]).transfer(msg.sender, value)
+        else:
+            ERC20(self.coins[i]).transfer(msg.sender, value)
+
+        assert value >= min_amounts[i], "Withdrawal resulted in fewer coins than expected"
         amounts[i] = value
-        assert ERC20(self.coins[i]).transfer(msg.sender, value)
 
     CurveToken(_lp_token).burnFrom(msg.sender, _amount)  # Will raise if not enough
 
@@ -628,10 +616,10 @@ def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS]) -> uint256
 
 @external
 @nonreentrant('lock')
-def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint256) -> uint256:
+def remove_liquidity_imbalance(_amounts: uint256[N_COINS], max_burn_amount: uint256, _use_underlying: bool = False) -> uint256:
     """
     @notice Withdraw coins from the pool in an imbalanced amount
-    @param amounts List of amounts of underlying coins to withdraw
+    @param _amounts List of amounts of underlying coins to withdraw
     @param max_burn_amount Maximum amount of LP token to burn in the withdrawal
     @return Actual amount of the LP token burned in the withdrawal
     """
@@ -642,8 +630,16 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint2
     D0: uint256 = self.get_D_mem(rates, old_balances)
 
     new_balances: uint256[N_COINS] = old_balances
+    amounts: uint256[N_COINS] = _amounts
+
     for i in range(N_COINS):
-        new_balances[i] -= amounts[i]
+        amount: uint256 = amounts[i]
+        if amount > 0:
+            if _use_underlying:
+                amount = amount * LENDING_PRECISION / rates[i]
+                amounts[i] = amount
+            new_balances[i] -= amount
+
     D1: uint256 = self.get_D_mem(rates, new_balances)
 
     _lp_token: address = self.lp_token
@@ -672,8 +668,13 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint2
 
     CurveToken(_lp_token).burnFrom(msg.sender, token_amount)  # dev: insufficient funds
     for i in range(N_COINS):
+        amount: uint256 = amounts[i]
         if amounts[i] != 0:
-            assert ERC20(self.coins[i]).transfer(msg.sender, amounts[i])
+            if _use_underlying:
+                amount = IdleToken(self.coins[i]).redeemIdleToken(amount)
+                ERC20(self.underlying_coins[i]).transfer(msg.sender, amount)
+            else:
+                ERC20(self.coins[i]).transfer(msg.sender, amount)
 
     log RemoveLiquidityImbalance(msg.sender, amounts, fees, D1, token_supply - token_amount)
 
@@ -777,7 +778,7 @@ def calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> uint256:
 
 @external
 @nonreentrant('lock')
-def remove_liquidity_one_coin(_token_amount: uint256, i: int128, _min_amount: uint256) -> uint256:
+def remove_liquidity_one_coin(_token_amount: uint256, i: int128, _min_amount: uint256, _use_underlying: bool = False) -> uint256:
     """
     @notice Withdraw a single coin from the pool
     @param _token_amount Amount of LP tokens to burn in the withdrawal
@@ -794,7 +795,11 @@ def remove_liquidity_one_coin(_token_amount: uint256, i: int128, _min_amount: ui
 
     self.balances[i] -= (dy + dy_fee * self.admin_fee / FEE_DENOMINATOR)
     CurveToken(self.lp_token).burnFrom(msg.sender, _token_amount)  # dev: insufficient funds
-    assert ERC20(self.coins[i]).transfer(msg.sender, dy)
+    if _use_underlying:
+        dy = IdleToken(self.coins[i]).redeemIdleToken(dy)
+        ERC20(self.underlying_coins[i]).transfer(msg.sender, dy)
+    else:
+        ERC20(self.coins[i]).transfer(msg.sender, dy)
 
     log RemoveLiquidityOne(msg.sender, _token_amount, dy)
 
@@ -922,7 +927,7 @@ def withdraw_admin_fees():
         c: address = self.coins[i]
         value: uint256 = ERC20(c).balanceOf(self) - self.balances[i]
         if value > 0:
-            assert ERC20(c).transfer(msg.sender, value)
+            ERC20(c).transfer(msg.sender, value)
 
 
 @external
