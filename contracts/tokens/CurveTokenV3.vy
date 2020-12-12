@@ -42,15 +42,12 @@ minter: public(address)
 
 
 @external
-def __init__(_name: String[64], _symbol: String[32], _decimals: uint256, _supply: uint256):
-    init_supply: uint256 = _supply * 10 ** _decimals
+def __init__(_name: String[64], _symbol: String[32], _decimals: uint256):
     self.name = _name
     self.symbol = _symbol
     self.decimals = _decimals
-    self.balanceOf[msg.sender] = init_supply
-    self.total_supply = init_supply
     self.minter = msg.sender
-    log Transfer(ZERO_ADDRESS, msg.sender, init_supply)
+    log Transfer(ZERO_ADDRESS, msg.sender, 0)
 
 
 @external
