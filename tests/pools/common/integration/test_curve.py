@@ -15,28 +15,32 @@ pytestmark = pytest.mark.skip_meta
 )
 @settings(max_examples=5)
 def test_curve_in_contract(
-    alice, swap, underlying_coins, wrapped_coins, st_seed_amount, n_coins, approx, st_pct, underlying_decimals
+    alice,
+    swap,
+    wrapped_coins,
+    wrapped_decimals,
+    underlying_decimals,
+    n_coins,
+    approx,
+    st_seed_amount,
+    st_pct,
 ):
     st_seed_amount = int(10 ** st_seed_amount)
 
     # add initial pool liquidity
     # we add at an imbalance of +10% for each subsequent coin
     initial_liquidity = []
-    for underlying, wrapped, decimals in zip(underlying_coins, wrapped_coins, underlying_decimals):
+    for coin, decimals in zip(wrapped_coins, wrapped_decimals):
         amount = st_seed_amount * 10 ** decimals + 1
-        underlying._mint_for_testing(alice, amount, {'from': alice})
+        coin._mint_for_testing(alice, amount, {'from': alice})
 
-        if hasattr(wrapped, 'set_exchange_rate'):
-            rate = int(10**18 * (1 + 0.1 * len(initial_liquidity)))
-            wrapped.set_exchange_rate(rate, {'from': alice})
-        if hasattr(wrapped, 'mint'):
-            underlying.approve(wrapped, amount, {'from': alice})
-            wrapped.mint(amount, {'from': alice})
-            amount = amount * 10 ** 18 // rate
+        if hasattr(coin, 'set_exchange_rate'):
+            rate = int(coin.get_rate() * (1 + 0.1 * len(initial_liquidity)))
+            coin.set_exchange_rate(rate, {'from': alice})
 
-        assert wrapped.balanceOf(alice) >= amount
+        assert coin.balanceOf(alice) >= amount
         initial_liquidity.append(amount // 10)
-        wrapped.approve(swap, amount // 10, {'from': alice})
+        coin.approve(swap, amount // 10, {'from': alice})
 
     swap.add_liquidity(initial_liquidity, 0, {'from': alice})
 
