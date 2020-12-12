@@ -52,19 +52,6 @@ def decimals() -> uint256:
 
 
 @external
-def set_minter(_minter: address):
-    assert msg.sender == self.minter
-    self.minter = _minter
-
-
-@external
-def set_name(_name: String[64], _symbol: String[32]):
-    assert Curve(self.minter).owner() == msg.sender
-    self.name = _name
-    self.symbol = _symbol
-
-
-@external
 def transfer(_to : address, _value : uint256) -> bool:
     """
     @dev Transfer token for a specified address
@@ -150,3 +137,16 @@ def burnFrom(_to: address, _value: uint256) -> bool:
     log Transfer(_to, ZERO_ADDRESS, _value)
 
     return True
+
+
+@external
+def set_minter(_minter: address):
+    assert msg.sender == self.minter
+    self.minter = _minter
+
+
+@external
+def set_name(_name: String[64], _symbol: String[32]):
+    assert Curve(self.minter).owner() == msg.sender
+    self.name = _name
+    self.symbol = _symbol
