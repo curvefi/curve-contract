@@ -151,10 +151,11 @@ def mint(_to: address, _value: uint256) -> bool:
     @param _value The amount that will be created.
     """
     assert msg.sender == self.minter
-    assert _to != ZERO_ADDRESS
+
     self.total_supply += _value
     self.balanceOf[_to] += _value
     log Transfer(ZERO_ADDRESS, _to, _value)
+
     return True
 
 
@@ -166,7 +167,6 @@ def burnFrom(_to: address, _value: uint256) -> bool:
     @param _value The amount that will be burned.
     """
     assert msg.sender == self.minter
-    assert _to != ZERO_ADDRESS
 
     self.total_supply -= _value
     self.balanceOf[_to] -= _value
