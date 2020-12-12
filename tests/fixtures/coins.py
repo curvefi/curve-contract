@@ -168,7 +168,8 @@ def _underlying(alice, project, pool_data, is_forked, base_pool_token):
 def _pool_token(project, alice, pool_data):
     name = pool_data['name']
     deployer = getattr(project, pool_data['lp_contract'])
-    return deployer.deploy(f"Curve {name} LP Token", f"{name}CRV", 18, 0, {'from': alice})
+    args = [f"Curve {name} LP Token", f"{name}CRV", 18, 0][:len(deployer.deploy.abi['inputs'])]
+    return deployer.deploy(*args, {'from': alice})
 
 
 # private fixtures used for setup in other fixtures - do not use in tests!
