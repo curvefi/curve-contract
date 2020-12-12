@@ -29,25 +29,26 @@ event Approval:
 
 name: public(String[64])
 symbol: public(String[32])
-decimals: public(uint256)
 
-# NOTE: By declaring `balanceOf` as public, vyper automatically generates a 'balanceOf()' getter
-#       method to allow access to account balances.
-#       The _KeyType will become a required parameter for the getter and it will return _ValueType.
-#       See: https://vyper.readthedocs.io/en/v0.1.0-beta.8/types.html?highlight=getter#mappings
 balanceOf: public(HashMap[address, uint256])
-allowances: HashMap[address, HashMap[address, uint256]]
-total_supply: uint256
+allowance: public(HashMap[address, HashMap[address, uint256]])
+totalSupply: public(uint256)
+
 minter: public(address)
 
 
 @external
-def __init__(_name: String[64], _symbol: String[32], _decimals: uint256):
+def __init__(_name: String[64], _symbol: String[32]):
     self.name = _name
     self.symbol = _symbol
-    self.decimals = _decimals
     self.minter = msg.sender
     log Transfer(ZERO_ADDRESS, msg.sender, 0)
+
+
+@view
+@external
+def decimals() -> uint256:
+    return 18
 
 
 @external
@@ -61,27 +62,6 @@ def set_name(_name: String[64], _symbol: String[32]):
     assert Curve(self.minter).owner() == msg.sender
     self.name = _name
     self.symbol = _symbol
-
-
-@view
-@external
-def totalSupply() -> uint256:
-    """
-    @dev Total number of tokens in existence.
-    """
-    return self.total_supply
-
-
-@view
-@external
-def allowance(_owner : address, _spender : address) -> uint256:
-    """
-    @dev Function to check the amount of tokens that an owner allowed to a spender.
-    @param _owner The address which owns the funds.
-    @param _spender The address which will spend the funds.
-    @return An uint256 specifying the amount of tokens still available for the spender.
-    """
-    return self.allowances[_owner][_spender]
 
 
 @external
@@ -112,11 +92,11 @@ def transferFrom(_from : address, _to : address, _value : uint256) -> bool:
     self.balanceOf[_from] -= _value
     self.balanceOf[_to] += _value
     if msg.sender != self.minter:  # minter is allowed to transfer anything
-        _allowance: uint256 = self.allowances[_from][msg.sender]
+        _allowance: uint256 = self.allowance[_from][msg.sender]
         if _allowance != MAX_UINT256:
             # NOTE: vyper does not allow underflows
             # so the following subtraction would revert on insufficient allowance
-            self.allowances[_from][msg.sender] = _allowance - _value
+            self.allowance[_from][msg.sender] = _allowance - _value
     log Transfer(_from, _to, _value)
     return True
 
@@ -132,8 +112,8 @@ def approve(_spender : address, _value : uint256) -> bool:
     @param _spender The address which will spend the funds.
     @param _value The amount of tokens to be spent.
     """
-    assert _value == 0 or self.allowances[msg.sender][_spender] == 0
-    self.allowances[msg.sender][_spender] = _value
+    assert _value == 0 or self.allowance[msg.sender][_spender] == 0
+    self.allowance[msg.sender][_spender] = _value
     log Approval(msg.sender, _spender, _value)
     return True
 
@@ -149,7 +129,7 @@ def mint(_to: address, _value: uint256) -> bool:
     """
     assert msg.sender == self.minter
 
-    self.total_supply += _value
+    self.totalSupply += _value
     self.balanceOf[_to] += _value
     log Transfer(ZERO_ADDRESS, _to, _value)
 
@@ -165,7 +145,7 @@ def burnFrom(_to: address, _value: uint256) -> bool:
     """
     assert msg.sender == self.minter
 
-    self.total_supply -= _value
+    self.totalSupply -= _value
     self.balanceOf[_to] -= _value
     log Transfer(_to, ZERO_ADDRESS, _value)
 
