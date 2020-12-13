@@ -179,24 +179,6 @@ def A_precise() -> uint256:
     return self._A()
 
 
-@view
-@internal
-def _xp() -> uint256[N_COINS]:
-    result: uint256[N_COINS] = RATES
-    for i in range(N_COINS):
-        result[i] = result[i] * self.balances[i] / LENDING_PRECISION
-    return result
-
-
-@pure
-@internal
-def _xp_mem(_balances: uint256[N_COINS]) -> uint256[N_COINS]:
-    result: uint256[N_COINS] = RATES
-    for i in range(N_COINS):
-        result[i] = result[i] * _balances[i] / PRECISION
-    return result
-
-
 @pure
 @internal
 def get_D(xp: uint256[N_COINS], amp: uint256) -> uint256:
@@ -228,7 +210,7 @@ def get_D(xp: uint256[N_COINS], amp: uint256) -> uint256:
 @view
 @internal
 def get_D_mem(_balances: uint256[N_COINS], amp: uint256) -> uint256:
-    return self.get_D(self._xp_mem(_balances), amp)
+    return self.get_D(_balances, amp)
 
 
 @view
@@ -239,7 +221,7 @@ def get_virtual_price() -> uint256:
     @dev Useful for calculating profits
     @return LP token virtual price normalized to 1e18
     """
-    D: uint256 = self.get_D(self._xp(), self._A())
+    D: uint256 = self.get_D(self.balances, self._A())
     # D is in the units similar to DAI (e.g. converted to precision 1e18)
     # When balanced, D = n * x_u - total virtual value of the portfolio
     token_supply: uint256 = ERC20(self.lp_token).totalSupply()
@@ -418,7 +400,7 @@ def get_y(i: int128, j: int128, x: uint256, xp_: uint256[N_COINS]) -> uint256:
 @view
 @external
 def get_dy(i: int128, j: int128, dx: uint256) -> uint256:
-    xp: uint256[N_COINS] = self._xp()
+    xp: uint256[N_COINS] = self.balances
     x: uint256 = xp[i] + dx
     y: uint256 = self.get_y(i, j, x, xp)
     dy: uint256 = xp[j] - y - 1
@@ -442,7 +424,7 @@ def exchange(i: int128, j: int128, dx: uint256, min_dy: uint256) -> uint256:
     assert not self.is_killed  # dev: is killed
 
     old_balances: uint256[N_COINS] = self.balances
-    xp: uint256[N_COINS] = self._xp_mem(old_balances)
+    xp: uint256[N_COINS] = old_balances
 
     x: uint256 = xp[i] + dx
     y: uint256 = self.get_y(i, j, x, xp)
@@ -667,7 +649,7 @@ def _calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> (uint256, uint
     # * Get current D
     # * Solve Eqn against y_i for D - _token_amount
     amp: uint256 = self._A()
-    xp: uint256[N_COINS] = self._xp()
+    xp: uint256[N_COINS] = self.balances
     D0: uint256 = self.get_D(xp, amp)
     total_supply: uint256 = ERC20(self.lp_token).totalSupply()
     D1: uint256 = D0 - _token_amount * D0 / total_supply
