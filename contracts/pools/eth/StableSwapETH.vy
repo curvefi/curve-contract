@@ -521,30 +521,32 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint2
     assert not self.is_killed  # dev: is killed
 
     amp: uint256 = self._A()
-    _lp_token: address = self.lp_token
-    token_supply: uint256 = ERC20(_lp_token).totalSupply()
+    lp_token: address = self.lp_token
+    token_supply: uint256 = ERC20(lp_token).totalSupply()
     assert token_supply != 0  # dev: zero total supply
 
     old_balances: uint256[N_COINS] = self.balances
-    new_balances: uint256[N_COINS] = old_balances
     D0: uint256 = self.get_D(old_balances, amp)
+
+    new_balances: uint256[N_COINS] = empty(uint256[N_COINS])
     for i in range(N_COINS):
-        new_balances[i] -= amounts[i]
+        new_balances[i] = old_balances[i] - amounts[i]
     D1: uint256 = self.get_D(new_balances, amp)
 
     fees: uint256[N_COINS] = empty(uint256[N_COINS])
-    _fee: uint256 = self.fee * N_COINS / (4 * (N_COINS - 1))
-    _admin_fee: uint256 = self.admin_fee
+    difference: uint256 = 0
+    fee: uint256 = self.fee * N_COINS / (4 * (N_COINS - 1))
+    admin_fee: uint256 = self.admin_fee
     for i in range(N_COINS):
+        new_balance: uint256 = new_balances[i]
         ideal_balance: uint256 = D1 * old_balances[i] / D0
-        difference: uint256 = 0
-        if ideal_balance > new_balances[i]:
-            difference = ideal_balance - new_balances[i]
+        if ideal_balance > new_balance:
+            difference = ideal_balance - new_balance
         else:
-            difference = new_balances[i] - ideal_balance
-        fees[i] = _fee * difference / FEE_DENOMINATOR
-        self.balances[i] = new_balances[i] - (fees[i] * _admin_fee / FEE_DENOMINATOR)
-        new_balances[i] -= fees[i]
+            difference = new_balance - ideal_balance
+        fees[i] = fee * difference / FEE_DENOMINATOR
+        self.balances[i] = new_balance - (fees[i] * admin_fee / FEE_DENOMINATOR)
+        new_balances[i] = new_balance - fees[i]
     D2: uint256 = self.get_D(new_balances, amp)
 
     token_amount: uint256 = (D0 - D2) * token_supply / D0
@@ -552,20 +554,21 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint2
     token_amount += 1  # In case of rounding errors - make it unfavorable for the "attacker"
     assert token_amount <= max_burn_amount, "Slippage screwed you"
 
-    CurveToken(_lp_token).burnFrom(msg.sender, token_amount)  # dev: insufficient funds
+    CurveToken(lp_token).burnFrom(msg.sender, token_amount)  # dev: insufficient funds
 
     for i in range(N_COINS):
-        if amounts[i] != 0:
-            _coin: address = self.coins[i]
-            if _coin == 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE:
-                raw_call(msg.sender, b"", value=amounts[i])
+        amount: uint256 = amounts[i]
+        if amount != 0:
+            coin: address = self.coins[i]
+            if coin == 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE:
+                raw_call(msg.sender, b"", value=amount)
             else:
                 _response: Bytes[32] = raw_call(
-                    _coin,
+                    coin,
                     concat(
                         method_id("transfer(address,uint256)"),
                         convert(msg.sender, bytes32),
-                        convert(amounts[i], bytes32),
+                        convert(amount, bytes32),
                     ),
                     max_outsize=32,
                 )  # dev: failed transfer
