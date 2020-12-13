@@ -260,23 +260,17 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256) -> uint25
     """
     assert not self.is_killed  # dev: is killed
 
-    amp: uint256 = self._A()
-    _lp_token: address = self.lp_token
-    _fee: uint256 = self.fee * N_COINS / (4 * (N_COINS - 1))
-    _admin_fee: uint256 = self.admin_fee
-    token_supply: uint256 = ERC20(_lp_token).totalSupply()
-
     # Initial invariant
-    D0: uint256 = 0
+    amp: uint256 = self._A()
     old_balances: uint256[N_COINS] = self.balances
-    if token_supply > 0:
-        D0 = self.get_D(old_balances, amp)
-    new_balances: uint256[N_COINS] = old_balances
+    D0: uint256 = self.get_D(old_balances, amp)
 
+    lp_token: address = self.lp_token
+    token_supply: uint256 = ERC20(lp_token).totalSupply()
+    new_balances: uint256[N_COINS] = empty(uint256[N_COINS])
     for i in range(N_COINS):
         if token_supply == 0:
             assert amounts[i] > 0  # dev: initial deposit requires all coins
-        # balances store amounts of c-tokens
         new_balances[i] = old_balances[i] + amounts[i]
 
     # Invariant after change
@@ -286,9 +280,12 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256) -> uint25
     # We need to recalculate the invariant accounting for fees
     # to calculate fair user's share
     fees: uint256[N_COINS] = empty(uint256[N_COINS])
+    mint_amount: uint256 = 0
     D2: uint256 = D1
     if token_supply > 0:
         # Only account for fees if we are not the first to deposit
+        fee: uint256 = self.fee * N_COINS / (4 * (N_COINS - 1))
+        admin_fee: uint256 = self.admin_fee
         for i in range(N_COINS):
             ideal_balance: uint256 = D1 * old_balances[i] / D0
             difference: uint256 = 0
@@ -296,19 +293,14 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256) -> uint25
                 difference = ideal_balance - new_balances[i]
             else:
                 difference = new_balances[i] - ideal_balance
-            fees[i] = _fee * difference / FEE_DENOMINATOR
-            self.balances[i] = new_balances[i] - (fees[i] * _admin_fee / FEE_DENOMINATOR)
+            fees[i] = fee * difference / FEE_DENOMINATOR
+            self.balances[i] = new_balances[i] - (fees[i] * admin_fee / FEE_DENOMINATOR)
             new_balances[i] -= fees[i]
         D2 = self.get_D(new_balances, amp)
+        mint_amount = token_supply * (D2 - D0) / D0
     else:
         self.balances = new_balances
-
-    # Calculate, how much pool tokens to mint
-    mint_amount: uint256 = 0
-    if token_supply == 0:
         mint_amount = D1  # Take the dust if there was any
-    else:
-        mint_amount = token_supply * (D2 - D0) / D0
 
     assert mint_amount >= min_mint_amount, "Slippage screwed you"
 
@@ -321,7 +313,7 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256) -> uint25
         elif _amount > 0:
             # "safeTransferFrom" which works for ERC20s which return bool or not
             _response: Bytes[32] = raw_call(
-                self.coins[i],
+                _coin,
                 concat(
                     method_id("transferFrom(address,address,uint256)"),
                     convert(msg.sender, bytes32),
@@ -334,7 +326,7 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256) -> uint25
                 assert convert(_response, bool)
 
     # Mint pool tokens
-    CurveToken(_lp_token).mint(msg.sender, mint_amount)
+    CurveToken(lp_token).mint(msg.sender, mint_amount)
 
     log AddLiquidity(msg.sender, amounts, fees, D1, token_supply + mint_amount)
 
