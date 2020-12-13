@@ -74,12 +74,9 @@ event StopRampA:
 
 # These constants must be set prior to compiling
 N_COINS: constant(int128) = 2
-PRECISION_MUL: constant(uint256[N_COINS]) = [1, 1]
-RATES: constant(uint256[N_COINS]) = [1000000000000000000, 1000000000000000000]
 
 # fixed constants
 FEE_DENOMINATOR: constant(uint256) = 10 ** 10
-LENDING_PRECISION: constant(uint256) = 10 ** 18
 PRECISION: constant(uint256) = 10 ** 18  # The precision to convert to
 
 MAX_ADMIN_FEE: constant(uint256) = 10 * 10 ** 9
@@ -667,9 +664,8 @@ def _calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> (uint256, uint
 
     dy: uint256 = xp_reduced[i] - self.get_y_D(amp, i, xp_reduced, D1)
 
-    precisions: uint256[N_COINS] = PRECISION_MUL
-    dy = (dy - 1) / precisions[i]  # Withdraw less to account for rounding errors
-    dy_0: uint256 = (xp[i] - new_y) / precisions[i]  # w/o fees
+    dy -= 1  # Withdraw less to account for rounding errors
+    dy_0: uint256 = xp[i] - new_y  # w/o fees
 
     return dy, dy_0 - dy
 
