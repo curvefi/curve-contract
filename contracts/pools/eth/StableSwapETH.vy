@@ -205,12 +205,6 @@ def get_D(xp: uint256[N_COINS], amp: uint256) -> uint256:
 
 
 @view
-@internal
-def get_D_mem(_balances: uint256[N_COINS], amp: uint256) -> uint256:
-    return self.get_D(_balances, amp)
-
-
-@view
 @external
 def get_virtual_price() -> uint256:
     """
@@ -238,13 +232,13 @@ def calc_token_amount(amounts: uint256[N_COINS], is_deposit: bool) -> uint256:
     """
     amp: uint256 = self._A()
     _balances: uint256[N_COINS] = self.balances
-    D0: uint256 = self.get_D_mem(_balances, amp)
+    D0: uint256 = self.get_D(_balances, amp)
     for i in range(N_COINS):
         if is_deposit:
             _balances[i] += amounts[i]
         else:
             _balances[i] -= amounts[i]
-    D1: uint256 = self.get_D_mem(_balances, amp)
+    D1: uint256 = self.get_D(_balances, amp)
     token_amount: uint256 = ERC20(self.lp_token).totalSupply()
     diff: uint256 = 0
     if is_deposit:
@@ -276,7 +270,7 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256) -> uint25
     D0: uint256 = 0
     old_balances: uint256[N_COINS] = self.balances
     if token_supply > 0:
-        D0 = self.get_D_mem(old_balances, amp)
+        D0 = self.get_D(old_balances, amp)
     new_balances: uint256[N_COINS] = old_balances
 
     for i in range(N_COINS):
@@ -286,7 +280,7 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256) -> uint25
         new_balances[i] = old_balances[i] + amounts[i]
 
     # Invariant after change
-    D1: uint256 = self.get_D_mem(new_balances, amp)
+    D1: uint256 = self.get_D(new_balances, amp)
     assert D1 > D0
 
     # We need to recalculate the invariant accounting for fees
@@ -305,7 +299,7 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256) -> uint25
             fees[i] = _fee * difference / FEE_DENOMINATOR
             self.balances[i] = new_balances[i] - (fees[i] * _admin_fee / FEE_DENOMINATOR)
             new_balances[i] -= fees[i]
-        D2 = self.get_D_mem(new_balances, amp)
+        D2 = self.get_D(new_balances, amp)
     else:
         self.balances = new_balances
 
@@ -542,10 +536,10 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint2
 
     old_balances: uint256[N_COINS] = self.balances
     new_balances: uint256[N_COINS] = old_balances
-    D0: uint256 = self.get_D_mem(old_balances, amp)
+    D0: uint256 = self.get_D(old_balances, amp)
     for i in range(N_COINS):
         new_balances[i] -= amounts[i]
-    D1: uint256 = self.get_D_mem(new_balances, amp)
+    D1: uint256 = self.get_D(new_balances, amp)
 
     fees: uint256[N_COINS] = empty(uint256[N_COINS])
     _fee: uint256 = self.fee * N_COINS / (4 * (N_COINS - 1))
@@ -560,7 +554,7 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint2
         fees[i] = _fee * difference / FEE_DENOMINATOR
         self.balances[i] = new_balances[i] - (fees[i] * _admin_fee / FEE_DENOMINATOR)
         new_balances[i] -= fees[i]
-    D2: uint256 = self.get_D_mem(new_balances, amp)
+    D2: uint256 = self.get_D(new_balances, amp)
 
     token_amount: uint256 = (D0 - D2) * token_supply / D0
     assert token_amount != 0  # dev: zero tokens burned
