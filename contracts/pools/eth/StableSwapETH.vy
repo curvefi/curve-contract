@@ -419,13 +419,11 @@ def get_y(i: int128, j: int128, x: uint256, xp_: uint256[N_COINS]) -> uint256:
 @external
 def get_dy(i: int128, j: int128, dx: uint256) -> uint256:
     xp: uint256[N_COINS] = self._xp()
-    rates: uint256[N_COINS] = RATES
-
-    x: uint256 = xp[i] + (dx * rates[i] / PRECISION)
+    x: uint256 = xp[i] + dx
     y: uint256 = self.get_y(i, j, x, xp)
     dy: uint256 = xp[j] - y - 1
     _fee: uint256 = self.fee * dy / FEE_DENOMINATOR
-    return (dy - _fee) * PRECISION / rates[j]
+    return dy - _fee
 
 
 @payable
@@ -446,19 +444,17 @@ def exchange(i: int128, j: int128, dx: uint256, min_dy: uint256) -> uint256:
     old_balances: uint256[N_COINS] = self.balances
     xp: uint256[N_COINS] = self._xp_mem(old_balances)
 
-    rates: uint256[N_COINS] = RATES
-    x: uint256 = xp[i] + dx * rates[i] / PRECISION
+    x: uint256 = xp[i] + dx
     y: uint256 = self.get_y(i, j, x, xp)
 
     dy: uint256 = xp[j] - y - 1  # -1 just in case there were some rounding errors
     dy_fee: uint256 = dy * self.fee / FEE_DENOMINATOR
 
     # Convert all to real units
-    dy = (dy - dy_fee) * PRECISION / rates[j]
+    dy = dy - dy_fee
     assert dy >= min_dy, "Exchange resulted in fewer coins than expected"
 
     dy_admin_fee: uint256 = dy_fee * self.admin_fee / FEE_DENOMINATOR
-    dy_admin_fee = dy_admin_fee * PRECISION / rates[j]
 
     # Change balances exactly in same way as we change actual ERC20 coin amounts
     self.balances[i] = old_balances[i] + dx
