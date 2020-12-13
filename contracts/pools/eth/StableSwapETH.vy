@@ -599,7 +599,7 @@ def get_y_D(A_: uint256, i: int128, xp: uint256[N_COINS], D: uint256) -> uint256
     Calculate x[i] if one reduces D from being calculated for xp to D
 
     Done by solving quadratic equation iteratively.
-    x_1**2 + x1 * (sum' - (A*n**n - 1) * D / (A * n**n)) = D ** (n + 1) / (n ** (2 * n) * prod' * A)
+    x_1**2 + x_1 * (sum' - (A*n**n - 1) * D / (A * n**n)) = D ** (n + 1) / (n ** (2 * n) * prod' * A)
     x_1**2 + b*x_1 = c
 
     x_1 = (x_1**2 + c) / (2*x_1 + b)
