@@ -7,6 +7,36 @@ from simulation import Curve
 pytestmark = [pytest.mark.lending, pytest.mark.skip_meta]
 
 
+@pytest.fixture(scope="module", autouse=True)
+def initial_setup(
+    alice,
+    bob,
+    swap,
+    set_fees,
+    wrapped_coins,
+    wrapped_decimals,
+    underlying_coins,
+    underlying_decimals,
+):
+    set_fees(10**7, 0)
+
+    # add initial pool liquidity
+    initial_liquidity = []
+    for coin, decimals in zip(wrapped_coins, wrapped_decimals):
+        amount = 1000 * 10 ** decimals
+        initial_liquidity.append(amount // 10)
+        coin._mint_for_testing(alice, amount, {'from': alice})
+        coin.approve(swap, amount // 10, {'from': alice})
+
+    swap.add_liquidity(initial_liquidity, 0, {'from': alice})
+
+    for coin, decimals in zip(underlying_coins, underlying_decimals):
+        # Fund bob with $100 of each coin and approve swap contract
+        amount = 100 * 10 ** decimals
+        coin._mint_for_testing(bob, amount, {'from': alice})
+        coin.approve(swap, amount, {'from': bob})
+
+
 @given(
     st_coin=strategy('decimal[100]', min_value=0, max_value="0.99", unique=True, places=2),
     st_divisor=strategy('uint[50]', min_value=1, max_value=100, unique=True),
@@ -18,10 +48,10 @@ def test_simulated_exchange(
     bob,
     underlying_coins,
     wrapped_coins,
+    underlying_decimals,
+    wrapped_decimals,
     swap,
-    pool_data,
     n_coins,
-    set_fees,
     st_coin,
     st_divisor,
 ):
@@ -37,54 +67,28 @@ def test_simulated_exchange(
         Array of integers, used to choose the size of each swap
     """
 
-    set_fees(10**7, 0)
-    coin_data = pool_data['coins']
-
-    # add initial pool liquidity
-    initial_liquidity = []
-    for underlying, wrapped, data in zip(underlying_coins, wrapped_coins, coin_data):
-        amount = 1000 * 10 ** data['decimals']
-        underlying._mint_for_testing(alice, amount, {'from': alice})
-
-        if data.get("wrapped_decimals"):
-
-            underlying.approve(wrapped, amount, {'from': alice})
-            wrapped.mint(amount, {'from': alice})
-
-        amount = wrapped.balanceOf(alice)
-        initial_liquidity.append(amount // 10)
-        wrapped.approve(swap, amount // 10, {'from': alice})
-
-    swap.add_liquidity(initial_liquidity, 0, {'from': alice})
-
     # initialize our python model using the same parameters as the contract
     balances = [swap.balances(i) for i in range(n_coins)]
     rates = []
-    for (coin, data) in zip(wrapped_coins, pool_data['coins']):
-        if data.get("wrapped_decimals"):
+    for coin, decimals in zip(wrapped_coins, wrapped_decimals):
+        if hasattr(coin, 'get_rate'):
             rate = coin.get_rate()
         else:
             rate = 10 ** 18
 
-        precision = 10 ** (18-data['decimals'])
+        precision = 10 ** (18-decimals)
         rates.append(rate * precision)
     curve_model = Curve(2 * 360, balances, n_coins, rates)
 
-    for coin, data in zip(underlying_coins, coin_data):
-        # Fund bob with $100 of each coin and approve swap contract
-        amount = 100 * 10 ** data['decimals']
-        coin._mint_for_testing(bob, amount, {'from': alice})
-        coin.approve(swap, amount, {'from': bob})
-
     # Start trading!
-    rate_mul = [10**i['decimals'] for i in coin_data]
+    rate_mul = [10**i for i in underlying_decimals]
     while st_coin:
         # Tune exchange rates
-        for i, (cc, data) in enumerate(zip(wrapped_coins, coin_data)):
-            if data.get("wrapped_decimals"):
-                rate = int(cc.get_rate() * 1.0001)
-                cc.set_exchange_rate(rate, {'from': alice})
-                curve_model.p[i] = rate * (10 ** (18-data['decimals']))
+        for i, (coin, decimals) in enumerate(zip(wrapped_coins, underlying_decimals)):
+            if hasattr(coin, 'get_rate'):
+                rate = int(coin.get_rate() * 1.0001)
+                coin.set_exchange_rate(rate, {'from': alice})
+                curve_model.p[i] = rate * (10 ** (18-decimals))
 
         chain.sleep(3600)
 
