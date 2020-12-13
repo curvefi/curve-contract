@@ -777,6 +777,7 @@ def commit_new_fee(new_fee: uint256, new_admin_fee: uint256):
 
 
 @external
+@nonreentrant('lock')
 def apply_new_fee():
     assert msg.sender == self.owner  # dev: only owner
     assert block.timestamp >= self.admin_actions_deadline  # dev: insufficient time
@@ -811,6 +812,7 @@ def commit_transfer_ownership(_owner: address):
 
 
 @external
+@nonreentrant('lock')
 def apply_transfer_ownership():
     assert msg.sender == self.owner  # dev: only owner
     assert block.timestamp >= self.transfer_ownership_deadline  # dev: insufficient time
@@ -869,6 +871,7 @@ def withdraw_admin_fees():
 
 
 @external
+@nonreentrant('lock')
 def donate_admin_fees():
     assert msg.sender == self.owner  # dev: only owner
     for i in range(N_COINS):
