@@ -407,12 +407,11 @@ def exchange(i: int128, j: int128, dx: uint256, min_dy: uint256) -> uint256:
     assert not self.is_killed  # dev: is killed
 
     old_balances: uint256[N_COINS] = self.balances
-    xp: uint256[N_COINS] = old_balances
 
-    x: uint256 = xp[i] + dx
-    y: uint256 = self.get_y(i, j, x, xp)
+    x: uint256 = old_balances[i] + dx
+    y: uint256 = self.get_y(i, j, x, old_balances)
 
-    dy: uint256 = xp[j] - y - 1  # -1 just in case there were some rounding errors
+    dy: uint256 = old_balances[j] - y - 1  # -1 just in case there were some rounding errors
     dy_fee: uint256 = dy * self.fee / FEE_DENOMINATOR
 
     # Convert all to real units
@@ -450,7 +449,7 @@ def exchange(i: int128, j: int128, dx: uint256, min_dy: uint256) -> uint256:
         raw_call(msg.sender, b"", value=dy)
     else:
         _response: Bytes[32] = raw_call(
-            self.coins[j],
+            _coin,
             concat(
                 method_id("transfer(address,uint256)"),
                 convert(msg.sender, bytes32),
