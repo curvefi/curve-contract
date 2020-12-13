@@ -475,18 +475,18 @@ def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS]) -> uint256
     @param min_amounts Minimum amounts of underlying coins to receive
     @return List of amounts of coins that were withdrawn
     """
-    _lp_token: address = self.lp_token
-    total_supply: uint256 = ERC20(_lp_token).totalSupply()
+    lp_token: address = self.lp_token
+    total_supply: uint256 = ERC20(lp_token).totalSupply()
     amounts: uint256[N_COINS] = empty(uint256[N_COINS])
-    fees: uint256[N_COINS] = empty(uint256[N_COINS])  # Fees are unused but we've got them historically in event
 
-    CurveToken(_lp_token).burnFrom(msg.sender, _amount)  # dev: insufficient funds
+    CurveToken(lp_token).burnFrom(msg.sender, _amount)  # dev: insufficient funds
 
     for i in range(N_COINS):
-        value: uint256 = self.balances[i] * _amount / total_supply
+        old_balance: uint256 = self.balances[i]
+        value: uint256 = old_balance * _amount / total_supply
         assert value >= min_amounts[i], "Withdrawal resulted in fewer coins than expected"
 
-        self.balances[i] -= value
+        self.balances[i] = old_balance - value
         amounts[i] = value
         _coin: address = self.coins[i]
         if _coin == 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE:
@@ -504,7 +504,7 @@ def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS]) -> uint256
             if len(_response) > 0:
                 assert convert(_response, bool)
 
-    log RemoveLiquidity(msg.sender, amounts, fees, total_supply - _amount)
+    log RemoveLiquidity(msg.sender, amounts, empty(uint256[N_COINS]), total_supply - _amount)
 
     return amounts
 
