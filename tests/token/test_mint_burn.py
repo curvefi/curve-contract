@@ -1,4 +1,5 @@
 import brownie
+import pytest
 
 ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 
@@ -18,6 +19,7 @@ def test_only_minter(token, minter, alice):
         token.set_minter(alice, {'from': alice})
 
 
+@pytest.mark.target_token(max=2)
 def test_transferFrom_without_approval(token, minter, alice, bob):
     balance = token.balanceOf(alice)
 
@@ -54,6 +56,7 @@ def test_mint_not_minter(token, alice):
         token.mint(alice, 12345678, {'from': alice})
 
 
+@pytest.mark.target_token(max=2)
 def test_mint_zero_address(token, minter):
     with brownie.reverts():
         token.mint(ZERO_ADDRESS, 10**18, {'from': minter})
@@ -86,8 +89,23 @@ def test_burn_not_minter(token, alice):
         token.burnFrom(alice, 12345678, {'from': alice})
 
 
+@pytest.mark.target_token(max=2)
 def test_burn_zero_address(token, alice, minter):
     token.transfer(ZERO_ADDRESS, 10**18, {'from': alice})
 
     with brownie.reverts():
         token.burnFrom(ZERO_ADDRESS, 10**18, {'from': minter})
+
+
+@pytest.mark.target_token(min=2)
+def test_burn_returns_true(token, minter, alice):
+    tx = token.burnFrom(alice, 12345678, {'from': minter})
+
+    assert tx.return_value is True
+
+
+@pytest.mark.target_token(min=2)
+def test_mint_returns_true(token, minter, bob):
+    tx = token.mint(bob, 12345678, {'from': minter})
+
+    assert tx.return_value is True

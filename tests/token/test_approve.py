@@ -15,6 +15,7 @@ def test_approve(token, alice, bob):
     assert token.allowance(alice, bob) == 10**19
 
 
+@pytest.mark.target_token(max=2)
 def test_modify_approve_nonzero(token, alice, bob):
     token.approve(bob, 10**19, {'from': alice})
 
@@ -60,3 +61,27 @@ def test_approval_event_fires(alice, bob, token):
 
     assert len(tx.events) == 1
     assert tx.events["Approval"].values() == [alice, bob, 10**19]
+
+
+@pytest.mark.target_token(min=2)
+def test_infinite_approval(token, alice, bob):
+    token.approve(bob, 2**256-1, {'from': alice})
+    token.transferFrom(alice, bob, 10**18, {'from': bob})
+
+    assert token.allowance(alice, bob) == 2**256-1
+
+
+@pytest.mark.target_token(min=3)
+def test_increase_allowance(token, alice, bob):
+    token.approve(bob, 100, {'from': alice})
+    token.increaseAllowance(bob, 403, {'from': alice})
+
+    assert token.allowance(alice, bob) == 503
+
+
+@pytest.mark.target_token(min=3)
+def test_decrease_allowance(token, alice, bob):
+    token.approve(bob, 100, {'from': alice})
+    token.decreaseAllowance(bob, 34, {'from': alice})
+
+    assert token.allowance(alice, bob) == 66
