@@ -5,7 +5,7 @@ from brownie.test import strategy
 
 pytestmark = [
     pytest.mark.usefixtures("add_initial_liquidity"),
-    pytest.mark.skip_pool("compound", "usdt")
+    pytest.mark.skip_pool("compound", "usdt", "ren", "sbtc")
 ]
 
 
@@ -39,6 +39,19 @@ class StateMachine:
 
         return min_idx, max_idx
 
+    def rule_ramp_A(self, st_pct):
+        """
+        Increase the amplification coefficient.
+
+        This action happens at most once per test. If A has already
+        been ramped, a swap is performed instead.
+        """
+        if not hasattr(self.swap, "ramp_A") or self.swap.future_A_time():
+            return self.rule_exchange_underlying(st_pct)
+
+        new_A = int(self.swap.A() * (1 + st_pct))
+        self.swap.ramp_A(new_A, chain.time() + 86410, {'from': self.alice})
+
     def rule_increase_rates(self, st_rates):
         """
         Increase the stored rate for each wrapped coin.
@@ -48,7 +61,9 @@ class StateMachine:
                 coin.set_exchange_rate(int(coin.get_rate() * rate), {'from': self.alice})
 
     def rule_exchange(self, st_pct):
-        # perform a swap using wrapped coins
+        """
+        Perform a swap using wrapped coins.
+        """
         send, recv = self._min_max()
         amount = int(10**self.decimals[send] * st_pct)
         self.swap.exchange(send, recv, amount, 0, {'from': self.alice})
@@ -108,7 +123,6 @@ class StateMachine:
         chain.sleep(3600)
 
 
-@pytest.mark.skip_pool("ren", "sbtc")
 def test_number_always_go_up(
     add_initial_liquidity,
     state_machine,
