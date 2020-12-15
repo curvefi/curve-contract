@@ -1,8 +1,8 @@
 import json
-import requests
 
 from brownie import accounts
 from brownie.project.main import get_loaded_projects
+from brownie.network.gas.strategies import GasNowScalingStrategy
 
 # modify this import if you wish to deploy a different liquidity gauge
 from brownie import LiquidityGauge as LiquidityGauge
@@ -14,18 +14,16 @@ REQUIRED_CONFIRMATIONS = 1
 # deployment settings
 # most settings are taken from `contracts/pools/{POOL_NAME}/pooldata.json`
 POOL_NAME = ""
-POOL_OWNER = "0x6e8f6D1DA6232d5E40b0B8758A0145D6C5123eB7"  # PoolProxy
+POOL_OWNER = "0xeCb456EA5365865EbAb8a2661B0c503410e9B347"  # PoolProxy
 MINTER = "0xd061D61a4d941c39E5453435B6345Dc261C2fcE0"
 
 
-def _gas_price():
-    data = requests.get("https://www.gasnow.org/api/v3/gas/price").json()
-    # change `fast` to `rapid` if you're in a hurry
-    return data['data']['fast'] + 10**9
-
-
 def _tx_params():
-    return {'from': DEPLOYER, 'required_confs': REQUIRED_CONFIRMATIONS, 'gas_price': _gas_price()}
+    return {
+        'from': DEPLOYER,
+        'required_confs': REQUIRED_CONFIRMATIONS,
+        'gas_price': GasNowScalingStrategy("standard", "fast"),
+    }
 
 
 def main():
@@ -52,7 +50,7 @@ def main():
 
     # deploy the token
     token_args = pool_data["lp_constructor"]
-    token = token_deployer.deploy(token_args['name'], token_args['symbol'], 18, 0, _tx_params())
+    token = token_deployer.deploy(token_args['name'], token_args['symbol'], _tx_params())
 
     # deploy the pool
     abi = next(i['inputs'] for i in swap_deployer.abi if i['type'] == "constructor")
