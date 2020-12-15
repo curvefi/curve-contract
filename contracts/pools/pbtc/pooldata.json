@@ -3,7 +3,7 @@
     "swap_address": "0x7F55DDe206dbAD629C080068923b36fe9D6bDBeF",
     "lp_token_address": "0xDE5331AC4B3630f94853Ff322B66407e0D6331E8",
     "zap_address": "0x11F419AdAbbFF8d595E7d5b223eee3863Bb3902C",
-    "gauge_addresses": ["0x6dc22CA4fdAC5Dc2fe9fD0936b60054d5eDe1186"],
+    "gauge_addresses": ["0xbA6D79185CdE2E8D06463222D5529AbB4DE6C586"],
     "lp_contract": "CurveTokenV2",
     "lp_constructor": {
         "symbol": "pBTC/sbtcCRV",
