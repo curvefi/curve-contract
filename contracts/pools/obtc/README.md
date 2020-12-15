@@ -9,10 +9,10 @@
 
 ## Deployments
 
-[`CurveContractV3`](../../tokens/CurveTokenV3.vy): [](https://etherscan.io/address/)
-* [`DepositOBTC`](DepositOBTC.vy): [](https://etherscan.io/address/)
-* [`LiquidityGaugeV2`](../../gauges/LiquidityGaugeV2.vy): [](https://etherscan.io/address/)
-* [`StableSwapOBTC`](StableSwapOBTC.vy): [](https://etherscan.io/address/)
+[`CurveContractV3`](../../tokens/CurveTokenV3.vy): [0x2fE94ea3d5d4a175184081439753DE15AeF9d614](https://etherscan.io/address/0x2fE94ea3d5d4a175184081439753DE15AeF9d614)
+* [`DepositOBTC`](DepositOBTC.vy): [0xd5BCf53e2C81e1991570f33Fa881c49EEa570C8D](https://etherscan.io/address/0xd5BCf53e2C81e1991570f33Fa881c49EEa570C8D)
+* [`LiquidityGaugeV2`](../../gauges/LiquidityGaugeV2.vy): [0x11137B10C210b579405c21A07489e28F3c040AB1](https://etherscan.io/address/0x11137B10C210b579405c21A07489e28F3c040AB1)
+* [`StableSwapOBTC`](StableSwapOBTC.vy): [0xd81dA8D904b52208541Bade1bD6595D8a251F8dd](https://etherscan.io/address/0xd81dA8D904b52208541Bade1bD6595D8a251F8dd)
 
 ## Stablecoins
 

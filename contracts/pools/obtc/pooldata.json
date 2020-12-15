@@ -1,9 +1,9 @@
 {
     "base_pool": "sbtc",
-    "swap_address": "",
-    "lp_token_address": "",
-    "zap_address": "",
-    "gauge_addresses": [""],
+    "swap_address": "0xd81dA8D904b52208541Bade1bD6595D8a251F8dd",
+    "lp_token_address": "0x2fE94ea3d5d4a175184081439753DE15AeF9d614",
+    "zap_address": "0xd5BCf53e2C81e1991570f33Fa881c49EEa570C8D",
+    "gauge_addresses": ["0x11137B10C210b579405c21A07489e28F3c040AB1"],
     "lp_contract": "CurveTokenV3",
     "lp_constructor": {
         "symbol": "oBTC/sbtcCRV",
