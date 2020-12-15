@@ -197,11 +197,11 @@ def get_D(xp: uint256[N_COINS], amp: uint256) -> uint256:
         # Equality with the precision of 1
         if D > Dprev:
             if D - Dprev <= 1:
-                break
+                return D
         else:
             if Dprev - D <= 1:
-                break
-    return D
+                return D
+    raise
 
 
 @view
@@ -373,11 +373,11 @@ def get_y(i: int128, j: int128, x: uint256, xp_: uint256[N_COINS]) -> uint256:
         # Equality with the precision of 1
         if y > y_prev:
             if y - y_prev <= 1:
-                break
+                return y
         else:
             if y_prev - y <= 1:
-                break
-    return y
+                return y
+    raise
 
 
 @view
@@ -620,11 +620,11 @@ def get_y_D(A_: uint256, i: int128, xp: uint256[N_COINS], D: uint256) -> uint256
         # Equality with the precision of 1
         if y > y_prev:
             if y - y_prev <= 1:
-                break
+                return y
         else:
             if y_prev - y <= 1:
-                break
-    return y
+                return y
+    raise
 
 
 @view
