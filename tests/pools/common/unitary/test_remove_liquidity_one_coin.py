@@ -81,3 +81,15 @@ def test_below_zero(alice, swap):
 def test_above_n_coins(alice, swap, wrapped_coins, n_coins):
     with brownie.reverts():
         swap.remove_liquidity_one_coin(1, n_coins, 0, {'from': alice})
+
+
+@pytest.mark.itercoins("idx")
+def test_event(alice, bob, swap, pool_token, idx, wrapped_coins):
+    pool_token.transfer(bob, 10**18, {'from': alice})
+
+    tx = swap.remove_liquidity_one_coin(10**18, idx, 0, {'from': bob})
+
+    event = tx.events["RemoveLiquidityOne"]
+    assert event['provider'] == bob
+    assert event['token_amount'] == 10**18
+    assert event['coin_amount'] == wrapped_coins[idx].balanceOf(bob)
