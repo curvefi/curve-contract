@@ -45,3 +45,14 @@ def test_below_min_amount(alice, swap, initial_amounts, base_amount, n_coins, id
 def test_amount_exceeds_balance(alice, swap, n_coins, base_amount):
     with brownie.reverts():
         swap.remove_liquidity(n_coins * 10**18 * base_amount + 1, [0] * n_coins, {'from': alice})
+
+
+def test_event(alice, bob, swap, wrapped_coins, pool_token, n_coins):
+    pool_token.transfer(bob, 10**18, {'from': alice})
+    tx = swap.remove_liquidity(10**18, [0] * n_coins, {'from': bob})
+
+    event = tx.events['RemoveLiquidity']
+    assert event['provider'] == bob
+    assert event['token_supply'] == pool_token.totalSupply()
+    for coin, amount in zip(wrapped_coins, event['token_amounts']):
+        assert coin.balanceOf(bob) == amount

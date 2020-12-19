@@ -74,3 +74,17 @@ def test_no_totalsupply(alice, swap, pool_token, n_coins):
     swap.remove_liquidity(pool_token.totalSupply(), [0] * n_coins, {'from': alice})
     with brownie.reverts():
         swap.remove_liquidity_imbalance([0] * n_coins, 0, {'from': alice})
+
+
+def test_event(alice, bob, swap, pool_token, wrapped_coins, initial_amounts, n_coins, base_amount):
+    pool_token.transfer(bob, pool_token.balanceOf(alice), {'from': alice})
+    amounts = [i // 5 for i in initial_amounts]
+    max_burn = (n_coins * 10**18 * base_amount)
+
+    tx = swap.remove_liquidity_imbalance(amounts, max_burn, {'from': bob})
+
+    event = tx.events["RemoveLiquidityImbalance"]
+    assert event['provider'] == bob
+    assert event['token_supply'] == pool_token.totalSupply()
+    for coin, amount in zip(wrapped_coins, event['token_amounts']):
+        assert coin.balanceOf(bob) == amount

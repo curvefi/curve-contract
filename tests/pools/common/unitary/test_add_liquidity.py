@@ -56,3 +56,12 @@ def test_min_amount_with_slippage(bob, swap, wrapped_decimals, n_coins):
     amounts[1] = int(amounts[1] * 1.01)
     with brownie.reverts("Slippage screwed you"):
         swap.add_liquidity(amounts, n_coins * 10**18, {'from': bob})
+
+
+def test_event(bob, swap, pool_token, initial_amounts):
+    tx = swap.add_liquidity(initial_amounts, 0, {'from': bob})
+
+    event = tx.events["AddLiquidity"]
+    assert event["provider"] == bob
+    assert event['token_amounts'] == initial_amounts
+    assert event['token_supply'] == pool_token.totalSupply()
