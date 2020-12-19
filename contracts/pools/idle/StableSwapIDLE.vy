@@ -96,7 +96,6 @@ PRECISION_MUL: constant(uint256[N_COINS]) = [1, 1000000000000, 1000000000000]
 
 # fixed constants
 FEE_DENOMINATOR: constant(uint256) = 10 ** 10
-LENDING_PRECISION: constant(uint256) = 10 ** 18
 PRECISION: constant(uint256) = 10 ** 18  # The precision to convert to
 
 MAX_ADMIN_FEE: constant(uint256) = 10 * 10 ** 9
@@ -295,8 +294,7 @@ def get_virtual_price() -> uint256:
     D: uint256 = self.get_D(self._xp(self._stored_rates()), self._A())
     # D is in the units similar to DAI (e.g. converted to precision 1e18)
     # When balanced, D = n * x_u - total virtual value of the portfolio
-    token_supply: uint256 = ERC20(self.lp_token).totalSupply()
-    return D * PRECISION / token_supply
+    return D * PRECISION / ERC20(self.lp_token).totalSupply()
 
 
 @view
@@ -331,10 +329,10 @@ def calc_token_amount(amounts: uint256[N_COINS], is_deposit: bool) -> uint256:
 
 @external
 @nonreentrant('lock')
-def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256, _use_underlying: bool = False) -> uint256:
+def add_liquidity(_amounts: uint256[N_COINS], min_mint_amount: uint256, _use_underlying: bool = False) -> uint256:
     """
     @notice Deposit coins into the pool
-    @param amounts List of amounts of coins to deposit
+    @param _amounts List of amounts of coins to deposit
     @param min_mint_amount Minimum amount of LP tokens to mint from the deposit
     @return Amount of LP tokens received by depositing
     """
@@ -353,8 +351,10 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256, _use_unde
     # Take coins from the sender
     coin: address = ZERO_ADDRESS
     new_balances: uint256[N_COINS] = old_balances
+    amounts: uint256[N_COINS] = empty(uint256[N_COINS])
     for i in range(N_COINS):
-        amount: uint256 = amounts[i]
+        amount: uint256 = _amounts[i]
+
         if token_supply == 0:
             assert amount > 0
         if amount != 0:
@@ -362,10 +362,12 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256, _use_unde
                 coin = self.underlying_coins[i]
             else:
                 coin = self.coins[i]
-                new_balances[i] += amount
+
             ERC20(coin).transferFrom(msg.sender, self, amount)
             if _use_underlying:
-                new_balances[i] += IdleToken(self.coins[i]).mintIdleToken(amount, True, self)
+                amount = IdleToken(self.coins[i]).mintIdleToken(amount, True, self)
+            amounts[i] = amount
+            new_balances[i] += amount
 
     # Invariant after change
     D1: uint256 = self.get_D_mem(rates, new_balances)
@@ -373,32 +375,28 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256, _use_unde
 
     # We need to recalculate the invariant accounting for fees
     # to calculate fair user's share
-    D2: uint256 = D1
     fees: uint256[N_COINS] = empty(uint256[N_COINS])
+    mint_amount: uint256 = 0
     if token_supply != 0:
         # Only account for fees if we are not the first to deposit
         _fee: uint256 = self.fee * N_COINS / (4 * (N_COINS - 1))
         _admin_fee: uint256 = self.admin_fee
+        difference: uint256 = 0
         for i in range(N_COINS):
+            new_balance: uint256 = new_balances[i]
             ideal_balance: uint256 = D1 * old_balances[i] / D0
-            difference: uint256 = 0
-            if ideal_balance > new_balances[i]:
-                difference = ideal_balance - new_balances[i]
+            if ideal_balance > new_balance:
+                difference = ideal_balance - new_balance
             else:
-                difference = new_balances[i] - ideal_balance
+                difference = new_balance - ideal_balance
             fees[i] = _fee * difference / FEE_DENOMINATOR
-            self.balances[i] = new_balances[i] - (fees[i] * _admin_fee / FEE_DENOMINATOR)
+            self.balances[i] = new_balance - (fees[i] * _admin_fee / FEE_DENOMINATOR)
             new_balances[i] -= fees[i]
-        D2 = self.get_D_mem(rates, new_balances)
+        D2: uint256 = self.get_D_mem(rates, new_balances)
+        mint_amount = token_supply * (D2 - D0) / D0
     else:
         self.balances = new_balances
-
-    # Calculate, how much pool tokens to mint
-    mint_amount: uint256 = 0
-    if token_supply == 0:
         mint_amount = D1  # Take the dust if there was any
-    else:
-        mint_amount = token_supply * (D2 - D0) / D0
 
     assert mint_amount >= min_mint_amount, "Slippage screwed you"
 
@@ -466,8 +464,8 @@ def get_dy(i: int128, j: int128, dx: uint256) -> uint256:
     x: uint256 = xp[i] + dx * rates[i] / PRECISION
     y: uint256 = self.get_y(i, j, x, xp)
     dy: uint256 = xp[j] - y
-    _fee: uint256 = self.fee * dy / FEE_DENOMINATOR
-    return (dy - _fee) * PRECISION / rates[j]
+    fee: uint256 = self.fee * dy / FEE_DENOMINATOR
+    return (dy - fee) * PRECISION / rates[j]
 
 
 @view
@@ -545,7 +543,7 @@ def exchange(i: int128, j: int128, dx: uint256, min_dy: uint256) -> uint256:
     @return Actual amount of `j` received
     """
     dy: uint256 = self._exchange(i, j, dx)
-    assert dy >= min_dy, "Exchange resulted in fewer coins than expected"
+    assert dy >= min_dy, "Too few coins in result"
 
     ERC20(self.coins[i]).transferFrom(msg.sender, self, dx)
     ERC20(self.coins[j]).transfer(msg.sender, dy)
@@ -574,7 +572,7 @@ def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256) -> u
     dy_: uint256 = self._exchange(i, j, dx_)
 
     dy: uint256 = IdleToken(self.coins[j]).redeemIdleToken(dy_)
-    assert dy >= min_dy, "Exchange resulted in fewer coins than expected"
+    assert dy >= min_dy, "Too few coins in result"
 
     ERC20(self.underlying_coins[j]).transfer(msg.sender, dy)
 
@@ -601,14 +599,16 @@ def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS], _use_under
         _balance: uint256 = self.balances[i]
         value: uint256 = _balance * _amount / total_supply
         self.balances[i] = _balance - value
+        amounts[i] = value
+
+        coin: address = self.coins[i]
         if _use_underlying:
-            value = IdleToken(self.coins[i]).redeemIdleToken(value)
+            value = IdleToken(coin).redeemIdleToken(value)
             ERC20(self.underlying_coins[i]).transfer(msg.sender, value)
         else:
-            ERC20(self.coins[i]).transfer(msg.sender, value)
+            ERC20(coin).transfer(msg.sender, value)
 
-        assert value >= min_amounts[i], "Withdrawal resulted in fewer coins than expected"
-        amounts[i] = value
+        assert value >= min_amounts[i], "Too few coins in result"
 
     CurveToken(_lp_token).burnFrom(msg.sender, _amount)  # Will raise if not enough
 
@@ -635,11 +635,12 @@ def remove_liquidity_imbalance(_amounts: uint256[N_COINS], max_burn_amount: uint
     new_balances: uint256[N_COINS] = old_balances
     amounts: uint256[N_COINS] = _amounts
 
+    precisions: uint256[N_COINS] = PRECISION_MUL
     for i in range(N_COINS):
         amount: uint256 = amounts[i]
         if amount > 0:
             if _use_underlying:
-                amount = amount * LENDING_PRECISION / rates[i]
+                amount = amount * precisions[i] * PRECISION / rates[i]
                 amounts[i] = amount
             new_balances[i] -= amount
 
@@ -660,9 +661,10 @@ def remove_liquidity_imbalance(_amounts: uint256[N_COINS], max_burn_amount: uint
             difference = ideal_balance - new_balance
         else:
             difference = new_balance - ideal_balance
-        fees[i] = _fee * difference / FEE_DENOMINATOR
-        self.balances[i] = new_balance - (fees[i] * _admin_fee / FEE_DENOMINATOR)
-        new_balances[i] = new_balance - fees[i]
+        coin_fee: uint256 = _fee * difference / FEE_DENOMINATOR
+        self.balances[i] = new_balance - (coin_fee * _admin_fee / FEE_DENOMINATOR)
+        new_balances[i] -= coin_fee
+        fees[i] = coin_fee
     D2: uint256 = self.get_D_mem(rates, new_balances)
 
     token_amount: uint256 = (D0 - D2) * token_supply / D0
@@ -672,12 +674,13 @@ def remove_liquidity_imbalance(_amounts: uint256[N_COINS], max_burn_amount: uint
     CurveToken(_lp_token).burnFrom(msg.sender, token_amount)  # dev: insufficient funds
     for i in range(N_COINS):
         amount: uint256 = amounts[i]
-        if amounts[i] != 0:
+        if amount != 0:
+            coin: address = self.coins[i]
             if _use_underlying:
-                amount = IdleToken(self.coins[i]).redeemIdleToken(amount)
+                amount = IdleToken(coin).redeemIdleToken(amount)
                 ERC20(self.underlying_coins[i]).transfer(msg.sender, amount)
             else:
-                ERC20(self.coins[i]).transfer(msg.sender, amount)
+                ERC20(coin).transfer(msg.sender, amount)
 
     log RemoveLiquidityImbalance(msg.sender, amounts, fees, D1, token_supply - token_amount)
 
@@ -733,7 +736,7 @@ def get_y_D(A_: uint256, i: int128, xp: uint256[N_COINS], D: uint256) -> uint256
 
 @view
 @internal
-def _calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> (uint256, uint256):
+def _calc_withdraw_one_coin(_token_amount: uint256, i: int128, _use_underlying: bool) -> (uint256, uint256):
     # First, need to calculate
     # * Get current D
     # * Solve Eqn against y_i for D - _token_amount
@@ -762,21 +765,24 @@ def _calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> (uint256, uint
 
     dy: uint256 = xp_reduced[i] - self.get_y_D(amp, i, xp_reduced, D1)
     dy = (dy - 1) * PRECISION / rate  # Withdraw less to account for rounding errors
-    dy_0: uint256 = (xp[i] - new_y) * PRECISION / rate   # w/o fees
+    dy_fee: uint256 = ((xp[i] - new_y) * PRECISION / rate) - dy
+    if _use_underlying:
+        precisions: uint256[N_COINS] = PRECISION_MUL
+        dy = dy * rate / precisions[i] / PRECISION
 
-    return dy, dy_0 - dy
+    return dy, dy_fee
 
 
 @view
 @external
-def calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> uint256:
+def calc_withdraw_one_coin(_token_amount: uint256, i: int128, _use_underlying: bool = False) -> uint256:
     """
     @notice Calculate the amount received when withdrawing a single coin
     @param _token_amount Amount of LP tokens to burn in the withdrawal
     @param i Index value of the coin to withdraw
     @return Amount of coin received
     """
-    return self._calc_withdraw_one_coin(_token_amount, i)[0]
+    return self._calc_withdraw_one_coin(_token_amount, i, _use_underlying)[0]
 
 
 @external
@@ -793,17 +799,19 @@ def remove_liquidity_one_coin(_token_amount: uint256, i: int128, _min_amount: ui
 
     dy: uint256 = 0
     dy_fee: uint256 = 0
-    dy, dy_fee = self._calc_withdraw_one_coin(_token_amount, i)
-    assert dy >= _min_amount, "Not enough coins removed"
+    dy, dy_fee = self._calc_withdraw_one_coin(_token_amount, i, False)
+    amount: uint256 = dy
 
     self.balances[i] -= (dy + dy_fee * self.admin_fee / FEE_DENOMINATOR)
     CurveToken(self.lp_token).burnFrom(msg.sender, _token_amount)  # dev: insufficient funds
+    coin: address = self.coins[i]
     if _use_underlying:
-        dy = IdleToken(self.coins[i]).redeemIdleToken(dy)
-        ERC20(self.underlying_coins[i]).transfer(msg.sender, dy)
+        amount = IdleToken(coin).redeemIdleToken(dy)
+        ERC20(self.underlying_coins[i]).transfer(msg.sender, amount)
     else:
-        ERC20(self.coins[i]).transfer(msg.sender, dy)
+        ERC20(coin).transfer(msg.sender, amount)
 
+    assert amount >= _min_amount, "Not enough coins removed"
     log RemoveLiquidityOne(msg.sender, _token_amount, dy)
 
     return dy
@@ -927,10 +935,10 @@ def withdraw_admin_fees():
     assert msg.sender == self.owner  # dev: only owner
 
     for i in range(N_COINS):
-        c: address = self.coins[i]
-        value: uint256 = ERC20(c).balanceOf(self) - self.balances[i]
+        coin: address = self.coins[i]
+        value: uint256 = ERC20(coin).balanceOf(self) - self.balances[i]
         if value > 0:
-            ERC20(c).transfer(msg.sender, value)
+            ERC20(coin).transfer(msg.sender, value)
 
 
 @external
