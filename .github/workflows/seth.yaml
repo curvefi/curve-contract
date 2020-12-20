@@ -1,18 +1,18 @@
-name: eth
+name: seth
 
 on:
   pull_request:
     paths:
     - 'tests/**/*.py'
-    - 'contracts/pools/eth/**.vy'
+    - 'contracts/pools/seth/**.vy'
   push:
     paths:
     - 'tests/**/*.py'
-    - 'contracts/pools/eth/**.vy'
+    - 'contracts/pools/seth/**.vy'
 
 
 env:
-  pool: 'eth'
+  pool: 'seth'
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   NODE_OPTIONS: --max_old_space_size=4096
 
