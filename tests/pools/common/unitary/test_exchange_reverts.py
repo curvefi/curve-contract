@@ -1,9 +1,8 @@
 import brownie
 import pytest
+from brownie import ETH_ADDRESS
 
 pytestmark = pytest.mark.usefixtures("add_initial_liquidity", "approve_bob")
-
-ETH_ADDRESS = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
 
 
 @pytest.mark.itercoins("sending", "receiving")
@@ -63,13 +62,13 @@ def test_j_above_n_coins(bob, swap, idx):
         swap.exchange(0, idx, 0, 0, {'from': bob})
 
 
-@pytest.mark.skip_pool("eth")
+@pytest.mark.skip_pool("seth")
 def test_nonpayable(swap, bob):
     with brownie.reverts():
         swap.exchange(0, 1, 0, 0, {'from': bob, 'value': "1 ether"})
 
 
-@pytest.mark.target_pool("eth")
+@pytest.mark.target_pool("seth")
 def test_incorrect_eth_amount(swap, bob):
     with brownie.reverts():
         swap.exchange(1, 0, 0, 0, {'from': bob, 'value': "1 ether"})
