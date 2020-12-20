@@ -1,9 +1,8 @@
 import brownie
 import pytest
+from brownie import ETH_ADDRESS
 
 pytestmark = pytest.mark.usefixtures("add_initial_liquidity", "mint_bob", "approve_bob")
-
-ETH_ADDRESS = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
 
 
 def test_add_liquidity(bob, swap, wrapped_coins, pool_token, initial_amounts, base_amount, n_coins):
@@ -78,8 +77,9 @@ def test_min_amount_with_slippage(bob, swap, wrapped_decimals, wrapped_coins, n_
         swap.add_liquidity(amounts, n_coins * 10**18, {'from': bob, 'value': value})
 
 
-def test_event(bob, swap, pool_token, initial_amounts):
-    tx = swap.add_liquidity(initial_amounts, 0, {'from': bob})
+def test_event(bob, swap, pool_token, initial_amounts, wrapped_coins):
+    value = initial_amounts[0] if ETH_ADDRESS in wrapped_coins else 0
+    tx = swap.add_liquidity(initial_amounts, 0, {'from': bob, 'value': value})
 
     event = tx.events["AddLiquidity"]
     assert event["provider"] == bob

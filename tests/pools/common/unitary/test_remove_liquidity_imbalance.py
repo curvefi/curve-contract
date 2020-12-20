@@ -1,9 +1,8 @@
 import brownie
 import pytest
+from brownie import ETH_ADDRESS
 
 pytestmark = pytest.mark.usefixtures("add_initial_liquidity")
-
-ETH_ADDRESS = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
 
 
 @pytest.mark.parametrize("divisor", [2, 5, 10])
@@ -101,4 +100,7 @@ def test_event(alice, bob, swap, pool_token, wrapped_coins, initial_amounts, n_c
     assert event['provider'] == bob
     assert event['token_supply'] == pool_token.totalSupply()
     for coin, amount in zip(wrapped_coins, event['token_amounts']):
-        assert coin.balanceOf(bob) == amount
+        if coin == ETH_ADDRESS:
+            assert tx.internal_transfers[0]['value'] == amount
+        else:
+            assert coin.balanceOf(bob) == amount

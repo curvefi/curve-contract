@@ -1,12 +1,12 @@
 import brownie
 import pytest
+from brownie import ETH_ADDRESS
 
 pytestmark = [
     pytest.mark.skip_pool("busd", "compound", "pax", "susd", "usdt", "y"),
     pytest.mark.usefixtures("add_initial_liquidity"),
 ]
 
-ETH_ADDRESS = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
 
 @pytest.mark.itercoins("idx")
 @pytest.mark.parametrize("rate_mod", [0.9, 0.99, 1.01, 1.1])
@@ -100,4 +100,9 @@ def test_event(alice, bob, swap, pool_token, idx, wrapped_coins):
     event = tx.events["RemoveLiquidityOne"]
     assert event['provider'] == bob
     assert event['token_amount'] == 10**18
-    assert event['coin_amount'] == wrapped_coins[idx].balanceOf(bob)
+
+    coin = wrapped_coins[idx]
+    if coin == ETH_ADDRESS:
+        assert tx.internal_transfers[0]['value'] == event['coin_amount']
+    else:
+        assert coin.balanceOf(bob) == event['coin_amount']
