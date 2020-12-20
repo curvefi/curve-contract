@@ -1,12 +1,11 @@
 import pytest
 import requests
 
-from brownie import Contract, ERC20Mock, ERC20MockNoReturn
+from brownie import Contract, ERC20Mock, ERC20MockNoReturn, ETH_ADDRESS, ZERO_ADDRESS
 from brownie.convert import to_address
 
 from conftest import WRAPPED_COIN_METHODS
 
-ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 
 _holders = {}
 
@@ -96,12 +95,16 @@ class _MintableTestToken(Contract):
                 continue
 
             balance = self.balanceOf(address)
-            if amount > balance:
-                self.transfer(target, balance, {'from': address})
-                amount -= balance
-            else:
-                self.transfer(target, amount, {'from': address})
-                return
+            try:
+                if amount > balance:
+                    self.transfer(target, balance, {'from': address})
+                    amount -= balance
+                else:
+                    self.transfer(target, amount, {'from': address})
+                    return
+            except Exception:
+                # sometimes tokens just don't want to be stolen
+                pass
 
         raise ValueError(f"Insufficient tokens available to mint {self.name()}")
 
@@ -153,11 +156,14 @@ def _underlying(alice, project, pool_data, is_forked, base_pool_token):
 
     if is_forked:
         for data in pool_data['coins']:
-            coins.append(_MintableTestToken(data['underlying_address'], pool_data))
+            if data['underlying_address'] == ETH_ADDRESS:
+                coins.append(ETH_ADDRESS)
+            else:
+                coins.append(_MintableTestToken(data['underlying_address'], pool_data))
     else:
         for i, coin_data in enumerate(pool_data['coins']):
-            if coin_data.get("eth"):
-                coins.append("0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE")
+            if coin_data.get('underlying_address') == ETH_ADDRESS:
+                coins.append(ETH_ADDRESS)
                 continue
             if coin_data.get("base_pool_token"):
                 coins.append(base_pool_token)
