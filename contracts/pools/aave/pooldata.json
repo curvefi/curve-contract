@@ -1,6 +1,20 @@
 {
-    "lp_contract": "CurveTokenV2",
+    "lp_contract": "CurveTokenV3",
     "wrapped_contract": "ATokenMock",
+    "swap_address": "0xDeBF20617708857ebe4F679508E7b7863a8A8EeE",
+    "lp_token_address": "0xFd2a8fA60Abd58Efe3EeE34dd494cD491dC14900",
+    "gauge_addresses": ["0xd662908ADA2Ea1916B3318327A97eB18aD588b5d"],
+    "lp_constructor": {
+        "symbol": "a3CRV",
+        "name": "Curve.fi aDAI/aUSDC/aUSDT"
+    },
+    "swap_constructor": {
+        "_A": 200,
+        "_fee": 4000000,
+        "_admin_fee": 5000000000,
+        "_offpeg_fee_multiplier": 20000000000,
+        "_aave_lending_pool": "0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9"
+    },
     "coins": [
         {
             "name": "DAI",
