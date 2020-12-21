@@ -324,11 +324,16 @@ def calc_token_amount(amounts: uint256[N_COINS], is_deposit: bool) -> uint256:
 
 @external
 @nonreentrant('lock')
-def add_liquidity(_amounts: uint256[N_COINS], min_mint_amount: uint256, _use_underlying: bool = False) -> uint256:
+def add_liquidity(
+    _amounts: uint256[N_COINS],
+    _min_mint_amount: uint256,
+    _use_underlying: bool = False
+) -> uint256:
     """
     @notice Deposit coins into the pool
     @param _amounts List of amounts of coins to deposit
-    @param min_mint_amount Minimum amount of LP tokens to mint from the deposit
+    @param _min_mint_amount Minimum amount of LP tokens to mint from the deposit
+    @param _use_underlying If True, deposit underlying assets instead of idleTokens
     @return Amount of LP tokens received by depositing
     """
     assert not self.is_killed
@@ -394,7 +399,7 @@ def add_liquidity(_amounts: uint256[N_COINS], min_mint_amount: uint256, _use_und
         self.balances = new_balances
         mint_amount = D1  # Take the dust if there was any
 
-    assert mint_amount >= min_mint_amount, "Slippage screwed you"
+    assert mint_amount >= _min_mint_amount, "Slippage screwed you"
 
     # Mint pool tokens
     CurveToken(_lp_token).mint(msg.sender, mint_amount)
@@ -586,12 +591,17 @@ def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256) -> u
 
 @external
 @nonreentrant('lock')
-def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS], _use_underlying: bool = False) -> uint256[N_COINS]:
+def remove_liquidity(
+    _amount: uint256,
+    _min_amounts: uint256[N_COINS],
+    _use_underlying: bool = False
+) -> uint256[N_COINS]:
     """
     @notice Withdraw coins from the pool
     @dev Withdrawal amounts are based on current deposit ratios
     @param _amount Quantity of LP tokens to burn in the withdrawal
-    @param min_amounts Minimum amounts of underlying coins to receive
+    @param _min_amounts Minimum amounts of underlying coins to receive
+    @param _use_underlying If True, withdraw underlying assets instead of idleTokens
     @return List of amounts of coins that were withdrawn
     """
     _lp_token: address = self.lp_token
@@ -611,7 +621,7 @@ def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS], _use_under
         else:
             ERC20(coin).transfer(msg.sender, value)
 
-        assert value >= min_amounts[i], "Too few coins in result"
+        assert value >= _min_amounts[i], "Too few coins in result"
 
     CurveToken(_lp_token).burnFrom(msg.sender, _amount)  # Will raise if not enough
 
@@ -622,11 +632,16 @@ def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS], _use_under
 
 @external
 @nonreentrant('lock')
-def remove_liquidity_imbalance(_amounts: uint256[N_COINS], max_burn_amount: uint256, _use_underlying: bool = False) -> uint256:
+def remove_liquidity_imbalance(
+    _amounts: uint256[N_COINS],
+    _max_burn_amount: uint256,
+    _use_underlying: bool = False
+) -> uint256:
     """
     @notice Withdraw coins from the pool in an imbalanced amount
     @param _amounts List of amounts of underlying coins to withdraw
-    @param max_burn_amount Maximum amount of LP token to burn in the withdrawal
+    @param _max_burn_amount Maximum amount of LP token to burn in the withdrawal
+    @param _use_underlying If True, withdraw underlying assets instead of idleTokens
     @return Actual amount of the LP token burned in the withdrawal
     """
     assert not self.is_killed
@@ -671,7 +686,7 @@ def remove_liquidity_imbalance(_amounts: uint256[N_COINS], max_burn_amount: uint
     token_supply: uint256 = ERC20(lp_token).totalSupply()
     token_amount: uint256 = (D0 - D2) * token_supply / D0
     assert token_amount != 0
-    assert token_amount <= max_burn_amount, "Slippage screwed you"
+    assert token_amount <= _max_burn_amount, "Slippage screwed you"
 
     CurveToken(lp_token).burnFrom(msg.sender, token_amount)  # dev: insufficient funds
     for i in range(N_COINS):
@@ -791,12 +806,18 @@ def calc_withdraw_one_coin(_token_amount: uint256, i: int128, _use_underlying: b
 
 @external
 @nonreentrant('lock')
-def remove_liquidity_one_coin(_token_amount: uint256, i: int128, _min_amount: uint256, _use_underlying: bool = False) -> uint256:
+def remove_liquidity_one_coin(
+    _token_amount: uint256,
+    i: int128,
+    _min_amount: uint256,
+    _use_underlying: bool = False
+) -> uint256:
     """
     @notice Withdraw a single coin from the pool
     @param _token_amount Amount of LP tokens to burn in the withdrawal
     @param i Index value of the coin to withdraw
     @param _min_amount Minimum amount of coin to receive
+    @param _use_underlying If True, withdraw underlying assets instead of idleTokens
     @return Amount of coin received
     """
     assert not self.is_killed  # dev: is killed
