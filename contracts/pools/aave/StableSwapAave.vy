@@ -252,7 +252,7 @@ def dynamic_fee(i: int128, j: int128) -> uint256:
 
 @view
 @external
-def balances(i: int128) -> uint256:
+def balances(i: uint256) -> uint256:
     """
     @notice Get the current balance of a coin within the
             pool, less the accrued admin fees
