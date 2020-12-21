@@ -144,6 +144,7 @@ def __init__(
     _A: uint256,
     _fee: uint256,
     _admin_fee: uint256,
+    _offpeg_fee_multiplier: uint256,
 ):
     """
     @notice Contract constructor
@@ -155,6 +156,7 @@ def __init__(
     @param _fee Swap fee expressed as an integer with 1e10 precision
     @param _admin_fee Percentage of fee taken as an admin fee,
                       expressed as an integer with 1e10 precision
+    @param _offpeg_fee_multiplier Offpeg fee multiplier
     """
     for i in range(N_COINS):
         assert _coins[i] != ZERO_ADDRESS
@@ -166,6 +168,7 @@ def __init__(
     self.future_A = _A * A_PRECISION
     self.fee = _fee
     self.admin_fee = _admin_fee
+    self.offpeg_fee_multiplier = _offpeg_fee_multiplier
     self.owner = msg.sender
     self.kill_deadline = block.timestamp + KILL_DEADLINE_DT
     self.lp_token = _pool_token
