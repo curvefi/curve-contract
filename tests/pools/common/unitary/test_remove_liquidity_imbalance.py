@@ -1,5 +1,6 @@
 import brownie
 import pytest
+from brownie import ETH_ADDRESS
 
 pytestmark = pytest.mark.usefixtures("add_initial_liquidity")
 
@@ -11,8 +12,12 @@ def test_remove_balanced(alice, swap, wrapped_coins, pool_token, divisor, initia
     swap.remove_liquidity_imbalance(amounts, max_burn + 1, {'from': alice})
 
     for i, coin in enumerate(wrapped_coins):
-        assert coin.balanceOf(alice) == amounts[i]
-        assert coin.balanceOf(swap) == initial_amounts[i] - amounts[i]
+        if coin == ETH_ADDRESS:
+            assert alice.balance() == amounts[i]
+            assert swap.balance() == initial_amounts[i] - amounts[i]
+        else:
+            assert coin.balanceOf(alice) == amounts[i]
+            assert coin.balanceOf(swap) == initial_amounts[i] - amounts[i]
 
     assert abs(pool_token.balanceOf(alice) - (n_coins * 10**18 * base_amount - max_burn)) <= 1
     assert abs(pool_token.totalSupply() - (n_coins * 10**18 * base_amount - max_burn)) <= 1
@@ -26,8 +31,12 @@ def test_remove_some(alice, swap, wrapped_coins, pool_token, idx, initial_amount
     swap.remove_liquidity_imbalance(amounts, n_coins*10**18 * base_amount, {'from': alice})
 
     for i, coin in enumerate(wrapped_coins):
-        assert coin.balanceOf(alice) == amounts[i]
-        assert coin.balanceOf(swap) == initial_amounts[i] - amounts[i]
+        if coin == ETH_ADDRESS:
+            assert alice.balance() == amounts[i]
+            assert swap.balance() == initial_amounts[i] - amounts[i]
+        else:
+            assert coin.balanceOf(alice) == amounts[i]
+            assert coin.balanceOf(swap) == initial_amounts[i] - amounts[i]
 
     actual_balance = pool_token.balanceOf(alice)
     actual_total_supply = pool_token.totalSupply()
@@ -45,8 +54,12 @@ def test_remove_one(alice, swap, wrapped_coins, pool_token, idx, initial_amounts
     swap.remove_liquidity_imbalance(amounts, n_coins*10**18 * base_amount, {'from': alice})
 
     for i, coin in enumerate(wrapped_coins):
-        assert coin.balanceOf(alice) == amounts[i]
-        assert coin.balanceOf(swap) == initial_amounts[i] - amounts[i]
+        if coin == ETH_ADDRESS:
+            assert alice.balance() == amounts[i]
+            assert swap.balance() == initial_amounts[i] - amounts[i]
+        else:
+            assert coin.balanceOf(alice) == amounts[i]
+            assert coin.balanceOf(swap) == initial_amounts[i] - amounts[i]
 
     actual_balance = pool_token.balanceOf(alice)
     actual_total_supply = pool_token.totalSupply()
@@ -87,4 +100,7 @@ def test_event(alice, bob, swap, pool_token, wrapped_coins, initial_amounts, n_c
     assert event['provider'] == bob
     assert event['token_supply'] == pool_token.totalSupply()
     for coin, amount in zip(wrapped_coins, event['token_amounts']):
-        assert coin.balanceOf(bob) == amount
+        if coin == ETH_ADDRESS:
+            assert tx.internal_transfers[0]['value'] == amount
+        else:
+            assert coin.balanceOf(bob) == amount

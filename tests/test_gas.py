@@ -1,3 +1,4 @@
+from brownie import ETH_ADDRESS
 import itertools
 import pytest
 
@@ -21,14 +22,19 @@ def test_swap_gas(
 ):
 
     # add liquidity balanced
-    swap.add_liquidity([i//2 for i in initial_amounts], 0, {'from': alice})
+    amounts = [i//2 for i in initial_amounts]
+    value = amounts[0] if ETH_ADDRESS in wrapped_coins else 0
+    swap.add_liquidity(amounts, 0, {'from': alice, 'value': value})
     chain.sleep(3600)
 
     # add liquidity imbalanced
     for idx in range(n_coins):
         amounts = [i // 10 for i in initial_amounts]
         amounts[idx] = 0
-        swap.add_liquidity(amounts, 0, {'from': alice})
+        value = 0
+        if ETH_ADDRESS in wrapped_coins:
+            value = amounts[0]
+        swap.add_liquidity(amounts, 0, {'from': alice, 'value': value})
         chain.sleep(3600)
 
     # perform swaps between each coin
@@ -37,12 +43,15 @@ def test_swap_gas(
 
         # retain a balance of the sent coin and start with 0 balance of receiving coin
         # this is the least gas-efficient method :)
-        wrapped_coins[send]._mint_for_testing(bob, amount+1, {'from': bob})
-        recv_balance = wrapped_coins[recv].balanceOf(bob)
-        if recv_balance > 0:
-            wrapped_coins[recv].transfer(alice, recv_balance, {'from': bob})
+        if wrapped_coins[send] != ETH_ADDRESS:
+            wrapped_coins[send]._mint_for_testing(bob, amount+1, {'from': bob})
+        if wrapped_coins[recv] != ETH_ADDRESS:
+            recv_balance = wrapped_coins[recv].balanceOf(bob)
+            if recv_balance > 0:
+                wrapped_coins[recv].transfer(alice, recv_balance, {'from': bob})
 
-        swap.exchange(send, recv, amount, 0, {'from': bob})
+        value = 0 if wrapped_coins[send] != ETH_ADDRESS else amount
+        swap.exchange(send, recv, amount, 0, {'from': bob, 'value': value})
         chain.sleep(3600)
 
     # perform swaps between each underlying coin

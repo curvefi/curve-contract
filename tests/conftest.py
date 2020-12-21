@@ -216,6 +216,7 @@ def pytest_collection_modifyitems(config, items):
         for marker in item.iter_markers(name="skip_pool"):
             if params["pool_data"] in marker.args:
                 items.remove(item)
+                break
 
         if item not in items:
             continue

@@ -1,5 +1,6 @@
 import brownie
 import pytest
+from brownie import ETH_ADDRESS
 
 pytestmark = [
     pytest.mark.skip_pool("busd", "compound", "pax", "susd", "usdt", "y"),
@@ -24,10 +25,12 @@ def test_amount_received(chain, alice, swap, wrapped_coins, wrapped_decimals, id
 
     swap.remove_liquidity_one_coin(10**18, idx, 0, {'from': alice})
 
+    balance = wrapped.balanceOf(alice) if wrapped != ETH_ADDRESS else alice.balance()
+
     if rate_mod < 1:
-        assert 10**decimals <= wrapped.balanceOf(alice) < 10**decimals / rate_mod
+        assert 10**decimals <= balance < 10**decimals / rate_mod
     else:
-        assert 10**decimals // rate_mod <= wrapped.balanceOf(alice) <= 10**decimals
+        assert 10**decimals // rate_mod <= balance <= 10**decimals
 
 
 @pytest.mark.itercoins("idx")
@@ -42,7 +45,7 @@ def test_lp_token_balance(alice, swap, pool_token, idx, divisor, n_coins, base_a
 
 @pytest.mark.itercoins("idx")
 @pytest.mark.parametrize("rate_mod", [0.9, 1.1])
-def test_expected_vs_actual(chain, alice, swap, wrapped_coins, pool_token, idx, rate_mod):
+def test_expected_vs_actual(chain, alice, swap, wrapped_coins, pool_token, n_coins, idx, rate_mod, base_amount):
     amount = pool_token.balanceOf(alice) // 10
     wrapped = wrapped_coins[idx]
 
@@ -55,7 +58,12 @@ def test_expected_vs_actual(chain, alice, swap, wrapped_coins, pool_token, idx, 
     expected = swap.calc_withdraw_one_coin(amount, idx)
     swap.remove_liquidity_one_coin(amount, idx, 0, {'from': alice})
 
-    assert wrapped_coins[idx].balanceOf(alice) == expected
+    if wrapped_coins[idx] == ETH_ADDRESS:
+        assert alice.balance() == expected
+    else:
+        assert wrapped_coins[idx].balanceOf(alice) == expected
+
+    assert pool_token.balanceOf(alice) == n_coins * 10**18 * base_amount - amount
 
 
 @pytest.mark.itercoins("idx")
@@ -92,4 +100,9 @@ def test_event(alice, bob, swap, pool_token, idx, wrapped_coins):
     event = tx.events["RemoveLiquidityOne"]
     assert event['provider'] == bob
     assert event['token_amount'] == 10**18
-    assert event['coin_amount'] == wrapped_coins[idx].balanceOf(bob)
+
+    coin = wrapped_coins[idx]
+    if coin == ETH_ADDRESS:
+        assert tx.internal_transfers[0]['value'] == event['coin_amount']
+    else:
+        assert coin.balanceOf(bob) == event['coin_amount']

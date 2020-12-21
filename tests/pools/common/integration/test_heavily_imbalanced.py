@@ -1,5 +1,5 @@
-
 import pytest
+from brownie import ETH_ADDRESS
 
 pytestmark = pytest.mark.usefixtures("add_initial_liquidity", "mint_bob", "approve_bob")
 
@@ -12,6 +12,9 @@ def test_imbalanced_swaps(alice, bob, swap, wrapped_coins, initial_amounts, n_co
     # deposit 1,000x the initial amount in a single asset, leaving the pool ~99.9% imbalanced
     amounts = [0] * n_coins
     amounts[idx] = initial_amounts[idx] * 1000
+    if wrapped_coins[idx] == ETH_ADDRESS:
+        pytest.skip()
+        swap.add_liquidity(amounts, 0, {'from': alice, 'value': amounts[idx]})
     wrapped_coins[idx]._mint_for_testing(alice, amounts[idx], {'from': alice})
     swap.add_liquidity(amounts, 0, {'from': alice})
 
@@ -25,6 +28,6 @@ def test_imbalanced_swaps(alice, bob, swap, wrapped_coins, initial_amounts, n_co
     # now we go the other direction, swaps where the output asset is the imbalanced one
     # lucky bob is about to get rich!
     for i in swap_indexes:
-        if i == idx:
-            continue
-        swap.exchange(i, idx, initial_amounts[i], 0, {'from': bob})
+        amount = initial_amounts[i]
+        value = 0 if wrapped_coins[i] != ETH_ADDRESS else amount
+        swap.exchange(i, idx, amount, 0, {'from': bob, 'value': value})
