@@ -134,11 +134,13 @@ KILL_DEADLINE_DT: constant(uint256) = 2 * 30 * 86400
 
 reward_tokens: public(address[8])
 reward_claimant: public(address)
+reward_admin: public(address)
 
 
 @external
 def __init__(
     _owner: address,
+    _reward_admin: address,
     _coins: address[N_COINS],
     _underlying_coins: address[N_COINS],
     _pool_token: address,
@@ -149,6 +151,7 @@ def __init__(
     """
     @notice Contract constructor
     @param _owner Contract owner address
+    @param _reward_admin Admin address capable of modifying reward tokens
     @param _coins Addresses of ERC20 contracts of wrapped coins
     @param _underlying_coins Addresses of ERC20 contracts of underlying coins
     @param _pool_token Address of the token representing LP share
@@ -180,6 +183,7 @@ def __init__(
     self.fee = _fee
     self.admin_fee = _admin_fee
     self.owner = _owner
+    self.reward_admin = _reward_admin
     self.kill_deadline = block.timestamp + KILL_DEADLINE_DT
     self.lp_token = _pool_token
 
@@ -1003,13 +1007,19 @@ def claim_rewards() -> bool:
 
 @external
 def set_reward_claimant(_reward_claimant: address):
-    assert msg.sender == self.owner
+    assert msg.sender == self.owner  # dev: only owner
     self.reward_claimant = _reward_claimant
 
 
 @external
+def set_reward_admin(_reward_admin: address):
+    assert msg.sender == self.owner  # dev: only owner
+    self.reward_admin = _reward_admin
+
+
+@external
 def set_rewards(_rewards: address[8]):
-    assert msg.sender == self.owner
+    assert msg.sender in [self.owner, self.reward_admin]  # dev: only owner
 
     coins: address[N_COINS] = self.coins
     for i in range(8):
@@ -1017,7 +1027,6 @@ def set_rewards(_rewards: address[8]):
         if token == ZERO_ADDRESS:
             if self.reward_tokens[i] == ZERO_ADDRESS:
                 break
-            self.reward_tokens[i] = ZERO_ADDRESS
-            continue
-        assert token not in coins
+        else:
+            assert token not in coins  # dev: pool coin
         self.reward_tokens[i] = token
