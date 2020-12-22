@@ -18,6 +18,7 @@ def _swap(project, alice, underlying, wrapped, pool_token, pool_data, swap_mock,
         '_offpeg_fee_multiplier': 0,
         '_owner': alice,
         '_reward_admin': alice,
+        '_reward_claimant': alice,
         '_y_pool': swap_mock,
         '_aave_lending_pool': aave_lending_pool,
     }
