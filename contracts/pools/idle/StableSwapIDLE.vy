@@ -141,6 +141,7 @@ reward_admin: public(address)
 def __init__(
     _owner: address,
     _reward_admin: address,
+    _reward_claimant: address,
     _coins: address[N_COINS],
     _underlying_coins: address[N_COINS],
     _pool_token: address,
@@ -152,6 +153,7 @@ def __init__(
     @notice Contract constructor
     @param _owner Contract owner address
     @param _reward_admin Admin address capable of modifying reward tokens
+    @param _reward_claimant Address capable of claiming reward tokens
     @param _coins Addresses of ERC20 contracts of wrapped coins
     @param _underlying_coins Addresses of ERC20 contracts of underlying coins
     @param _pool_token Address of the token representing LP share
@@ -184,6 +186,7 @@ def __init__(
     self.admin_fee = _admin_fee
     self.owner = _owner
     self.reward_admin = _reward_admin
+    self.reward_claimant = _reward_claimant
     self.kill_deadline = block.timestamp + KILL_DEADLINE_DT
     self.lp_token = _pool_token
 
