@@ -1,0 +1,59 @@
+name: aave
+
+on:
+  pull_request:
+    paths:
+    - 'tests/**/*.py'
+    - 'contracts/pools/aave/**.vy'
+  push:
+    paths:
+    - 'tests/**/*.py'
+    - 'contracts/pools/aave/**.vy'
+
+
+env:
+  pool: 'aave'
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  NODE_OPTIONS: --max_old_space_size=4096
+
+
+jobs:
+
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [pools, zaps]
+        type: [unitary, integration]
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Cache Compiler Installations
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.solcx
+          ~/.vvm
+        key: compiler-cache
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v1
+
+    - name: Install Ganache
+      run: npm install
+
+    - name: Setup Python 3.8
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
+
+    - name: Install Requirements
+      run: |
+        pip install wheel
+        pip install -r requirements.txt
+
+    - name: Run Tests
+      run: brownie test tests/${{ matrix.target }} --pool ${{ env.pool }} --${{ matrix.type }}

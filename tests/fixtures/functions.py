@@ -20,10 +20,15 @@ def get_admin_balances(swap, wrapped_coins):
     yield _get_admin_balances
 
 
-def _set_fees(chain, swap, fee, admin_fee):
+def _set_fees(chain, swap, fee, admin_fee, offpeg_multiplier=None):
     owner = swap.owner()
     if hasattr(swap, "commit_new_fee"):
-        swap.commit_new_fee(fee, admin_fee, {'from': owner})
+        if hasattr(swap, "offpeg_fee_multiplier"):
+            swap.commit_new_fee(fee, admin_fee, offpeg_multiplier or 0, {'from': owner})
+        elif offpeg_multiplier is not None:
+            raise ValueError("Pool does not support `offpeg_fee_multiplier`")
+        else:
+            swap.commit_new_fee(fee, admin_fee, {'from': owner})
         chain.sleep(86400*3)
         swap.apply_new_fee({'from': owner})
     else:
