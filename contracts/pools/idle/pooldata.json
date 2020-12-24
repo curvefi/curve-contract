@@ -1,10 +1,9 @@
 {
     "lp_contract": "CurveTokenV3",
     "wrapped_contract": "IdleToken",
-    "swap_address": "",
-    "lp_token_address": "",
-    "zap_address": "",
-    "gauge_addresses": [""],
+    "swap_address": "0x83f252f036761a1E3d10DACa8e16D7b21E3744D7",
+    "lp_token_address": "0x09f4B84A87FC81FC84220fD7287b613B8A9D4c05",
+    "gauge_addresses": ["0xd69ac8d9D25e99446171B5D0B3E4234dAd294890"],
     "lp_constructor": {
         "symbol": "i3CRV",
         "name": "Curve.fi idleDAI/idleUSDC/idleUSDT"
