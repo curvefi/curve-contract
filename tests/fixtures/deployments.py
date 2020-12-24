@@ -1,9 +1,5 @@
 import pytest
-from brownie import Contract
-
-from scripts.utils import right_pad, pack_values
-
-ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
+from brownie import Contract, ZERO_ADDRESS
 
 
 def _swap(project, alice, underlying, wrapped, pool_token, pool_data, swap_mock, base_swap, aave_lending_pool):
@@ -21,6 +17,8 @@ def _swap(project, alice, underlying, wrapped, pool_token, pool_data, swap_mock,
         '_admin_fee': 0,
         '_offpeg_fee_multiplier': 0,
         '_owner': alice,
+        '_reward_admin': alice,
+        '_reward_claimant': alice,
         '_y_pool': swap_mock,
         '_aave_lending_pool': aave_lending_pool,
     }
