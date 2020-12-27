@@ -6,11 +6,11 @@
 
 * [`StableSwapIDLE`](StableSwapIDLE.vy): Curve stablecoin AMM contract
 
-## Deployments
+<!-- ## Deployments
 
 * [`CurveContractV3`](../../tokens/CurveTokenV3.vy): [0x09f4B84A87FC81FC84220fD7287b613B8A9D4c05](https://etherscan.io/address/0x09f4B84A87FC81FC84220fD7287b613B8A9D4c05)
 * [`LiquidityGaugeV2`](https://github.com/curvefi/curve-dao-contracts/blob/master/contracts/gauges/LiquidityGaugeV2.vy): [0xd69ac8d9D25e99446171B5D0B3E4234dAd294890](https://etherscan.io/address/0xd69ac8d9D25e99446171B5D0B3E4234dAd294890)
-* [`StableSwapIDLE`](StableSwapIDLE.vy): [0x83f252f036761a1E3d10DACa8e16D7b21E3744D7](https://etherscan.io/address/0x83f252f036761a1E3d10DACa8e16D7b21E3744D7)
+* [`StableSwapIDLE`](StableSwapIDLE.vy): [0x83f252f036761a1E3d10DACa8e16D7b21E3744D7](https://etherscan.io/address/0x83f252f036761a1E3d10DACa8e16D7b21E3744D7) -->
 
 ## Stablecoins
 
