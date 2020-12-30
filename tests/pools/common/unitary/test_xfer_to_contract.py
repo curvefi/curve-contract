@@ -8,6 +8,7 @@ ETH_ADDRESS = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
 pytestmark = pytest.mark.usefixtures("add_initial_liquidity")
 
 
+@pytest.mark.skip_pool("steth")
 def test_unexpected_eth(swap, alice, bob, get_admin_balances, wrapped_coins):
     code = """
 # @version 0.2.4
@@ -29,7 +30,7 @@ def __init__(swap: address):
         assert sum(get_admin_balances()) == 0
 
 
-@pytest.mark.skip_pool("aave", reason="Aave-style interest accrues by increasing balance")
+@pytest.mark.skip_pool("aave", "steth", reason="Aave-style interest accrues by increasing balance")
 def test_unexpected_coin(swap, alice, bob, get_admin_balances, wrapped_coins):
     virtual_price = swap.get_virtual_price()
 
