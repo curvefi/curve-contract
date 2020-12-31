@@ -612,7 +612,7 @@ def get_y_D(A_: uint256, i: int128, xp: uint256[N_COINS], D: uint256) -> uint256
 
 @view
 @internal
-def _calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> uint256:
+def _calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> (uint256, uint256):
     # First, need to calculate
     # * Get current D
     # * Solve Eqn against y_i for D - _token_amount
@@ -635,7 +635,10 @@ def _calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> uint256:
 
     dy: uint256 = xp_reduced[i] - self.get_y_D(amp, i, xp_reduced, D1)
 
-    return dy - 1
+    dy -= 1  # Withdraw less to account for rounding errors
+    dy_0: uint256 = xp[i] - new_y  # w/o fees
+
+    return dy, dy_0 - dy
 
 
 @view
@@ -648,7 +651,7 @@ def calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> uint256:
     @param i Index value of the coin to withdraw
     @return Amount of coin received
     """
-    return self._calc_withdraw_one_coin(_token_amount, i)
+    return self._calc_withdraw_one_coin(_token_amount, i)[0]
 
 
 @external
@@ -667,8 +670,13 @@ def remove_liquidity_one_coin(
     """
     assert not self.is_killed  # dev: is killed
 
-    dy: uint256 = self._calc_withdraw_one_coin(_token_amount, i)
+    dy: uint256 = 0
+    dy_fee: uint256 = 0
+    dy, dy_fee = self._calc_withdraw_one_coin(_token_amount, i)
+
     assert dy >= _min_amount, "Not enough coins removed"
+
+    self.admin_balances[i] += dy_fee * self.admin_fee / FEE_DENOMINATOR
 
     CurveToken(self.lp_token).burnFrom(msg.sender, _token_amount)  # dev: insufficient funds
 
