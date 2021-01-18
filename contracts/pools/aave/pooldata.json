@@ -17,7 +17,7 @@
     },
     "coins": [
         {
-            "name": "DAI",
+            "name": "aDAI",
             "decimals": 18,
             "wrapped_decimals": 18,
             "tethered": false,
@@ -25,7 +25,7 @@
             "wrapped_address": "0x028171bCA77440897B824Ca71D1c56caC55b68A3"
         },
         {
-            "name": "USDC",
+            "name": "aUSDC",
             "decimals": 6,
             "wrapped_decimals": 6,
             "tethered": false,
@@ -34,7 +34,7 @@
 
         },
         {
-            "name": "USDT",
+            "name": "aUSDT",
             "decimals": 6,
             "wrapped_decimals": 6,
             "tethered": true,
