@@ -1,8 +1,8 @@
 import pytest
-from brownie import Contract, ZERO_ADDRESS
+from brownie import Contract
 
 
-def _swap(project, alice, underlying, wrapped, pool_token, pool_data, swap_mock, base_swap, aave_lending_pool):
+def _swap(project, alice, underlying, wrapped, pool_token, pool_data, base_swap, aave_lending_pool):
     deployer = getattr(project, pool_data['swap_contract'])
 
     abi = next(i['inputs'] for i in deployer.abi if i['type'] == "constructor")
@@ -19,7 +19,6 @@ def _swap(project, alice, underlying, wrapped, pool_token, pool_data, swap_mock,
         '_owner': alice,
         '_reward_admin': alice,
         '_reward_claimant': alice,
-        '_y_pool': swap_mock,
         '_aave_lending_pool': aave_lending_pool,
     }
     deployment_args = [args[i['name']] for i in abi] + [({'from': alice})]
@@ -35,8 +34,8 @@ def _swap(project, alice, underlying, wrapped, pool_token, pool_data, swap_mock,
 
 
 @pytest.fixture(scope="module")
-def swap(project, alice, _underlying_coins, wrapped_coins, pool_token, pool_data, swap_mock, base_swap, aave_lending_pool):
-    return _swap(project, alice, _underlying_coins, wrapped_coins, pool_token, pool_data, swap_mock, base_swap, aave_lending_pool)
+def swap(project, alice, _underlying_coins, wrapped_coins, pool_token, pool_data, base_swap, aave_lending_pool):
+    return _swap(project, alice, _underlying_coins, wrapped_coins, pool_token, pool_data, base_swap, aave_lending_pool)
 
 
 @pytest.fixture(scope="module")
@@ -45,13 +44,7 @@ def base_swap(project, charlie, _base_coins, base_pool_token, base_pool_data, is
         return
     if is_forked:
         return Contract(base_pool_data["swap_address"])
-    return _swap(project, charlie, _base_coins, _base_coins, base_pool_token, base_pool_data, None, None, None)
-
-
-@pytest.fixture(scope="module")
-def swap_mock(SwapMock, pool_data, alice):
-    if pool_data['name'] == "snow":
-        return SwapMock.deploy({'from': alice})
+    return _swap(project, charlie, _base_coins, _base_coins, base_pool_token, base_pool_data, None, None)
 
 
 @pytest.fixture(scope="module")

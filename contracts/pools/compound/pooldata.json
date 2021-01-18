@@ -7,6 +7,7 @@
     "gauge_addresses": ["0x7ca5b0a2910B33e9759DC7dDB0413949071D7575"],
     "coins": [
         {
+            "name": "cDAI",
             "decimals": 18,
             "tethered": false,
             "wrapped_decimals": 8,
@@ -14,6 +15,7 @@
             "wrapped_address": "0x5d3a536e4d6dbd6114cc1ead35777bab948e3643"
         },
         {
+            "name": "cUSDC",
             "decimals": 6,
             "tethered": false,
             "wrapped_decimals": 8,
