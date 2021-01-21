@@ -1,0 +1,32 @@
+{
+  "lp_contract": "CurveTokenV3",
+  "swap_address": "",
+  "lp_token_address": "",
+  "gauge_addresses": [""],
+  "lp_constructor": {
+    "symbol": "ankrCRV",
+    "name": "Curve.fi ETH/aETH"
+  },
+  "swap_constructor": {
+    "_A": 100,
+    "_fee": 4000000,
+    "_admin_fee": 5000000000
+  },
+  "coins": [
+    {
+      "name": "ETH",
+      "decimals": 18,
+      "tethered": false,
+      "underlying_address": "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
+    },
+    {
+      "name": "aETHB",
+      "decimals": 18,
+      "tethered": false,
+      "underlying_address": "0xE95A203B1a91a908F9B9CE46459d101078c2c3cb"
+    }
+  ],
+  "testing": {
+    "initial_amount": 10000
+  }
+}
