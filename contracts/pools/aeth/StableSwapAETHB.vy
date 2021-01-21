@@ -1,7 +1,7 @@
 
 # @version 0.2.8
 """
-@title ETH/aETH StableSwap
+@title ETH/aETHB StableSwap
 @author Curve.Fi
 @license Copyright (c) Curve.Fi, 2020 - all rights reserved
 """
