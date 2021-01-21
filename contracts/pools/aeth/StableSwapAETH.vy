@@ -141,7 +141,6 @@ def __init__(
     @notice Contract constructor
     @param _owner Contract owner address
     @param _coins Addresses of ERC20 contracts of wrapped coins
-    @param _underlying_coins Addresses of ERC20 contracts of underlying coins
     @param _pool_token Address of the token representing LP share
     @param _A Amplification coefficient multiplied by n * (n - 1)
     @param _fee Fee to charge for exchanges
