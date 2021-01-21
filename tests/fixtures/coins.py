@@ -90,17 +90,23 @@ class _MintableTestToken(Contract):
         if self.name().startswith("Aave"):
             underlying = _MintableTestToken(self.UNDERLYING_ASSET_ADDRESS())
             lending_pool = Contract("0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9")
-
             underlying._mint_for_testing(target, amount)
             underlying.approve(lending_pool, amount, {"from": target})
             lending_pool.deposit(underlying, amount, target, 0, {"from": target})
+            return
+        if self.address == "0x4A64515E5E1d1073e83f30cB97BEd20400b66E10":
+            # wZEC
+            self.mint(target, amount, {"from": "0x5Ca1262e25A5Fb6CA8d74850Da2753f0c896e16c"})
+            return
+        if self.address == "0x1C5db575E2Ff833E46a2E9864C22F4B22E0B37C2":
+            # renZEC
+            self.mint(target, amount, {"from": "0xc3BbD5aDb611dd74eCa6123F05B18acc886e122D"})
             return
 
         for address in _holders[self.address].copy():
             if address == self.address:
                 # don't claim from the treasury - that could cause wierdness
                 continue
-
             balance = self.balanceOf(address)
             try:
                 if amount > balance:
