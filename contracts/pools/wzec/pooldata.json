@@ -20,7 +20,7 @@
       "decimals": 8,
       "tethered": false,
       "name": "renZEC",
-      "underlying_address": "0x1c5db575e2ff833e46a2e9864c22f4b22e0b37c2"
+      "underlying_address": "0x1C5db575E2Ff833E46a2E9864C22F4B22E0B37C2"
     }
   ],
   "testing": {
