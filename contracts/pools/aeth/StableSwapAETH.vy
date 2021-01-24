@@ -1,7 +1,7 @@
 
 # @version 0.2.8
 """
-@title ETH/aETHB StableSwap
+@title ETH/aETH StableSwap
 @author Curve.Fi
 @license Copyright (c) Curve.Fi, 2020 - all rights reserved
 """
@@ -452,31 +452,6 @@ def get_dx(i: int128, j: int128, dy: uint256) -> uint256:
     y: uint256 = xp[j] - (dy * FEE_DENOMINATOR / (FEE_DENOMINATOR - self.fee)) * rates[j] / PRECISION
     x: uint256 = self.get_y(j, i, y, xp)
     dx: uint256 = (x - xp[i]) * PRECISION / rates[i]
-    return dx
-
-
-@view
-@external
-def get_dy_underlying(i: int128, j: int128, dx: uint256) -> uint256:
-    # dx and dy in underlying units
-    rates: uint256[N_COINS] = self._stored_rates()
-    xp: uint256[N_COINS] = self._xp(rates)
-    x: uint256 = xp[i] + dx
-    y: uint256 = self.get_y(i, j, x, xp)
-    dy: uint256 = xp[j] - y - 1
-    _fee: uint256 = self.fee * dy / FEE_DENOMINATOR
-    return dy - _fee
-
-
-@external
-@view
-def get_dx_underlying(i: int128, j: int128, dy: uint256) -> uint256:
-    # dx and dy in underlying units
-    rates: uint256[N_COINS] = self._stored_rates()
-    xp: uint256[N_COINS] = self._xp(rates)
-    y: uint256 = xp[j] - (dy * FEE_DENOMINATOR / (FEE_DENOMINATOR - self.fee))
-    x: uint256 = self.get_y(j, i, y, xp)
-    dx: uint256 = x - xp[i]
     return dx
 
 

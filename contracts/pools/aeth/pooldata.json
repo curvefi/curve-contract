@@ -1,5 +1,6 @@
 {
   "lp_contract": "CurveTokenV3",
+  "wrapped_contract": "aETH",
   "swap_address": "",
   "lp_token_address": "",
   "gauge_addresses": [""],
@@ -20,10 +21,12 @@
       "underlying_address": "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
     },
     {
-      "name": "aETHB",
+      "name": "aETH",
       "decimals": 18,
+      "wrapped_decimals": 18,
       "tethered": false,
-      "underlying_address": "0xE95A203B1a91a908F9B9CE46459d101078c2c3cb"
+      "underlying_address": "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+      "wrapped_address": "0xE95A203B1a91a908F9B9CE46459d101078c2c3cb"
     }
   ],
   "testing": {
