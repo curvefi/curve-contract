@@ -2,3 +2,4 @@ black==19.10b0
 eth-brownie>=1.13.0,<2.0.0
 flake8==3.7.9
 isort==4.3.21
+brownie-token-tester>=0.1.0
