@@ -14,6 +14,7 @@ WRAPPED_COIN_METHODS = {
     "IdleToken": {"get_rate": "tokenPrice", "mint": "mintIdleToken"},
     "renERC20": {"get_rate": "exchangeRateCurrent"},
     "yERC20": {"get_rate": "getPricePerFullShare", "mint": "deposit"},
+    "aETH": {"get_rate": "ratio"},
 }
 
 pytest_plugins = [
@@ -38,11 +39,16 @@ def pytest_addoption(parser):
 
 def pytest_configure(config):
     # add custom markers
-    config.addinivalue_line("markers", "target_pool: run test against one or more specific pool")
-    config.addinivalue_line("markers", "skip_pool: exclude one or more pools in this test")
-    config.addinivalue_line("markers", "skip_meta: exclude metapools in this test")
-    config.addinivalue_line("markers", "lending: only run test against pools that involve lending")
-    config.addinivalue_line("markers", "zap: only run test against pools with a deposit contract")
+    config.addinivalue_line(
+        "markers", "target_pool: run test against one or more specific pool")
+    config.addinivalue_line(
+        "markers", "skip_pool: exclude one or more pools in this test")
+    config.addinivalue_line(
+        "markers", "skip_meta: exclude metapools in this test")
+    config.addinivalue_line(
+        "markers", "lending: only run test against pools that involve lending")
+    config.addinivalue_line(
+        "markers", "zap: only run test against pools with a deposit contract")
     config.addinivalue_line(
         "markers",
         "itercoins: parametrize a test with one or more ranges, equal to the length "
@@ -64,7 +70,8 @@ def pytest_sessionstart():
                 _pooldata[path.name]["zap_contract"] = zap_contract
 
     # create pooldata for templates
-    lp_contract = sorted(i._name for i in project if i._name.startswith("CurveToken"))[-1]
+    lp_contract = sorted(
+        i._name for i in project if i._name.startswith("CurveToken"))[-1]
 
     for path in [i for i in project._path.glob("contracts/pool-templates/*") if i.is_dir()]:
         with path.joinpath("pooldata.json").open() as fp:
@@ -144,14 +151,16 @@ def pytest_generate_tests(metafunc):
                 else:
                     params = list(_pooldata)
                 if test_path.parts[2] == "meta":
-                    params = [i for i in params if _pooldata[i].get("base_pool")]
+                    params = [
+                        i for i in params if _pooldata[i].get("base_pool")]
             else:
                 # run targetted pool/zap tests against only the specific pool
                 params = [test_path.parts[2]]
 
             if test_path.parts[1] == "zaps":
                 # for zap tests, filter by pools that have a Deposit contract
-                params = [i for i in params if _pooldata[i].get("zap_contract")]
+                params = [
+                    i for i in params if _pooldata[i].get("zap_contract")]
         else:
             # pool tests outside `tests/pools` or `tests/zaps` will only run when
             # a target pool is explicitly declared
@@ -163,7 +172,8 @@ def pytest_generate_tests(metafunc):
                     f"'{test_path.as_posix()}' contains pool tests, but is outside of "
                     "'tests/pools/'. To run it, specify a pool with `--pool [name]`"
                 )
-        metafunc.parametrize("pool_data", params, indirect=True, scope="session")
+        metafunc.parametrize("pool_data", params,
+                             indirect=True, scope="session")
 
         # apply initial parametrization of `itercoins`
         for marker in metafunc.definition.iter_markers(name="itercoins"):
@@ -242,7 +252,8 @@ def pytest_collection_modifyitems(config, items):
             continue
 
     # hacky magic to ensure the correct number of tests is shown in collection report
-    config.pluginmanager.get_plugin("terminalreporter")._numcollected = len(items)
+    config.pluginmanager.get_plugin(
+        "terminalreporter")._numcollected = len(items)
 
 
 @pytest.hookimpl(trylast=True)
