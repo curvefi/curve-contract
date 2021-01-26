@@ -87,8 +87,6 @@ event StopRampA:
 # These constants must be set prior to compiling
 N_COINS: constant(int128) = 2
 
-YIELD_BEARING: constant(bool[N_COINS]) = [False, True]
-
 # fixed constants
 FEE_DENOMINATOR: constant(uint256) = 10 ** 10
 LENDING_PRECISION: constant(uint256) = 10 ** 18
@@ -193,19 +191,13 @@ def A() -> uint256:
 def A_precise() -> uint256:
     return self._A()
 
-
 @view
 @internal
 def _stored_rates() -> uint256[N_COINS]:
-    result: uint256[N_COINS] = [convert(1, uint256), convert(1, uint256)]
-    yield_bearing: bool[N_COINS] = YIELD_BEARING
-    for i in range(N_COINS):
-        rate: uint256 = LENDING_PRECISION
-        if yield_bearing[i]:
-            rate = PRECISION * LENDING_PRECISION / aETH(self.coins[i]).ratio()
-        result[i] *= rate
-    return result
-
+    return [
+        convert(PRECISION, uint256),
+        PRECISION * LENDING_PRECISION / aETH(self.coins[1]).ratio()
+    ]
 
 @view
 @internal
@@ -602,7 +594,7 @@ def get_y_D(A_: uint256, i: int128, xp: uint256[N_COINS], D: uint256) -> uint256
     Calculate x[i] if one reduces D from being calculated for xp to D
 
     Done by solving quadratic equation iteratively.
-    x_1**2 + x1 * (sum' - (A*n**n - 1) * D / (A * n**n)) = D ** (n + 1) / (n ** (2 * n) * prod' * A)
+    x_1**2 + x_1 * (sum' - (A*n**n - 1) * D / (A * n**n)) = D ** (n + 1) / (n ** (2 * n) * prod' * A)
     x_1**2 + b*x_1 = c
 
     x_1 = (x_1**2 + c) / (2*x_1 + b)
@@ -774,6 +766,7 @@ def commit_new_fee(new_fee: uint256, new_admin_fee: uint256):
 
 
 @external
+@nonreentrant('lock')
 def apply_new_fee():
     assert msg.sender == self.owner  # dev: only owner
     assert block.timestamp >= self.admin_actions_deadline  # dev: insufficient time
@@ -808,6 +801,7 @@ def commit_transfer_ownership(_owner: address):
 
 
 @external
+@nonreentrant('lock')
 def apply_transfer_ownership():
     assert msg.sender == self.owner  # dev: only owner
     assert block.timestamp >= self.transfer_ownership_deadline  # dev: insufficient time
@@ -835,6 +829,7 @@ def admin_balances(i: uint256) -> uint256:
 
 
 @external
+@nonreentrant('lock')
 def withdraw_admin_fees():
     assert msg.sender == self.owner  # dev: only owner
 
@@ -848,6 +843,7 @@ def withdraw_admin_fees():
 
 
 @external
+@nonreentrant('lock')
 def donate_admin_fees():
     assert msg.sender == self.owner  # dev: only owner
     for i in range(N_COINS):
