@@ -1,0 +1,43 @@
+{
+    "lp_contract": "CurveTokenV3",
+    "wrapped_contract": "cERC20",
+    "swap_address": "0xDeBF20617708857ebe4F679508E7b7863a8A8EeE",
+    "lp_token_address": "0xFd2a8fA60Abd58Efe3EeE34dd494cD491dC14900",
+    "gauge_addresses": ["0xd662908ADA2Ea1916B3318327A97eB18aD588b5d"],
+    "lp_constructor": {
+        "symbol": "cy3CRV",
+        "name": "Curve.fi cyDAI/cyUSDC/cyUSDT"
+    },
+    "swap_constructor": {
+        "_A": 200,
+        "_fee": 4000000,
+        "_admin_fee": 5000000000
+    },
+    "coins": [
+        {
+            "name": "cyDAI",
+            "decimals": 18,
+            "wrapped_decimals": 8,
+            "tethered": false,
+            "underlying_address": "0x6b175474e89094c44da98b954eedeac495271d0f",
+            "wrapped_address": "0x48759f220ed983db51fa7a8c0d2aab8f3ce4166a"
+        },
+        {
+            "name": "cyUSDC",
+            "decimals": 6,
+            "wrapped_decimals": 8,
+            "tethered": false,
+            "underlying_address": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+            "wrapped_address": "0x76eb2fe28b36b3ee97f3adae0c69606eedb2a37c"
+
+        },
+        {
+            "name": "cyUSDT",
+            "decimals": 6,
+            "wrapped_decimals": 8,
+            "tethered": true,
+            "underlying_address": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+            "wrapped_address": "0x48759f220ed983db51fa7a8c0d2aab8f3ce4166a"
+        }
+    ]
+}
