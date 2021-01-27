@@ -1,6 +1,6 @@
 # @version 0.2.8
 """
-@title Curve aPool
+@title Curve saPool
 @author Curve.Fi
 @license Copyright (c) Curve.Fi, 2020 - all rights reserved
 @notice Pool implementation with aToken-style lending
