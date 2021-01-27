@@ -10,13 +10,7 @@ from vyper.interfaces import ERC20
 
 # External Contracts
 interface aETH:
-    def burn(amount: uint256): nonpayable
-    def updateMicroPoolContract(microPoolContract: address): nonpayable
     def ratio() -> uint256: view
-    def mintFrozen(account: address, amount: uint256): nonpayable
-    def mint(account: address, amount: uint256) -> uint256: nonpayable
-    def mintPool(): payable
-    def fundPool(poolIndex: uint256, amount: uint256): nonpayable
 
 
 interface CurveToken:
@@ -306,13 +300,12 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256) -> uint25
     @return Amount of LP tokens received by depositing
     """
     assert not self.is_killed
-
+    amp: uint256 = self._A()
     rates: uint256[N_COINS] = self._stored_rates()
     _lp_token: address = self.lp_token
     token_supply: uint256 = ERC20(_lp_token).totalSupply()
 
     # Initial invariant
-    amp: uint256 = self._A()
     D0: uint256 = 0
     old_balances: uint256[N_COINS] = self.balances
     if token_supply != 0:
@@ -322,7 +315,7 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256) -> uint25
     for i in range(N_COINS):
         if token_supply == 0:
             assert amounts[i] > 0
-        new_balances[i] = old_balances[i] + amounts[i]
+        new_balances[i] += amounts[i]
 
     # Invariant after change
     D1: uint256 = self.get_D_mem(rates, new_balances, amp)
@@ -332,6 +325,7 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256) -> uint25
     # to calculate fair user's share
     D2: uint256 = D1
     fees: uint256[N_COINS] = empty(uint256[N_COINS])
+    mint_amount: uint256 = 0
     if token_supply != 0:
         # Only account for fees if we are not the first to deposit
         _fee: uint256 = self.fee * N_COINS / (4 * (N_COINS - 1))
@@ -347,15 +341,10 @@ def add_liquidity(amounts: uint256[N_COINS], min_mint_amount: uint256) -> uint25
             self.balances[i] = new_balances[i] - (fees[i] * _admin_fee / FEE_DENOMINATOR)
             new_balances[i] -= fees[i]
         D2 = self.get_D_mem(rates, new_balances, amp)
+        mint_amount = token_supply * (D2 - D0) / D0
     else:
         self.balances = new_balances
-
-    # Calculate, how much pool tokens to mint
-    mint_amount: uint256 = 0
-    if token_supply == 0:
         mint_amount = D1  # Take the dust if there was any
-    else:
-        mint_amount = token_supply * (D2 - D0) / D0
 
     assert mint_amount >= min_mint_amount, "Slippage screwed you"
 
@@ -502,7 +491,6 @@ def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS]) -> uint256
     _lp_token: address = self.lp_token
     total_supply: uint256 = ERC20(_lp_token).totalSupply()
     amounts: uint256[N_COINS] = empty(uint256[N_COINS])
-    fees: uint256[N_COINS] = empty(uint256[N_COINS])
 
     for i in range(N_COINS):
         _balance: uint256 = self.balances[i]
@@ -517,7 +505,7 @@ def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS]) -> uint256
 
     CurveToken(_lp_token).burnFrom(msg.sender, _amount)  # Will raise if not enough
 
-    log RemoveLiquidity(msg.sender, amounts, fees, total_supply - _amount)
+    log RemoveLiquidity(msg.sender, amounts, empty(uint256[N_COINS]), total_supply - _amount)
 
     return amounts
 
@@ -543,8 +531,6 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint2
     D1: uint256 = self.get_D_mem(rates, new_balances, amp)
 
     _lp_token: address = self.lp_token
-    token_supply: uint256 = ERC20(_lp_token).totalSupply()
-    assert token_supply != 0
 
     fees: uint256[N_COINS] = empty(uint256[N_COINS])
     _fee: uint256 = self.fee * N_COINS / (4 * (N_COINS - 1))
@@ -562,6 +548,7 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint2
         new_balances[i] = new_balance - fees[i]
     D2: uint256 = self.get_D_mem(rates, new_balances, amp)
 
+    token_supply: uint256 = ERC20(_lp_token).totalSupply()
     token_amount: uint256 = (D0 - D2) * token_supply / D0
     assert token_amount != 0
     assert token_amount <= max_burn_amount, "Slippage screwed you"
