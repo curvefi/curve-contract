@@ -222,8 +222,9 @@ def _stored_rates() -> uint256[N_COINS]:
     # exchangeRateStored * (1 + supplyRatePerBlock * (getBlockNumber - accrualBlockNumber) / 1e18)
     result: uint256[N_COINS] = PRECISION_MUL
     for i in range(N_COINS):
-        rate: uint256 = cyToken(self.coins[i]).exchangeRateStored()
-        rate += rate * cyToken(self.coins[i]).supplyRatePerBlock() * (block.number - cyToken(self.coins[i]).accrualBlockNumber()) / PRECISION
+        coin: address = self.coins[i]
+        rate: uint256 = cyToken(coin).exchangeRateStored()
+        rate += rate * cyToken(coin).supplyRatePerBlock() * (block.number - cyToken(coin).accrualBlockNumber()) / PRECISION
         result[i] *= rate
     return result
 
@@ -238,9 +239,9 @@ def _current_rates() -> uint256[N_COINS]:
 @view
 @internal
 def _xp(rates: uint256[N_COINS]) -> uint256[N_COINS]:
-    result: uint256[N_COINS] = rates
+    result: uint256[N_COINS] = empty(uint256[N_COINS])
     for i in range(N_COINS):
-        result[i] = result[i] * self.balances[i] / PRECISION
+        result[i] = rates[i] * self.balances[i] / PRECISION
     return result
 
 @pure
@@ -357,15 +358,15 @@ def add_liquidity(
         D0 = self.get_D_mem(rates, old_balances, amp)
 
     # Take coins from the sender
-    coin: address = ZERO_ADDRESS
     new_balances: uint256[N_COINS] = old_balances
     amounts: uint256[N_COINS] = empty(uint256[N_COINS])
     for i in range(N_COINS):
         amount: uint256 = _amounts[i]
 
-        if token_supply == 0:
-            assert amount > 0
-        if amount != 0:
+        if amount == 0:
+            assert token_supply > 0
+        else:
+            coin: address = ZERO_ADDRESS
             if _use_underlying:
                 coin = self.underlying_coins[i]
             else:
@@ -427,6 +428,10 @@ def get_y(i: int128, j: int128, x: uint256, xp_: uint256[N_COINS]) -> uint256:
     assert j >= 0       # dev: j below zero
     assert j < N_COINS  # dev: j above N_COINS
 
+    # should be unreachable, but good for safety
+    assert i >= 0
+    assert i < N_COINS
+    
     A_: uint256 = self._A()
     D: uint256 = self.get_D(xp_, A_)
     Ann: uint256 = A_ * N_COINS
@@ -581,16 +586,21 @@ def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256) -> u
 
     ERC20(self.underlying_coins[i]).transferFrom(msg.sender, self, dx)
 
-    dx_: uint256 = ERC20(self.coins[i]).balanceOf(self)
-    assert cyToken(self.coins[i]).mint(dx) == 0
-    dx_ = ERC20(self.coins[i]).balanceOf(self) - dx_
+    coin: address = self.coins[i]
+
+    dx_: uint256 = ERC20(coin).balanceOf(self)
+    assert cyToken(coin).mint(dx) == 0
+    dx_ = ERC20(coin).balanceOf(self) - dx_
     dy_: uint256 = self._exchange(i, j, dx_)
 
     assert cyToken(self.coins[j]).redeem(dy_) == 0
-    dy: uint256 = ERC20(self.underlying_coins[j]).balanceOf(self)
+
+    underlying: address = self.underlying_coins[j]
+
+    dy: uint256 = ERC20(underlying).balanceOf(self)
     assert dy >= min_dy, "Too few coins in result"
 
-    ERC20(self.underlying_coins[j]).transfer(msg.sender, dy)
+    ERC20(underlying).transfer(msg.sender, dy)
 
     log TokenExchangeUnderlying(msg.sender, i, dx, j, dy)
 
@@ -625,8 +635,9 @@ def remove_liquidity(
         coin: address = self.coins[i]
         if _use_underlying:
             assert cyToken(coin).redeem(value) == 0
-            value = ERC20(self.underlying_coins[i]).balanceOf(self)
-            ERC20(self.underlying_coins[i]).transfer(msg.sender, value)
+            underlying: address = self.underlying_coins[i]
+            value = ERC20(underlying).balanceOf(self)
+            ERC20(underlying).transfer(msg.sender, value)
         else:
             ERC20(coin).transfer(msg.sender, value)
 
@@ -704,7 +715,8 @@ def remove_liquidity_imbalance(
             coin: address = self.coins[i]
             if _use_underlying:
                 assert cyToken(coin).redeem(amount) == 0
-                ERC20(self.underlying_coins[i]).transfer(msg.sender, ERC20(self.underlying_coins[i]).balanceOf(self))
+                underlying: address = self.underlying_coins[i]
+                ERC20(underlying).transfer(msg.sender, ERC20(underlying).balanceOf(self))
             else:
                 ERC20(coin).transfer(msg.sender, amount)
 
@@ -841,8 +853,9 @@ def remove_liquidity_one_coin(
     coin: address = self.coins[i]
     if _use_underlying:
         assert cyToken(coin).redeem(dy) == 0
-        amount = ERC20(self.underlying_coins[i]).balanceOf(self)
-        ERC20(self.underlying_coins[i]).transfer(msg.sender, amount)
+        underlying: address = self.underlying_coins[i]
+        amount = ERC20(underlying).balanceOf(self)
+        ERC20(underlying).transfer(msg.sender, amount)
     else:
         ERC20(coin).transfer(msg.sender, amount)
 
