@@ -19,11 +19,9 @@ Curve SAAVE pool supports swaps between the following stablecoins:
 ### Wrapped
 
 * `aDAI`: [0x028171bCA77440897B824Ca71D1c56caC55b68A3](https://etherscan.io/address/0x028171bCA77440897B824Ca71D1c56caC55b68A3)
-* `aUSDC`: [0xBcca60bB61934080951369a648Fb03DF4F96263C](https://etherscan.io/address/0xBcca60bB61934080951369a648Fb03DF4F96263C)
-* `aUSDT`: [0x3Ed3B47Dd13EC9a98b44e6204A523E766B225811](https://etherscan.io/address/0x3Ed3B47Dd13EC9a98b44e6204A523E766B225811)
+* `aSUSD`: [0x6c5024cd4f8a59110119c56f8933403a539555eb](https://etherscan.io/address/0x6c5024cd4f8a59110119c56f8933403a539555eb)
 
 ### Underlying
 
 * `DAI`: [0x6b175474e89094c44da98b954eedeac495271d0f](https://etherscan.io/token/0x6b175474e89094c44da98b954eedeac495271d0f)
-* `USDC`: [0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48](https://etherscan.io/token/0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48)
-* `USDT`: [0xdac17f958d2ee523a2206206994597c13d831ec7](https://etherscan.io/address/0xdac17f958d2ee523a2206206994597c13d831ec7)
+* `sUSD`: [0x57ab1ec28d129707052df4df418d58a2d46d5f51](https://etherscan.io/token/0x57ab1ec28d129707052df4df418d58a2d46d5f51)
