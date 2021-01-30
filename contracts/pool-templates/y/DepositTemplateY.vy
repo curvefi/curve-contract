@@ -49,7 +49,7 @@ def __init__(
     _coins: address[N_COINS],
     _underlying_coins: address[N_COINS],
     _curve: address,
-    _lp_token: address
+    _token: address
 ):
     """
     @notice Contract constructor
@@ -58,7 +58,7 @@ def __init__(
     @param _coins List of wrapped coin addresses
     @param _underlying_coins List of underlying coin addresses
     @param _curve Pool address
-    @param _lp_token Pool LP token address
+    @param _token Pool LP token address
     """
     for i in range(N_COINS):
         assert _coins[i] != ZERO_ADDRESS
@@ -91,7 +91,7 @@ def __init__(
     self.coins = _coins
     self.underlying_coins = _underlying_coins
     self.curve = _curve
-    self.lp_token = _lp_token
+    self.lp_token = _token
 
 
 @external
