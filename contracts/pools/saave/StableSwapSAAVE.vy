@@ -174,18 +174,7 @@ def __init__(
 
     # approve transfer of underlying coin to aave lending pool
     for coin in _underlying_coins:
-        _response: Bytes[32] = raw_call(
-            coin,
-            concat(
-                method_id("approve(address,uint256)"),
-                convert(_aave_lending_pool, bytes32),
-                convert(MAX_UINT256, bytes32)
-            ),
-            max_outsize=32
-        )
-        if len(_response) != 0:
-            assert convert(_response, bool)
-
+        assert ERC20(coin).approve(_aave_lending_pool, MAX_UINT256)
 
 
 @view
@@ -425,18 +414,7 @@ def add_liquidity(_amounts: uint256[N_COINS], _min_mint_amount: uint256, _use_un
             if amount != 0:
                 coin: address = self.underlying_coins[i]
                 # transfer underlying coin from msg.sender to self
-                _response: Bytes[32] = raw_call(
-                    coin,
-                    concat(
-                        method_id("transferFrom(address,address,uint256)"),
-                        convert(msg.sender, bytes32),
-                        convert(self, bytes32),
-                        convert(amount, bytes32)
-                    ),
-                    max_outsize=32
-                )
-                if len(_response) != 0:
-                    assert convert(_response, bool)
+                assert ERC20(coin).transferFrom(msg.sender, self, amount)
 
                 # deposit to aave lending pool
                 raw_call(
@@ -609,18 +587,7 @@ def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256) -> u
     lending_pool: address = self.aave_lending_pool
 
     # transfer underlying coin from msg.sender to self
-    _response: Bytes[32] = raw_call(
-        u_coin_i,
-        concat(
-            method_id("transferFrom(address,address,uint256)"),
-            convert(msg.sender, bytes32),
-            convert(self, bytes32),
-            convert(dx, bytes32)
-        ),
-        max_outsize=32
-    )
-    if len(_response) != 0:
-        assert convert(_response, bool)
+    assert ERC20(u_coin_i).transferFrom(msg.sender, self, dx)
 
     # deposit to aave lending pool
     raw_call(
