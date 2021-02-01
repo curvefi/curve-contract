@@ -1,5 +1,5 @@
 {
     "scripts": {
-      "preinstall": "npm i -g ganache-cli@6.11.0"
+      "preinstall": "npm i -g ganache-cli@6.12.1"
     }
   }
