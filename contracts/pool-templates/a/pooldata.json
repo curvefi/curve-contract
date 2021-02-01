@@ -1,0 +1,17 @@
+{
+  "wrapped_contract": "ATokenMock",
+  "coins": [
+    {
+      "decimals": 18,
+      "wrapped_decimals": 18,
+      "wrapped": true,
+      "tethered": false
+    },
+    {
+      "decimals": 18,
+      "wrapped_decimals": 18,
+      "wrapped": true,
+      "tethered": false
+    }
+  ]
+}
