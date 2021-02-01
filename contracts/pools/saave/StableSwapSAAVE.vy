@@ -90,7 +90,7 @@ N_COINS: constant(int128) = 2
 
 # fixed constants
 FEE_DENOMINATOR: constant(uint256) = 10 ** 10
-PRECISION: constant(uint256) = 10 ** 18  # The precision to convert to
+PRECISION: constant(uint256) = 10 ** 18
 
 MAX_ADMIN_FEE: constant(uint256) = 10 * 10 ** 9
 MAX_FEE: constant(uint256) = 5 * 10 ** 9
@@ -308,13 +308,6 @@ def get_D(xp: uint256[N_COINS], amp: uint256) -> uint256:
     raise
 
 
-
-@view
-@internal
-def get_D_precisions(coin_balances: uint256[N_COINS], amp: uint256) -> uint256:
-    return self.get_D(coin_balances, amp)
-
-
 @view
 @external
 def get_virtual_price() -> uint256:
@@ -323,7 +316,7 @@ def get_virtual_price() -> uint256:
     @dev Useful for calculating profits
     @return LP token virtual price normalized to 1e18
     """
-    D: uint256 = self.get_D_precisions(self._balances(), self._A())
+    D: uint256 = self.get_D(self._balances(), self._A())
     # D is in the units similar to DAI (e.g. converted to precision 1e18)
     # When balanced, D = n * x_u - total virtual value of the portfolio
     token_supply: uint256 = ERC20(self.lp_token).totalSupply()
@@ -343,13 +336,13 @@ def calc_token_amount(_amounts: uint256[N_COINS], is_deposit: bool) -> uint256:
     """
     coin_balances: uint256[N_COINS] = self._balances()
     amp: uint256 = self._A()
-    D0: uint256 = self.get_D_precisions(coin_balances, amp)
+    D0: uint256 = self.get_D(coin_balances, amp)
     for i in range(N_COINS):
         if is_deposit:
             coin_balances[i] += _amounts[i]
         else:
             coin_balances[i] -= _amounts[i]
-    D1: uint256 = self.get_D_precisions(coin_balances, amp)
+    D1: uint256 = self.get_D(coin_balances, amp)
     token_amount: uint256 = ERC20(self.lp_token).totalSupply()
     diff: uint256 = 0
     if is_deposit:
@@ -379,7 +372,7 @@ def add_liquidity(_amounts: uint256[N_COINS], _min_mint_amount: uint256, _use_un
     token_supply: uint256 = ERC20(lp_token).totalSupply()
     D0: uint256 = 0
     if token_supply != 0:
-        D0 = self.get_D_precisions(old_balances, amp)
+        D0 = self.get_D(old_balances, amp)
 
     new_balances: uint256[N_COINS] = old_balances
     for i in range(N_COINS):
@@ -388,7 +381,7 @@ def add_liquidity(_amounts: uint256[N_COINS], _min_mint_amount: uint256, _use_un
         new_balances[i] += _amounts[i]
 
     # Invariant after change
-    D1: uint256 = self.get_D_precisions(new_balances, amp)
+    D1: uint256 = self.get_D(new_balances, amp)
     assert D1 > D0
 
     # We need to recalculate the invariant accounting for fees
@@ -414,7 +407,7 @@ def add_liquidity(_amounts: uint256[N_COINS], _min_mint_amount: uint256, _use_un
             if _admin_fee != 0:
                 self.admin_balances[i] += fees[i] * _admin_fee / FEE_DENOMINATOR
             new_balances[i] = new_balance - fees[i]
-        D2: uint256 = self.get_D_precisions(new_balances, amp)
+        D2: uint256 = self.get_D(new_balances, amp)
         mint_amount = token_supply * (D2 - D0) / D0
     else:
         mint_amount = D1  # Take the dust if there was any
@@ -704,11 +697,11 @@ def remove_liquidity_imbalance(
 
     amp: uint256 = self._A()
     old_balances: uint256[N_COINS] = self._balances()
-    D0: uint256 = self.get_D_precisions(old_balances, amp)
+    D0: uint256 = self.get_D(old_balances, amp)
     new_balances: uint256[N_COINS] = old_balances
     for i in range(N_COINS):
         new_balances[i] -= _amounts[i]
-    D1: uint256 = self.get_D_precisions(new_balances, amp)
+    D1: uint256 = self.get_D(new_balances, amp)
     ys: uint256 = (D0 + D1) / N_COINS
 
     lp_token: address = self.lp_token
@@ -732,7 +725,7 @@ def remove_liquidity_imbalance(
         if _admin_fee != 0:
             self.admin_balances[i] += fees[i] * _admin_fee / FEE_DENOMINATOR
         new_balances[i] -= fees[i]
-    D2: uint256 = self.get_D_precisions(new_balances, amp)
+    D2: uint256 = self.get_D(new_balances, amp)
 
     token_amount: uint256 = (D0 - D2) * token_supply / D0
     assert token_amount != 0  # dev: zero tokens burned
