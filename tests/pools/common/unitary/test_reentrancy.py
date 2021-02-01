@@ -1,11 +1,10 @@
 import brownie
 import pytest
-
 from brownie import compile_source, history
 
 pytestmark = [
     pytest.mark.usefixtures("add_initial_liquidity", "mint_bob", "approve_bob"),
-    pytest.mark.target_pool("seth", "steth")
+    pytest.mark.target_pool("seth", "steth"),
 ]
 
 
@@ -38,12 +37,12 @@ def exchange(_coin: address, _swap: address):
     StableSwap(_swap).exchange(1, 0, 10**18, 0)
     """
 
-    contract = compile_source(code, vyper_version="0.2.4").Vyper.deploy({'from': alice})
+    contract = compile_source(code, vyper_version="0.2.4").Vyper.deploy({"from": alice})
     coin = wrapped_coins[1]
-    coin._mint_for_testing(contract, 2 * 10**18, {'from': alice})
+    coin._mint_for_testing(contract, 2 * 10 ** 18, {"from": alice})
 
     with brownie.reverts():
-        contract.exchange(coin, swap, {'from': alice})
+        contract.exchange(coin, swap, {"from": alice})
 
     assert "Callback" in history[-1].events
 
@@ -74,11 +73,11 @@ def remove_liquidity(_swap: address):
     StableSwap(_swap).remove_liquidity(10**18, [{'0,' * n_coins}])
     """
 
-    contract = compile_source(code, vyper_version="0.2.4").Vyper.deploy({'from': alice})
-    pool_token.transfer(contract, pool_token.balanceOf(alice), {'from': alice})
+    contract = compile_source(code, vyper_version="0.2.4").Vyper.deploy({"from": alice})
+    pool_token.transfer(contract, pool_token.balanceOf(alice), {"from": alice})
 
     with brownie.reverts():
-        contract.remove_liquidity(swap, {'from': alice})
+        contract.remove_liquidity(swap, {"from": alice})
 
     assert "Callback" in history[-1].events
 
@@ -109,17 +108,17 @@ def remove_liquidity_imbalance(_swap: address):
     StableSwap(_swap).remove_liquidity_imbalance([{'10**18, ' * n_coins}], MAX_UINT256)
     """
 
-    contract = compile_source(code, vyper_version="0.2.4").Vyper.deploy({'from': alice})
-    pool_token.transfer(contract, pool_token.balanceOf(alice), {'from': alice})
+    contract = compile_source(code, vyper_version="0.2.4").Vyper.deploy({"from": alice})
+    pool_token.transfer(contract, pool_token.balanceOf(alice), {"from": alice})
 
     with brownie.reverts():
-        contract.remove_liquidity_imbalance(swap, {'from': alice})
+        contract.remove_liquidity_imbalance(swap, {"from": alice})
 
     assert "Callback" in history[-1].events
 
 
 def test_remove_liquidity_one_coin(swap, alice, pool_token):
-    code = f"""
+    code = """
 # @version ^0.2.0
 
 interface StableSwap:
@@ -144,10 +143,10 @@ def remove_liquidity_one_coin(_swap: address):
     StableSwap(_swap).remove_liquidity_one_coin(10**18, 0, 0)
     """
 
-    contract = compile_source(code, vyper_version="0.2.4").Vyper.deploy({'from': alice})
-    pool_token.transfer(contract, pool_token.balanceOf(alice), {'from': alice})
+    contract = compile_source(code, vyper_version="0.2.4").Vyper.deploy({"from": alice})
+    pool_token.transfer(contract, pool_token.balanceOf(alice), {"from": alice})
 
     with brownie.reverts():
-        contract.remove_liquidity_one_coin(swap, {'from': alice})
+        contract.remove_liquidity_one_coin(swap, {"from": alice})
 
     assert "Callback" in history[-1].events
