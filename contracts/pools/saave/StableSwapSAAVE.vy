@@ -86,9 +86,7 @@ event StopRampA:
     t: uint256
 
 
-# These constants must be set prior to compiling
 N_COINS: constant(int128) = 2
-PRECISION_MUL: constant(uint256[N_COINS]) = [1, 1]
 
 # fixed constants
 FEE_DENOMINATOR: constant(uint256) = 10 ** 10
@@ -244,9 +242,8 @@ def dynamic_fee(i: int128, j: int128) -> uint256:
     @param j Index value of the coin to recieve
     @return Swap fee expressed as an integer with 1e10 precision
     """
-    precisions: uint256[N_COINS] = PRECISION_MUL
-    xpi: uint256 = (ERC20(self.coins[i]).balanceOf(self) - self.admin_balances[i]) * precisions[i]
-    xpj: uint256 = (ERC20(self.coins[j]).balanceOf(self) - self.admin_balances[j]) * precisions[j]
+    xpi: uint256 = (ERC20(self.coins[i]).balanceOf(self) - self.admin_balances[i])
+    xpj: uint256 = (ERC20(self.coins[j]).balanceOf(self) - self.admin_balances[j])
     return self._dynamic_fee(xpi, xpj, self.fee, self.offpeg_fee_multiplier)
 
 
@@ -315,10 +312,7 @@ def get_D(xp: uint256[N_COINS], amp: uint256) -> uint256:
 @view
 @internal
 def get_D_precisions(coin_balances: uint256[N_COINS], amp: uint256) -> uint256:
-    xp: uint256[N_COINS] = PRECISION_MUL
-    for i in range(N_COINS):
-        xp[i] *= coin_balances[i]
-    return self.get_D(xp, amp)
+    return self.get_D(coin_balances, amp)
 
 
 @view
@@ -535,13 +529,10 @@ def get_y(i: int128, j: int128, x: uint256, xp: uint256[N_COINS]) -> uint256:
 @internal
 def _get_dy(i: int128, j: int128, dx: uint256) -> uint256:
     xp: uint256[N_COINS] = self._balances()
-    precisions: uint256[N_COINS] = PRECISION_MUL
-    for k in range(N_COINS):
-        xp[k] *= precisions[k]
 
-    x: uint256 = xp[i] + dx * precisions[i]
+    x: uint256 = xp[i] + dx
     y: uint256 = self.get_y(i, j, x, xp)
-    dy: uint256 = (xp[j] - y) / precisions[j]
+    dy: uint256 = (xp[j] - y)
     _fee: uint256 = self._dynamic_fee(
             (xp[i] + x) / 2, (xp[j] + y) / 2, self.fee, self.offpeg_fee_multiplier
         ) * dy / FEE_DENOMINATOR
@@ -566,11 +557,8 @@ def _exchange(i: int128, j: int128, dx: uint256) -> uint256:
     # dx and dy are in aTokens
 
     xp: uint256[N_COINS] = self._balances()
-    precisions: uint256[N_COINS] = PRECISION_MUL
-    for k in range(N_COINS):
-        xp[k] *= precisions[k]
 
-    x: uint256 = xp[i] + dx * precisions[i]
+    x: uint256 = xp[i] + dx
     y: uint256 = self.get_y(i, j, x, xp)
     dy: uint256 = xp[j] - y
     dy_fee: uint256 = dy * self._dynamic_fee(
@@ -581,9 +569,9 @@ def _exchange(i: int128, j: int128, dx: uint256) -> uint256:
     if admin_fee != 0:
         dy_admin_fee: uint256 = dy_fee * admin_fee / FEE_DENOMINATOR
         if dy_admin_fee != 0:
-            self.admin_balances[j] += dy_admin_fee / precisions[j]
+            self.admin_balances[j] += dy_admin_fee
 
-    return (dy - dy_fee) / precisions[j]
+    return dy - dy_fee
 
 
 @external
@@ -824,10 +812,6 @@ def _calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> uint256:
     # * Solve Eqn against y_i for D - _token_amount
     amp: uint256 = self._A()
     xp: uint256[N_COINS] = self._balances()
-    precisions: uint256[N_COINS] = PRECISION_MUL
-
-    for j in range(N_COINS):
-        xp[j] *= precisions[j]
 
     D0: uint256 = self.get_D(xp, amp)
     D1: uint256 = D0 - _token_amount * D0 / ERC20(self.lp_token).totalSupply()
@@ -851,7 +835,7 @@ def _calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> uint256:
 
     dy: uint256 = xp_reduced[i] - self.get_y_D(amp, i, xp_reduced, D1)
 
-    return (dy - 1) / precisions[i]
+    return dy - 1
 
 
 @view
