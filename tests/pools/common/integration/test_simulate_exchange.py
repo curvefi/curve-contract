@@ -5,7 +5,7 @@ from hypothesis import settings
 from simulation import Curve
 
 # do not run this test on pools without lending or meta pools
-pytestmark = [pytest.mark.lending, pytest.mark.skip_meta, pytest.mark.skip_pool("aave", "saave")]
+pytestmark = [pytest.mark.lending, pytest.mark.skip_meta, pytest.mark.skip_pool("aave", "template-a")]
 
 
 @pytest.fixture(scope="module", autouse=True)
