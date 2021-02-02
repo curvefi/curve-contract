@@ -14,6 +14,7 @@ WRAPPED_COIN_METHODS = {
     "IdleToken": {"get_rate": "tokenPrice", "mint": "mintIdleToken"},
     "renERC20": {"get_rate": "exchangeRateCurrent"},
     "yERC20": {"get_rate": "getPricePerFullShare", "mint": "deposit"},
+    "aETH": {"get_rate": "ratio"},
 }
 
 pytest_plugins = [
@@ -29,9 +30,7 @@ _pooldata = {}
 
 
 def pytest_addoption(parser):
-    parser.addoption(
-        "--pool", help="comma-separated list of pools to target",
-    )
+    parser.addoption("--pool", help="comma-separated list of pools to target")
     parser.addoption("--unitary", action="store_true", help="only run unit tests")
     parser.addoption("--integration", action="store_true", help="only run integration tests")
 
