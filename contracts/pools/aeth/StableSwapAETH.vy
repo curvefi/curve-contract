@@ -530,8 +530,6 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint2
         new_balances[i] -= amounts[i]
     D1: uint256 = self.get_D_mem(rates, new_balances, amp)
 
-    _lp_token: address = self.lp_token
-
     fees: uint256[N_COINS] = empty(uint256[N_COINS])
     _fee: uint256 = self.fee * N_COINS / (4 * (N_COINS - 1))
     _admin_fee: uint256 = self.admin_fee
@@ -548,12 +546,13 @@ def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint2
         new_balances[i] = new_balance - fees[i]
     D2: uint256 = self.get_D_mem(rates, new_balances, amp)
 
-    token_supply: uint256 = ERC20(_lp_token).totalSupply()
+    lp_token: address = self.lp_token
+    token_supply: uint256 = ERC20(lp_token).totalSupply()
     token_amount: uint256 = (D0 - D2) * token_supply / D0
     assert token_amount != 0
     assert token_amount <= max_burn_amount, "Slippage screwed you"
 
-    CurveToken(_lp_token).burnFrom(msg.sender, token_amount)  # dev: insufficient funds
+    CurveToken(lp_token).burnFrom(msg.sender, token_amount)  # dev: insufficient funds
 
     if amounts[0] != 0:
         raw_call(msg.sender, b"", value=amounts[0])
@@ -630,7 +629,6 @@ def _calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> (uint256, uint
 
     xp_reduced: uint256[N_COINS] = xp
     _fee: uint256 = self.fee * N_COINS / (4 * (N_COINS - 1))
-    rate: uint256 = rates[i]
 
     for j in range(N_COINS):
         dx_expected: uint256 = 0
@@ -642,6 +640,7 @@ def _calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> (uint256, uint
         xp_reduced[j] -= _fee * dx_expected / FEE_DENOMINATOR
 
     dy: uint256 = xp_reduced[i] - self.get_y_D(amp, i, xp_reduced, D1)
+    rate: uint256 = rates[i]
     dy = (dy - 1) * PRECISION / rate  # Withdraw less to account for rounding errors
     dy_0: uint256 = (xp[i] - new_y) * PRECISION / rate   # w/o fees
 
