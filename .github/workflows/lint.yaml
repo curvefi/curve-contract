@@ -1,0 +1,28 @@
+on: ["push", "pull_request"]
+
+name: linting
+
+jobs:
+
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Setup Python 3.8
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
+
+    - name: Install Requirements
+      run: pip install -r requirements.txt
+
+    - name: Run black
+      run: black --check scripts tests
+
+    - name: Run flake8
+      run: flake8 scripts tests
+
+    - name: Run isort
+      run: isort --check-only --diff --recursive scripts tests

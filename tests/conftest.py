@@ -1,34 +1,20 @@
 import json
-import pytest
 import warnings
-
-from brownie.project.main import get_loaded_projects
 from pathlib import Path
 
+import pytest
 from brownie._config import CONFIG
+from brownie.project.main import get_loaded_projects
 
 # functions in wrapped methods are renamed to simplify common tests
 
 WRAPPED_COIN_METHODS = {
-    "ATokenMock": {
-        "get_rate": "_get_rate",
-        "mint": "mint"
-    },
-    "cERC20": {
-        "get_rate": "exchangeRateStored",
-        "mint": "mint",
-    },
-    "IdleToken": {
-        "get_rate": "tokenPrice",
-        "mint": "mintIdleToken",
-    },
-    "renERC20": {
-        "get_rate": "exchangeRateCurrent",
-    },
-    "yERC20": {
-        "get_rate": "getPricePerFullShare",
-        "mint": "deposit",
-    },
+    "ATokenMock": {"get_rate": "_get_rate", "mint": "mint"},
+    "cERC20": {"get_rate": "exchangeRateStored", "mint": "mint"},
+    "IdleToken": {"get_rate": "tokenPrice", "mint": "mintIdleToken"},
+    "renERC20": {"get_rate": "exchangeRateCurrent"},
+    "yERC20": {"get_rate": "getPricePerFullShare", "mint": "deposit"},
+    "aETH": {"get_rate": "ratio"},
 }
 
 pytest_plugins = [
@@ -44,7 +30,7 @@ _pooldata = {}
 
 
 def pytest_addoption(parser):
-    parser.addoption("--pool", help="comma-separated list of pools to target",)
+    parser.addoption("--pool", help="comma-separated list of pools to target")
     parser.addoption("--unitary", action="store_true", help="only run unit tests")
     parser.addoption("--integration", action="store_true", help="only run integration tests")
 
@@ -59,7 +45,7 @@ def pytest_configure(config):
     config.addinivalue_line(
         "markers",
         "itercoins: parametrize a test with one or more ranges, equal to the length "
-        "of `wrapped_coins` for the active pool"
+        "of `wrapped_coins` for the active pool",
     )
 
 
@@ -67,39 +53,38 @@ def pytest_sessionstart():
     # load `pooldata.json` for each pool
     project = get_loaded_projects()[0]
     for path in [i for i in project._path.glob("contracts/pools/*") if i.is_dir()]:
-        with path.joinpath('pooldata.json').open() as fp:
+        with path.joinpath("pooldata.json").open() as fp:
             _pooldata[path.name] = json.load(fp)
             _pooldata[path.name].update(
-                name=path.name,
-                swap_contract=next(i.stem for i in path.glob(f"StableSwap*"))
+                name=path.name, swap_contract=next(i.stem for i in path.glob("StableSwap*"))
             )
-            zap_contract = next((i.stem for i in path.glob(f"Deposit*")), None)
+            zap_contract = next((i.stem for i in path.glob("Deposit*")), None)
             if zap_contract:
-                _pooldata[path.name]['zap_contract'] = zap_contract
+                _pooldata[path.name]["zap_contract"] = zap_contract
 
     # create pooldata for templates
     lp_contract = sorted(i._name for i in project if i._name.startswith("CurveToken"))[-1]
 
     for path in [i for i in project._path.glob("contracts/pool-templates/*") if i.is_dir()]:
-        with path.joinpath('pooldata.json').open() as fp:
+        with path.joinpath("pooldata.json").open() as fp:
             name = f"template-{path.name}"
             _pooldata[name] = json.load(fp)
             _pooldata[name].update(
                 name=name,
                 lp_contract=lp_contract,
-                swap_contract=next(i.stem for i in path.glob(f"*Swap*")),
+                swap_contract=next(i.stem for i in path.glob("*Swap*")),
             )
-            zap_contract = next((i.stem for i in path.glob(f"Deposit*")), None)
+            zap_contract = next((i.stem for i in path.glob("Deposit*")), None)
             if zap_contract:
-                _pooldata[name]['zap_contract'] = zap_contract
+                _pooldata[name]["zap_contract"] = zap_contract
 
-    for name, data in _pooldata.items():
+    for _, data in _pooldata.items():
         if "base_pool" in data:
-            data["base_pool"] = _pooldata[data['base_pool']]
+            data["base_pool"] = _pooldata[data["base_pool"]]
         elif "base_pool_contract" in data:
             # for metapool templates, we target a contract instead of a specific pool
             base_swap = data["base_pool_contract"]
-            base_data = next(v for v in _pooldata.values() if v['swap_contract'] == base_swap)
+            base_data = next(v for v in _pooldata.values() if v["swap_contract"] == base_swap)
             data["base_pool"] = base_data
 
 
@@ -132,7 +117,7 @@ def pytest_ignore_collect(path, config):
         if path_parts[1] == "common":
             return None
 
-        target_pools = config.getoption("pool").split(',')
+        target_pools = config.getoption("pool").split(",")
 
         # only include metapool tests if at least one targeted pool is a metapool
         if path_parts[1] == "meta":
@@ -145,7 +130,7 @@ def pytest_ignore_collect(path, config):
 
 def pytest_generate_tests(metafunc):
     project = get_loaded_projects()[0]
-    itercoins_bound = max(len(i['coins']) for i in _pooldata.values())
+    itercoins_bound = max(len(i["coins"]) for i in _pooldata.values())
 
     if "pool_data" in metafunc.fixturenames:
         # parametrize `pool_data`
@@ -154,7 +139,7 @@ def pytest_generate_tests(metafunc):
             if test_path.parts[2] in ("common", "meta"):
                 # parametrize common pool/zap tests to run against all pools
                 if metafunc.config.getoption("pool"):
-                    params = metafunc.config.getoption("pool").split(',')
+                    params = metafunc.config.getoption("pool").split(",")
                 else:
                     params = list(_pooldata)
                 if test_path.parts[2] == "meta":
@@ -170,7 +155,7 @@ def pytest_generate_tests(metafunc):
             # pool tests outside `tests/pools` or `tests/zaps` will only run when
             # a target pool is explicitly declared
             try:
-                params = metafunc.config.getoption("pool").split(',')
+                params = metafunc.config.getoption("pool").split(",")
             except Exception:
                 params = []
                 warnings.warn(
@@ -188,14 +173,14 @@ def pytest_generate_tests(metafunc):
 def pytest_collection_modifyitems(config, items):
     project = get_loaded_projects()[0]
     try:
-        is_forked = "fork" in CONFIG.active_network['id']
+        is_forked = "fork" in CONFIG.active_network["id"]
     except Exception:
         is_forked = False
 
     for item in items.copy():
         try:
             params = item.callspec.params
-            data = _pooldata[params['pool_data']]
+            data = _pooldata[params["pool_data"]]
         except Exception:
             continue
 
@@ -206,11 +191,11 @@ def pytest_collection_modifyitems(config, items):
 
         # remove excess `itercoins` parametrized tests
         for marker in item.iter_markers(name="itercoins"):
-            n_coins = len(data['coins'])
+            n_coins = len(data["coins"])
 
             # for metapools, consider the base pool when calculating n_coins
             if marker.kwargs.get("underlying") and "base_pool" in data:
-                n_coins = len(data['base_pool']['coins']) + 1
+                n_coins = len(data["base_pool"]["coins"]) + 1
 
             values = [params[i] for i in marker.args]
             if max(values) >= n_coins or len(set(values)) < len(values):
@@ -245,7 +230,7 @@ def pytest_collection_modifyitems(config, items):
 
         # apply `lending` marker
         if next(item.iter_markers(name="lending"), False):
-            deployer = getattr(project, data['swap_contract'])
+            deployer = getattr(project, data["swap_contract"])
             if "exchange_underlying" not in deployer.signatures:
                 items.remove(item)
                 continue
@@ -254,7 +239,6 @@ def pytest_collection_modifyitems(config, items):
         if next(item.iter_markers(name="zap"), False) and "zap_contract" not in data:
             items.remove(item)
             continue
-
 
     # hacky magic to ensure the correct number of tests is shown in collection report
     config.pluginmanager.get_plugin("terminalreporter")._numcollected = len(items)
@@ -269,12 +253,14 @@ def pytest_sessionfinish(session, exitstatus):
 
 # isolation setup
 
+
 @pytest.fixture(autouse=True)
 def isolation_setup(fn_isolation):
     pass
 
 
 # main parametrized fixture, used to pass data about each pool into the other fixtures
+
 
 @pytest.fixture(scope="module")
 def pool_data(request):
@@ -301,4 +287,4 @@ def project():
 
 @pytest.fixture(scope="session")
 def is_forked():
-    yield "fork" in CONFIG.active_network['id']
+    yield "fork" in CONFIG.active_network["id"]

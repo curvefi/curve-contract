@@ -1,4 +1,3 @@
-
 class Curve:
 
     """
@@ -57,7 +56,7 @@ class Curve:
         Calculate x[j] if one makes x[i] = x
 
         Done by solving quadratic equation iteratively.
-        x_1**2 + x1 * (sum' - (A*n**n - 1) * D / (A * n**n)) = D ** (n + 1) / (n ** (2 * n) * prod' * A)
+        x_1**2 + x1 * (sum' - (A*n**n - 1) * D / (A * n**n)) = D ** (n+1)/(n ** (2 * n) * prod' * A)
         x_1**2 + b*x_1 = c
 
         x_1 = (x_1**2 + c) / (2*x_1 + b)
@@ -84,7 +83,7 @@ class Curve:
         Calculate x[j] if one makes x[i] = x
 
         Done by solving quadratic equation iteratively.
-        x_1**2 + x1 * (sum' - (A*n**n - 1) * D / (A * n**n)) = D ** (n + 1) / (n ** (2 * n) * prod' * A)
+        x_1**2 + x1 * (sum' - (A*n**n - 1) * D / (A * n**n)) = D ** (n+1)/(n ** (2 * n) * prod' * A)
         x_1**2 + b*x_1 = c
 
         x_1 = (x_1**2 + c) / (2*x_1 + b)
