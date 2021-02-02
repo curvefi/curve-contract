@@ -170,10 +170,14 @@ def _underlying(alice, project, pool_data, is_forked, base_pool_token):
 
     if is_forked:
         for data in pool_data["coins"]:
-            if data["underlying_address"] == ETH_ADDRESS:
+            if data.get("underlying_address") == ETH_ADDRESS:
                 coins.append(ETH_ADDRESS)
             else:
-                coins.append(_MintableTestToken(data["underlying_address"], pool_data))
+                coins.append(
+                    _MintableTestToken(
+                        data.get("underlying_address", data["wrapped_address"]), pool_data
+                    )
+                )
     else:
         for i, coin_data in enumerate(pool_data["coins"]):
             if coin_data.get("underlying_address") == ETH_ADDRESS:
