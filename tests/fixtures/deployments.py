@@ -115,7 +115,7 @@ def zap(project, alice, swap, underlying_coins, wrapped_coins, pool_token, pool_
 
 @pytest.fixture(scope="module")
 def aave_lending_pool(AaveLendingPoolMock, pool_data, alice, is_forked):
-    if pool_data['name'] == "aave" or pool_data['name'] == "template-a":
+    if pool_data["name"] == "aave" or pool_data["name"] == "template-a":
         if is_forked:
             return Contract("0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9")
         else:
