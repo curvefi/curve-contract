@@ -366,17 +366,14 @@ def add_liquidity(
         if amount == 0:
             assert token_supply > 0
         else:
-            coin: address = ZERO_ADDRESS
+            coin: address = self.coins[i]
             if _use_underlying:
-                coin = self.underlying_coins[i]
+                ERC20(self.underlying_coins[i]).transferFrom(msg.sender, self, amount)
+                before: uint256 = ERC20(coin).balanceOf(self)
+                assert cyToken(coin).mint(amount) == 0
+                amount = ERC20(coin).balanceOf(self) - before
             else:
-                coin = self.coins[i]
-
-            ERC20(coin).transferFrom(msg.sender, self, amount)
-            if _use_underlying:
-                before: uint256 = ERC20(self.coins[i]).balanceOf(self)
-                assert cyToken(self.coins[i]).mint(amount) == 0
-                amount = ERC20(self.coins[i]).balanceOf(self) - before
+                ERC20(coin).transferFrom(msg.sender, self, amount)
             amounts[i] = amount
             new_balances[i] += amount
 
@@ -431,7 +428,7 @@ def get_y(i: int128, j: int128, x: uint256, xp_: uint256[N_COINS]) -> uint256:
     # should be unreachable, but good for safety
     assert i >= 0
     assert i < N_COINS
-    
+
     A_: uint256 = self._A()
     D: uint256 = self.get_D(xp_, A_)
     Ann: uint256 = A_ * N_COINS
