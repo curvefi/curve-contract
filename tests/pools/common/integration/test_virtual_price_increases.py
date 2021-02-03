@@ -1,11 +1,10 @@
-
 import pytest
 from brownie import chain
 from brownie.test import strategy
 
 pytestmark = [
     pytest.mark.usefixtures("add_initial_liquidity"),
-    pytest.mark.skip_pool("compound", "yv2", "usdt", "ren", "sbtc")
+    pytest.mark.skip_pool("compound", "yv2", "usdt", "ren", "sbtc"),
 ]
 
 ETH_ADDRESS = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
@@ -52,7 +51,7 @@ class StateMachine:
             return self.rule_exchange_underlying(st_pct)
 
         new_A = int(self.swap.A() * (1 + st_pct))
-        self.swap.ramp_A(new_A, chain.time() + 86410, {'from': self.alice})
+        self.swap.ramp_A(new_A, chain.time() + 86410, {"from": self.alice})
 
     def rule_increase_rates(self, st_rates):
         """
@@ -60,16 +59,16 @@ class StateMachine:
         """
         for rate, coin in zip(self.coins, st_rates):
             if hasattr(coin, "set_exchange_rate"):
-                coin.set_exchange_rate(int(coin.get_rate() * rate), {'from': self.alice})
+                coin.set_exchange_rate(int(coin.get_rate() * rate), {"from": self.alice})
 
     def rule_exchange(self, st_pct):
         """
         Perform a swap using wrapped coins.
         """
         send, recv = self._min_max()
-        amount = int(10**self.decimals[send] * st_pct)
+        amount = int(10 ** self.decimals[send] * st_pct)
         value = amount if self.coins[send] == ETH_ADDRESS else 0
-        self.swap.exchange(send, recv, amount, 0, {'from': self.alice, 'value': value})
+        self.swap.exchange(send, recv, amount, 0, {"from": self.alice, "value": value})
 
     def rule_exchange_underlying(self, st_pct):
         """
@@ -80,9 +79,9 @@ class StateMachine:
             return self.rule_exchange(st_pct)
 
         send, recv = self._min_max()
-        amount = int(10**self.decimals[send] * st_pct)
+        amount = int(10 ** self.decimals[send] * st_pct)
         value = amount if self.coins[send] == ETH_ADDRESS else 0
-        self.swap.exchange_underlying(send, recv, amount, 0, {'from': self.alice, 'value': value})
+        self.swap.exchange_underlying(send, recv, amount, 0, {"from": self.alice, "value": value})
 
     def rule_remove_one_coin(self, st_pct):
         """
@@ -93,8 +92,8 @@ class StateMachine:
             return self.rule_remove_imbalance(st_pct)
 
         idx = self._min_max()[1]
-        amount = int(10**self.decimals[idx] * st_pct)
-        self.swap.remove_liquidity_one_coin(amount, idx, 0, {'from': self.alice})
+        amount = int(10 ** self.decimals[idx] * st_pct)
+        self.swap.remove_liquidity_one_coin(amount, idx, 0, {"from": self.alice})
 
     def rule_remove_imbalance(self, st_pct):
         """
@@ -102,15 +101,15 @@ class StateMachine:
         """
         idx = self._min_max()[1]
         amounts = [0] * self.n_coins
-        amounts[idx] = 10**self.decimals[idx] * st_pct
-        self.swap.remove_liquidity_imbalance(amounts, 2**256-1, {'from': self.alice})
+        amounts[idx] = 10 ** self.decimals[idx] * st_pct
+        self.swap.remove_liquidity_imbalance(amounts, 2 ** 256 - 1, {"from": self.alice})
 
     def rule_remove(self, st_pct):
         """
         Remove liquidity from the pool.
         """
-        amount = int(10**18 * st_pct)
-        self.swap.remove_liquidity(amount, [0] * self.n_coins, {'from': self.alice})
+        amount = int(10 ** 18 * st_pct)
+        self.swap.remove_liquidity(amount, [0] * self.n_coins, {"from": self.alice})
 
     def invariant_check_virtual_price(self):
         """
@@ -139,16 +138,16 @@ def test_number_always_go_up(
     base_amount,
     set_fees,
 ):
-    set_fees(10**7, 0)
+    set_fees(10 ** 7, 0)
 
     for underlying, wrapped in zip(underlying_coins, wrapped_coins):
-        amount = 10**18 * base_amount
+        amount = 10 ** 18 * base_amount
         if underlying == ETH_ADDRESS:
             bob.transfer(alice, amount)
         else:
-            underlying._mint_for_testing(alice, amount, {'from': alice})
+            underlying._mint_for_testing(alice, amount, {"from": alice})
         if underlying != wrapped:
-            wrapped._mint_for_testing(alice, amount, {'from': alice})
+            wrapped._mint_for_testing(alice, amount, {"from": alice})
 
     state_machine(
         StateMachine,
@@ -156,5 +155,5 @@ def test_number_always_go_up(
         swap,
         wrapped_coins,
         wrapped_decimals,
-        settings={'max_examples': 25, 'stateful_step_count': 50}
+        settings={"max_examples": 25, "stateful_step_count": 50},
     )

@@ -5,7 +5,7 @@ import pytest
 
 pytestmark = [
     pytest.mark.usefixtures("add_initial_liquidity", "approve_zap"),
-    pytest.mark.skip_pool("busd", "compound", "pax", "susd", "usdt", "y")
+    pytest.mark.skip_pool("busd", "compound", "pax", "susd", "usdt", "y"),
 ]
 
 
@@ -18,8 +18,8 @@ def test_remove_one(alice, bob, zap, underlying_coins, wrapped_coins, pool_token
     initial_amount = pool_token.balanceOf(alice)
     amount = initial_amount // divisor
 
-    pool_token.transfer(bob, initial_amount, {'from': alice})
-    zap.remove_liquidity_one_coin(amount, idx, 0, {'from': bob})
+    pool_token.transfer(bob, initial_amount, {"from": alice})
+    zap.remove_liquidity_one_coin(amount, idx, 0, {"from": bob})
 
     assert underlying.balanceOf(zap) == 0
     assert wrapped.balanceOf(zap) == 0
@@ -35,4 +35,4 @@ def test_remove_one(alice, bob, zap, underlying_coins, wrapped_coins, pool_token
 @pytest.mark.itercoins("idx")
 def test_amount_exceeds_balance(bob, zap, idx):
     with brownie.reverts():
-        zap.remove_liquidity_one_coin(1, idx, 0, {'from': bob})
+        zap.remove_liquidity_one_coin(1, idx, 0, {"from": bob})

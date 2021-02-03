@@ -1,6 +1,7 @@
 import pytest
 from brownie.test import given, strategy
 from hypothesis import settings
+
 from simulation import Curve
 
 # do not run this test on pools without lending or meta pools
@@ -8,8 +9,8 @@ pytestmark = [pytest.mark.lending, pytest.mark.skip_meta]
 
 
 @given(
-    st_coin=strategy('decimal[100]', min_value=0, max_value="0.99", unique=True, places=2),
-    st_divisor=strategy('uint[50]', min_value=1, max_value=100, unique=True),
+    st_coin=strategy("decimal[100]", min_value=0, max_value="0.99", unique=True, places=2),
+    st_divisor=strategy("uint[50]", min_value=1, max_value=100, unique=True),
 )
 @settings(max_examples=5)
 def test_simulated_exchange(
@@ -38,39 +39,39 @@ def test_simulated_exchange(
         Array of integers, used to choose the size of each swap
     """
 
-    set_fees(10**7, 0)
+    set_fees(10 ** 7, 0)
 
     # add initial pool liquidity
     initial_liquidity = []
-    for underlying, wrapped, decimals in zip(underlying_coins, wrapped_coins, wrapped_decimals):
+    for underlying, decimals in zip(underlying_coins, wrapped_decimals):
         amount = 1000 * 10 ** decimals
-        underlying._mint_for_testing(alice, amount, {'from': alice})
-        underlying.approve(swap, amount, {'from': alice})
+        underlying._mint_for_testing(alice, amount, {"from": alice})
+        underlying.approve(swap, amount, {"from": alice})
         initial_liquidity.append(amount // 10)
 
-    swap.add_liquidity(initial_liquidity, 0, True, {'from': alice})
+    swap.add_liquidity(initial_liquidity, 0, True, {"from": alice})
 
     # initialize our python model using the same parameters as the contract
     balances = [swap.balances(i) for i in range(n_coins)]
     rates = []
     for decimals in wrapped_decimals:
         rate = 10 ** 18
-        precision = 10 ** (18-decimals)
+        precision = 10 ** (18 - decimals)
         rates.append(rate * precision)
     curve_model = Curve(2 * 360, balances, n_coins, rates)
 
     for coin, decimals in zip(underlying_coins, wrapped_decimals):
         # Fund bob with $100 of each coin and approve swap contract
         amount = 100 * 10 ** decimals
-        coin._mint_for_testing(bob, amount, {'from': alice})
-        coin.approve(swap, amount, {'from': bob})
+        coin._mint_for_testing(bob, amount, {"from": alice})
+        coin.approve(swap, amount, {"from": bob})
 
     # Start trading!
-    rate_mul = [10**i for i in wrapped_decimals]
+    rate_mul = [10 ** i for i in wrapped_decimals]
     while st_coin:
         # Increase aToken balances by 1% to simulate accrued interest
-        for i, (coin, decimals) in enumerate(zip(wrapped_coins, wrapped_decimals)):
-            coin._mint_for_testing(swap, coin.balanceOf(swap) // 100, {'from': alice})
+        for i, coin in enumerate(wrapped_coins):
+            coin._mint_for_testing(swap, coin.balanceOf(swap) // 100, {"from": alice})
             curve_model.x[i] = int(curve_model.x[i] * 1.01)
 
         # Simulate the exchange
@@ -86,11 +87,11 @@ def test_simulated_exchange(
 
         x_0 = underlying_coins[send].balanceOf(bob)
         y_0 = underlying_coins[recv].balanceOf(bob)
-        underlying_coins[send].approve(swap, 0, {'from': bob})
-        underlying_coins[send].approve(swap, value, {'from': bob})
+        underlying_coins[send].approve(swap, 0, {"from": bob})
+        underlying_coins[send].approve(swap, value, {"from": bob})
 
         amount = int(0.5 * value * rate_mul[recv] / rate_mul[send])
-        swap.exchange_underlying(send, recv, value, amount, {'from': bob})
+        swap.exchange_underlying(send, recv, value, amount, {"from": bob})
 
         x_1 = underlying_coins[send].balanceOf(bob)
         y_1 = underlying_coins[recv].balanceOf(bob)

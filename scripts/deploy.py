@@ -1,11 +1,10 @@
 import json
 
-from brownie import accounts
-from brownie.project.main import get_loaded_projects
-from brownie.network.gas.strategies import GasNowScalingStrategy
-
 # modify this import if you wish to deploy a different liquidity gauge
 from brownie import LiquidityGauge as LiquidityGauge
+from brownie import accounts
+from brownie.network.gas.strategies import GasNowScalingStrategy
+from brownie.project.main import get_loaded_projects
 
 # set a throwaway admin account here
 DEPLOYER = accounts.add()
@@ -20,9 +19,9 @@ MINTER = "0xd061D61a4d941c39E5453435B6345Dc261C2fcE0"
 
 def _tx_params():
     return {
-        'from': DEPLOYER,
-        'required_confs': REQUIRED_CONFIRMATIONS,
-        'gas_price': GasNowScalingStrategy("standard", "fast"),
+        "from": DEPLOYER,
+        "required_confs": REQUIRED_CONFIRMATIONS,
+        "gas_price": GasNowScalingStrategy("standard", "fast"),
     }
 
 
@@ -37,23 +36,23 @@ def main():
 
     swap_name = next(i.stem for i in contracts_path.glob(f"{POOL_NAME}/StableSwap*"))
     swap_deployer = getattr(project, swap_name)
-    token_deployer = getattr(project, pool_data.get('lp_contract'))
+    token_deployer = getattr(project, pool_data.get("lp_contract"))
 
-    underlying_coins = [i['underlying_address'] for i in pool_data['coins']]
-    wrapped_coins = [i.get('wrapped_address', i['underlying_address']) for i in pool_data['coins']]
+    underlying_coins = [i["underlying_address"] for i in pool_data["coins"]]
+    wrapped_coins = [i.get("wrapped_address", i["underlying_address"]) for i in pool_data["coins"]]
 
     base_pool = None
     if "base_pool" in pool_data:
         with contracts_path.joinpath(f"{pool_data['base_pool']}/pooldata.json").open() as fp:
             base_pool_data = json.load(fp)
-            base_pool = base_pool_data['swap_address']
+            base_pool = base_pool_data["swap_address"]
 
     # deploy the token
     token_args = pool_data["lp_constructor"]
-    token = token_deployer.deploy(token_args['name'], token_args['symbol'], _tx_params())
+    token = token_deployer.deploy(token_args["name"], token_args["symbol"], _tx_params())
 
     # deploy the pool
-    abi = next(i['inputs'] for i in swap_deployer.abi if i['type'] == "constructor")
+    abi = next(i["inputs"] for i in swap_deployer.abi if i["type"] == "constructor")
     args = pool_data["swap_constructor"]
     args.update(
         _coins=wrapped_coins,
@@ -62,7 +61,7 @@ def main():
         _base_pool=base_pool,
         _owner=POOL_OWNER,
     )
-    deployment_args = [args[i['name']] for i in abi] + [_tx_params()]
+    deployment_args = [args[i["name"]] for i in abi] + [_tx_params()]
 
     swap = swap_deployer.deploy(*deployment_args)
 
@@ -77,16 +76,16 @@ def main():
     if zap_name is not None:
         zap_deployer = getattr(project, zap_name)
 
-        abi = next(i['inputs'] for i in zap_deployer.abi if i['type'] == "constructor")
+        abi = next(i["inputs"] for i in zap_deployer.abi if i["type"] == "constructor")
         args = {
-            '_coins': wrapped_coins,
-            '_underlying_coins': underlying_coins,
-            '_token': token,
-            '_pool': swap,
-            '_curve': swap,
+            "_coins": wrapped_coins,
+            "_underlying_coins": underlying_coins,
+            "_token": token,
+            "_pool": swap,
+            "_curve": swap,
         }
-        deployment_args = [args[i['name']] for i in abi] + [_tx_params()]
+        deployment_args = [args[i["name"]] for i in abi] + [_tx_params()]
 
         zap_deployer.deploy(*deployment_args)
 
-    print(f'Gas used in deployment: {(balance - DEPLOYER.balance()) / 1e18:.4f} ETH')
+    print(f"Gas used in deployment: {(balance - DEPLOYER.balance()) / 1e18:.4f} ETH")

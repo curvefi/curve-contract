@@ -27,9 +27,9 @@ def pytest_collection_modifyitems(config, items):
 
         # remove invalid `target_token` parametrized tests
         for marker in item.iter_markers(name="target_token"):
-            lower = marker.kwargs.get("min", float('-inf'))
-            upper = marker.kwargs.get("max", float('inf'))
-            version = int(params['token']._name[-1])
+            lower = marker.kwargs.get("min", float("-inf"))
+            upper = marker.kwargs.get("max", float("inf"))
+            version = int(params["token"]._name[-1])
             if version < lower or version > upper:
                 items.remove(item)
 
@@ -38,10 +38,10 @@ def pytest_collection_modifyitems(config, items):
 def token(request, alice, minter):
     # parametrized fixture that uses every token contract in `contracts/tokens`
     deployer = request.param
-    args = ["Test Token", "TST", 18, 0][:len(deployer.deploy.abi['inputs'])]
-    contract = deployer.deploy(*args, {'from': alice})
-    contract.set_minter(minter, {'from': alice})
-    contract.mint(alice, 100000 * 10**18, {'from': minter})
+    args = ["Test Token", "TST", 18, 0][: len(deployer.deploy.abi["inputs"])]
+    contract = deployer.deploy(*args, {"from": alice})
+    contract.set_minter(minter, {"from": alice})
+    contract.mint(alice, 100000 * 10 ** 18, {"from": minter})
 
     yield contract
 
