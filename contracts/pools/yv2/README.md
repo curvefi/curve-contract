@@ -8,9 +8,9 @@
 
 ## Deployments
 
-* [`CurveContractV3`](../../tokens/CurveTokenV3.vy): [0xFd2a8fA60Abd58Efe3EeE34dd494cD491dC14900](https://etherscan.io/address/0xFd2a8fA60Abd58Efe3EeE34dd494cD491dC14900)
-* [`LiquidityGaugeV2`](https://github.com/curvefi/curve-dao-contracts/blob/master/contracts/gauges/LiquidityGaugeV2.vy): [0xd662908ADA2Ea1916B3318327A97eB18aD588b5d](https://etherscan.io/address/0xd662908ADA2Ea1916B3318327A97eB18aD588b5d)
-* [`StableSwapYv2`](StableSwapYv2.vy): [0xDeBF20617708857ebe4F679508E7b7863a8A8EeE](https://etherscan.io/address/0xDeBF20617708857ebe4F679508E7b7863a8A8EeE)
+* [`CurveContractV3`](../../tokens/CurveTokenV3.vy): [0x571FF5b7b346F706aa48d696a9a4a288e9Bb4091](https://etherscan.io/address/0x571FF5b7b346F706aa48d696a9a4a288e9Bb4091)
+* [`LiquidityGaugeV2`](https://github.com/curvefi/curve-dao-contracts/blob/master/contracts/gauges/LiquidityGaugeV2.vy): [0x8101E6760130be2C8Ace79643AB73500571b7162](https://etherscan.io/address/0x8101E6760130be2C8Ace79643AB73500571b7162)
+* [`StableSwapYv2`](StableSwapYv2.vy): [0x8925D9d9B4569D737a48499DeF3f67BaA5a144b9](https://etherscan.io/address/0x8925D9d9B4569D737a48499DeF3f67BaA5a144b9)
 
 ## Stablecoins
 
