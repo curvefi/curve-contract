@@ -10,7 +10,7 @@ pytestmark = [
 
 @pytest.mark.itercoins("idx")
 @pytest.mark.parametrize("rate_mod", [0.9, 0.99, 1.01, 1.1])
-@pytest.mark.skip_pool("ren", "sbtc", "aave", "steth", "template-a")
+@pytest.mark.skip_pool("ren", "sbtc", "aave", "steth", "aeth", "template-a")
 def test_amount_received(chain, alice, swap, wrapped_coins, wrapped_decimals, idx, rate_mod):
 
     decimals = wrapped_decimals[idx]
