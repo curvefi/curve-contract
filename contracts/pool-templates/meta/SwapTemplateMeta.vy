@@ -96,7 +96,7 @@ event StopRampA:
     t: uint256
 
 
-# This can (and needs to) be changed at compile time
+# These constants must be set prior to compiling
 N_COINS: constant(int128) = ___N_COINS___
 MAX_COIN: constant(int128) = N_COINS - 1
 
@@ -433,7 +433,7 @@ def add_liquidity(_amounts: uint256[N_COINS], _min_mint_amount: uint256) -> uint
                     convert(_amounts[i], bytes32),
                 ),
                 max_outsize=32,
-            )  # dev: failed transfer
+            )
             if len(_response) > 0:
                 assert convert(_response, bool)  # dev: failed transfer
             # end "safeTransferFrom"
@@ -449,6 +449,15 @@ def add_liquidity(_amounts: uint256[N_COINS], _min_mint_amount: uint256) -> uint
 @view
 @internal
 def _get_y(i: int128, j: int128, x: uint256, _xp: uint256[N_COINS]) -> uint256:
+    """
+    Calculate x[j] if one makes x[i] = x
+
+    Done by solving quadratic equation iteratively.
+    x_1**2 + x_1 * (sum' - (A*n**n - 1) * D / (A * n**n)) = D ** (n + 1) / (n ** (2 * n) * prod' * A)
+    x_1**2 + b*x_1 = c
+
+    x_1 = (x_1**2 + c) / (2*x_1 + b)
+    """
     # x in the input is converted to the same price/precision
 
     assert i != j       # dev: same coin
@@ -495,12 +504,11 @@ def _get_y(i: int128, j: int128, x: uint256, _xp: uint256[N_COINS]) -> uint256:
 @view
 @external
 def get_dy(i: int128, j: int128, _dx: uint256) -> uint256:
-    # dx and dy in c-units
     rates: uint256[N_COINS] = RATES
     rates[MAX_COIN] = self._vp_rate_ro()
     xp: uint256[N_COINS] = self._xp(rates[MAX_COIN])
 
-    x: uint256 = xp[i] + _dx * rates[i] / PRECISION
+    x: uint256 = xp[i] + (_dx * rates[i] / PRECISION)
     y: uint256 = self._get_y(i, j, x, xp)
     dy: uint256 = xp[j] - y - 1
     fee: uint256 = self.fee * dy / FEE_DENOMINATOR
@@ -598,7 +606,6 @@ def exchange(i: int128, j: int128, _dx: uint256, _min_dy: uint256) -> uint256:
     # When rounding errors happen, we undercharge admin fee in favor of LP
     self.balances[j] = old_balances[j] - dy - dy_admin_fee
 
-    # "safeTransferFrom" which works for ERC20s which return bool or not
     _response: Bytes[32] = raw_call(
         self.coins[i],
         concat(
@@ -608,12 +615,10 @@ def exchange(i: int128, j: int128, _dx: uint256, _min_dy: uint256) -> uint256:
             convert(_dx, bytes32),
         ),
         max_outsize=32,
-    )  # dev: failed transfer
+    )
     if len(_response) > 0:
-        assert convert(_response, bool)  # dev: failed transfer
-    # end "safeTransferFrom"
+        assert convert(_response, bool)
 
-    # "safeTransfer" which works for ERC20s which return bool or not
     response: Bytes[32] = raw_call(
         self.coins[j],
         concat(
@@ -622,10 +627,9 @@ def exchange(i: int128, j: int128, _dx: uint256, _min_dy: uint256) -> uint256:
             convert(dy, bytes32),
         ),
         max_outsize=32,
-    )  # dev: failed transfer
+    )
     if len(response) > 0:
-        assert convert(response, bool)  # dev: failed transfer
-    # end "safeTransfer"
+        assert convert(response, bool)
 
     log TokenExchange(msg.sender, i, _dx, j, dy)
 
@@ -676,7 +680,7 @@ def exchange_underlying(i: int128, j: int128, _dx: uint256, _min_dy: uint256) ->
     dx_w_fee: uint256 = _dx
     if input_coin == FEE_ASSET:
         dx_w_fee = ERC20(FEE_ASSET).balanceOf(self)
-    # "safeTransferFrom" which works for ERC20s which return bool or not
+
     _response: Bytes[32] = raw_call(
         input_coin,
         concat(
@@ -686,10 +690,10 @@ def exchange_underlying(i: int128, j: int128, _dx: uint256, _min_dy: uint256) ->
             convert(_dx, bytes32),
         ),
         max_outsize=32,
-    )  # dev: failed transfer
+    )
     if len(_response) > 0:
-        assert convert(_response, bool)  # dev: failed transfer
-    # end "safeTransferFrom"
+        assert convert(_response, bool)  
+
     # Handle potential Tether fees
     if input_coin == FEE_ASSET:
         dx_w_fee = ERC20(FEE_ASSET).balanceOf(self) - dx_w_fee
@@ -784,10 +788,10 @@ def remove_liquidity(_amount: uint256, _min_amounts: uint256[N_COINS]) -> uint25
     fees: uint256[N_COINS] = empty(uint256[N_COINS])  # Fees are unused but we've got them historically in event
 
     for i in range(N_COINS):
-        _balance: uint256 = self.balances[i]
-        value: uint256 = _balance * _amount / total_supply
+        old_balance: uint256 = self.balances[i]
+        value: uint256 = old_balance * _amount / total_supply
         assert value >= _min_amounts[i], "Withdrawal resulted in fewer coins than expected"
-        self.balances[i] = _balance - value
+        self.balances[i] = old_balance - value
         amounts[i] = value
         ERC20(self.coins[i]).transfer(msg.sender, value)
         
@@ -1030,7 +1034,6 @@ def commit_new_fee(_new_fee: uint256, _new_admin_fee: uint256):
     
 
 @external
-@nonreentrant('lock')
 def apply_new_fee():
     assert msg.sender == self.owner  # dev: only owner
     assert block.timestamp >= self.admin_actions_deadline  # dev: insufficient time
@@ -1065,7 +1068,6 @@ def commit_transfer_ownership(_owner: address):
 
 
 @external
-@nonreentrant('lock')
 def apply_transfer_ownership():
     assert msg.sender == self.owner  # dev: only owner
     assert block.timestamp >= self.transfer_ownership_deadline  # dev: insufficient time
@@ -1092,7 +1094,6 @@ def admin_balances(i: uint256) -> uint256:
 
 
 @external
-@nonreentrant('lock')
 def withdraw_admin_fees():
     assert msg.sender == self.owner  # dev: only owner
 
@@ -1103,7 +1104,6 @@ def withdraw_admin_fees():
             ERC20(coin).transfer(msg.sender, value)
 
 @external
-@nonreentrant('lock')
 def donate_admin_fees():
     assert msg.sender == self.owner  # dev: only owner
     for i in range(N_COINS):

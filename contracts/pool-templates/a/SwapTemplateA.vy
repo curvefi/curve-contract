@@ -1,4 +1,4 @@
-# @version 0.2.8
+# @version ^0.2.8
 """
 @title StableSwap
 @author Curve.Fi
@@ -17,6 +17,7 @@ interface LendingPool:
     def withdraw(_underlying_asset: address, _amount: uint256, _receiver: address): nonpayable
 
 interface CurveToken:
+    def totalSupply() -> uint256: view
     def mint(_to: address, _value: uint256) -> bool: nonpayable
     def burnFrom(_to: address, _value: uint256) -> bool: nonpayable
 
@@ -166,7 +167,6 @@ def __init__(
     for i in range(N_COINS):
         assert _coins[i] != ZERO_ADDRESS
         assert _underlying_coins[i] != ZERO_ADDRESS
-
     self.coins = _coins
     self.underlying_coins = _underlying_coins
     self.initial_A = _A * A_PRECISION
@@ -194,15 +194,16 @@ def __init__(
             assert convert(_response, bool)
 
 
-
 @view
 @internal
 def _A() -> uint256:
+    """
+    Handle ramping A up or down
+    """
     t1: uint256 = self.future_A_time
     A1: uint256 = self.future_A
 
     if block.timestamp < t1:
-        # handle ramping up and down of A
         A0: uint256 = self.initial_A
         t0: uint256 = self.initial_A_time
         # Expressions in uint256 cannot have negative numbers, thus "if"
@@ -289,19 +290,19 @@ def _get_D(_xp: uint256[N_COINS], _amp: uint256) -> uint256:
     D[j+1] = (A * n**n * sum(x_i) - D[j]**(n+1) / (n**n prod(x_i))) / (A * n**n - 1)
     """
     S: uint256 = 0
+    Dprev: uint256 = 0
 
     for _x in _xp:
         S += _x
     if S == 0:
         return 0
 
-    Dprev: uint256 = 0
     D: uint256 = S
     Ann: uint256 = _amp * N_COINS
     for _i in range(255):
         D_P: uint256 = D
         for _x in _xp:
-            D_P = D_P * D / (_x * N_COINS + 1)  # +1 is to prevent /0
+            D_P = D_P * D / (_x * N_COINS)  # If division by 0, this will be borked: only withdrawal will work. And that is good
         Dprev = D
         D = (Ann * S / A_PRECISION + D_P * N_COINS) * D / ((Ann - A_PRECISION) * D / A_PRECISION + (N_COINS + 1) * D_P)
         # Equality with the precision of 1
@@ -361,7 +362,7 @@ def calc_token_amount(_amounts: uint256[N_COINS], _is_deposit: bool) -> uint256:
         else:
             coin_balances[i] -= _amounts[i]
     D1: uint256 = self._get_D_precisions(coin_balances, amp)
-    token_amount: uint256 = ERC20(self.lp_token).totalSupply()
+    token_amount: uint256 = CurveToken(self.lp_token).totalSupply()
     diff: uint256 = 0
     if _is_deposit:
         diff = D1 - D0
@@ -382,19 +383,20 @@ def add_liquidity(_amounts: uint256[N_COINS], _min_mint_amount: uint256, _use_un
     """
     assert not self.is_killed  # dev: is killed
 
-    # Initial invariant
     amp: uint256 = self._A()
     old_balances: uint256[N_COINS] = self._balances()
     lp_token: address = self.lp_token
-    token_supply: uint256 = ERC20(lp_token).totalSupply()
+    token_supply: uint256 = CurveToken(lp_token).totalSupply()
+    
+    # Initial invariant
     D0: uint256 = 0
-    if token_supply != 0:
+    if token_supply > 0:
         D0 = self._get_D_precisions(old_balances, amp)
 
     new_balances: uint256[N_COINS] = old_balances
     for i in range(N_COINS):
         if token_supply == 0:
-            assert _amounts[i] != 0  # dev: initial deposit requires all coins
+            assert _amounts[i] > 0  # dev: initial deposit requires all coins
         new_balances[i] += _amounts[i]
 
     # Invariant after change
@@ -405,15 +407,15 @@ def add_liquidity(_amounts: uint256[N_COINS], _min_mint_amount: uint256, _use_un
     # to calculate fair user's share
     fees: uint256[N_COINS] = empty(uint256[N_COINS])
     mint_amount: uint256 = 0
-    if token_supply != 0:
+    if token_supply > 0:
         # Only account for fees if we are not the first to deposit
         ys: uint256 = (D0 + D1) / N_COINS
         fee: uint256 = self.fee * N_COINS / (4 * (N_COINS - 1))
         feemul: uint256 = self.offpeg_fee_multiplier
         admin_fee: uint256 = self.admin_fee
-        difference: uint256 = 0
         for i in range(N_COINS):
             ideal_balance: uint256 = D1 * old_balances[i] / D0
+            difference: uint256 = 0
             new_balance: uint256 = new_balances[i]
             if ideal_balance > new_balance:
                 difference = ideal_balance - new_balance
@@ -453,7 +455,7 @@ def add_liquidity(_amounts: uint256[N_COINS], _min_mint_amount: uint256, _use_un
                     ),
                     max_outsize=32
                 )
-                if len(_response) != 0:
+                if len(_response) > 0:
                     assert convert(_response, bool)
 
                 # deposit to aave lending pool: this may need to be changed for non-aave pools!
@@ -480,8 +482,8 @@ def add_liquidity(_amounts: uint256[N_COINS], _min_mint_amount: uint256, _use_un
                         convert(amount, bytes32)
                     ),
                     max_outsize=32
-                ) # dev: failed transfer
-                if len(_response) != 0:
+                )
+                if len(_response) > 0:
                     assert convert(_response, bool)
     # Mint pool tokens
     CurveToken(lp_token).mint(msg.sender, mint_amount)
@@ -622,11 +624,11 @@ def exchange(i: int128, j: int128, _dx: uint256, _min_dy: uint256) -> uint256:
             method_id("transferFrom(address,address,uint256)"),
             convert(msg.sender, bytes32),
             convert(self, bytes32),
-            convert(_dx, bytes32)
+            convert(_dx, bytes32),
         ),
-        max_outsize=32
+        max_outsize=32,
     )
-    if len(_response) != 0:
+    if len(_response) > 0:
         assert convert(_response, bool)
 
     _response = raw_call(
@@ -634,11 +636,11 @@ def exchange(i: int128, j: int128, _dx: uint256, _min_dy: uint256) -> uint256:
         concat(
             method_id("transfer(address,uint256)"),
             convert(msg.sender, bytes32),
-            convert(dy, bytes32)
+            convert(dy, bytes32),
         ),
-        max_outsize=32
+        max_outsize=32,
     )
-    if len(_response) != 0:
+    if len(_response) > 0:
         assert convert(_response, bool)
 
     log TokenExchange(msg.sender, i, _dx, j, dy)
@@ -673,9 +675,9 @@ def exchange_underlying(i: int128, j: int128, _dx: uint256, _min_dy: uint256) ->
             convert(self, bytes32),
             convert(_dx, bytes32)
         ),
-        max_outsize=32
+        max_outsize=32,
     )
-    if len(_response) != 0:
+    if len(_response) > 0:
         assert convert(_response, bool)
 
     # deposit to aave lending pool: this may need to be changed for non-aave pools!
@@ -714,8 +716,7 @@ def remove_liquidity(
     """
     amounts: uint256[N_COINS] = self._balances()
     lp_token: address = self.lp_token
-    total_supply: uint256 = ERC20(lp_token).totalSupply()
-    CurveToken(lp_token).burnFrom(msg.sender, _amount)  # dev: insufficient funds
+    total_supply: uint256 = CurveToken(lp_token).totalSupply()
 
     lending_pool: address = ZERO_ADDRESS
     if _use_underlying:
@@ -728,7 +729,6 @@ def remove_liquidity(
         if _use_underlying:
             LendingPool(lending_pool).withdraw(self.underlying_coins[i], value, msg.sender)
         else:
-            # "safeTransferFrom" which works for ERC20s which return bool or not
             _response: Bytes[32] = raw_call(
                 self.coins[i],
                 concat(
@@ -737,11 +737,11 @@ def remove_liquidity(
                     convert(value, bytes32),
                 ),
                 max_outsize=32,
-            )  # dev: failed transfer
+            )
             if len(_response) > 0:
-                assert convert(_response, bool)  # dev: failed transfer
-            # end "safeTransferFrom"
-
+                assert convert(_response, bool)
+    
+    CurveToken(lp_token).burnFrom(msg.sender, _amount)  # dev: insufficient funds
     log RemoveLiquidity(msg.sender, amounts, empty(uint256[N_COINS]), total_supply - _amount)
 
     return amounts
@@ -773,7 +773,7 @@ def remove_liquidity_imbalance(
     ys: uint256 = (D0 + D1) / N_COINS
 
     lp_token: address = self.lp_token
-    token_supply: uint256 = ERC20(lp_token).totalSupply()
+    token_supply: uint256 = CurveToken(lp_token).totalSupply()
     assert token_supply != 0  # dev: zero total supply
 
     fee: uint256 = self.fee * N_COINS / (4 * (N_COINS - 1))
@@ -816,11 +816,11 @@ def remove_liquidity_imbalance(
                 concat(
                     method_id("transfer(address,uint256)"),
                     convert(msg.sender, bytes32),
-                    convert(amount, bytes32)
+                    convert(amount, bytes32),
                 ),
-                max_outsize=32
+                max_outsize=32,
                 )
-                if len(_response) != 0:
+                if len(_response) > 0:
                     assert convert(_response, bool)
 
     log RemoveLiquidityImbalance(msg.sender, _amounts, fees, D1, token_supply - token_amount)
@@ -842,12 +842,12 @@ def _get_y_D(A: uint256, i: int128, _xp: uint256[N_COINS], D: uint256) -> uint25
     """
     # x in the input is converted to the same price/precision
 
-    assert i >= 0       # dev: i below zero
+    assert i >= 0  # dev: i below zero
     assert i < N_COINS  # dev: i above N_COINS
 
     Ann: uint256 = A * N_COINS
     c: uint256 = D
-    S_: uint256 = 0
+    S: uint256 = 0
     _x: uint256 = 0
     y_prev: uint256 = 0
 
@@ -856,10 +856,10 @@ def _get_y_D(A: uint256, i: int128, _xp: uint256[N_COINS], D: uint256) -> uint25
             _x = _xp[_i]
         else:
             continue
-        S_ += _x
+        S += _x
         c = c * D / (_x * N_COINS)
     c = c * D * A_PRECISION / (Ann * N_COINS)
-    b: uint256 = S_ + D * A_PRECISION / Ann
+    b: uint256 = S + D * A_PRECISION / Ann
     y: uint256 = D
 
     for _i in range(255):
@@ -957,11 +957,11 @@ def remove_liquidity_one_coin(
         concat(
             method_id("transfer(address,uint256)"),
             convert(msg.sender, bytes32),
-            convert(dy, bytes32)
+            convert(dy, bytes32),
         ),
-        max_outsize=32
+        max_outsize=32,
         )
-        if len(_response) != 0:
+        if len(_response) > 0:
             assert convert(_response, bool)
 
     log RemoveLiquidityOne(msg.sender, _token_amount, dy)
@@ -1026,7 +1026,6 @@ def commit_new_fee(_new_fee: uint256, _new_admin_fee: uint256, _new_offpeg_fee_m
 
 
 @external
-@nonreentrant('lock')
 def apply_new_fee():
     assert msg.sender == self.owner  # dev: only owner
     assert block.timestamp >= self.admin_actions_deadline  # dev: insufficient time
@@ -1063,7 +1062,6 @@ def commit_transfer_ownership(_owner: address):
 
 
 @external
-@nonreentrant('lock')
 def apply_transfer_ownership():
     assert msg.sender == self.owner  # dev: only owner
     assert block.timestamp >= self.transfer_ownership_deadline  # dev: insufficient time
@@ -1084,14 +1082,12 @@ def revert_transfer_ownership():
 
 
 @external
-@nonreentrant('lock')
 def withdraw_admin_fees():
     assert msg.sender == self.owner  # dev: only owner
 
     for i in range(N_COINS):
         value: uint256 = self.admin_balances[i]
-        if value != 0:
-            # "safeTransferFrom" which works for ERC20s which return bool or not
+        if value > 0:
             _response: Bytes[32] = raw_call(
                 self.coins[i],
                 concat(
@@ -1102,8 +1098,7 @@ def withdraw_admin_fees():
                 max_outsize=32,
             )  # dev: failed transfer
             if len(_response) > 0:
-                assert convert(_response, bool)  # dev: failed transfer
-            # end "safeTransferFrom"
+                assert convert(_response, bool)
             self.admin_balances[i] = 0
 
 
@@ -1130,9 +1125,8 @@ def unkill_me():
     self.is_killed = False
 
 
-# This may not be required for non-aave pools
 @external
-def set_aave_referral(_referral_code: uint256):
+def set_aave_referral(_referral_code: uint256):  # This may not be required for non-aave pools
     assert msg.sender == self.owner  # dev: only owner
     assert _referral_code < 2 ** 16  # dev: uint16 overflow
     self.aave_referral = _referral_code
