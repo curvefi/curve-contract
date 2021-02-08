@@ -5,7 +5,7 @@
     "lp_token_address": "0x571FF5b7b346F706aa48d696a9a4a288e9Bb4091",
     "gauge_addresses": ["0x8101E6760130be2C8Ace79643AB73500571b7162"],
     "lp_constructor": {
-        "symbol": "cy3CRV",
+        "symbol": "ib3CRV",
         "name": "Curve.fi cyDAI/cyUSDC/cyUSDT"
     },
     "swap_constructor": {

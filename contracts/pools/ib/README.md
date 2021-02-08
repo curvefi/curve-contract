@@ -1,20 +1,20 @@
-# curve-contract/contracts/pools/yv2
+# curve-contract/contracts/pools/ib
 
-[Curve Aave pool](https://www.curve.fi/yv2), with lending on [Cream](https://v1.yearn.finance/lending).
+[Curve Iron Bank pool](https://www.curve.fi/ib), with lending on [Cream](https://v1.yearn.finance/lending).
 
 ## Contracts
 
-* [`StableSwapYv2`](StableSwapYv2.vy): Curve stablecoin AMM contract
+* [`StableSwapIB`](StableSwapIB.vy): Curve stablecoin AMM contract
 
 ## Deployments
 
 * [`CurveContractV3`](../../tokens/CurveTokenV3.vy): [0x571FF5b7b346F706aa48d696a9a4a288e9Bb4091](https://etherscan.io/address/0x571FF5b7b346F706aa48d696a9a4a288e9Bb4091)
 * [`LiquidityGaugeV2`](https://github.com/curvefi/curve-dao-contracts/blob/master/contracts/gauges/LiquidityGaugeV2.vy): [0x8101E6760130be2C8Ace79643AB73500571b7162](https://etherscan.io/address/0x8101E6760130be2C8Ace79643AB73500571b7162)
-* [`StableSwapYv2`](StableSwapYv2.vy): [0x8925D9d9B4569D737a48499DeF3f67BaA5a144b9](https://etherscan.io/address/0x8925D9d9B4569D737a48499DeF3f67BaA5a144b9)
+* [`StableSwapIB`](StableSwapIB.vy): [0x8925D9d9B4569D737a48499DeF3f67BaA5a144b9](https://etherscan.io/address/0x8925D9d9B4569D737a48499DeF3f67BaA5a144b9)
 
 ## Stablecoins
 
-Curve Cream pool supports swaps between the following stablecoins:
+Curve Iron Bank pool supports swaps between the following stablecoins:
 
 ### Wrapped
 

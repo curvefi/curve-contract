@@ -20,8 +20,8 @@ interface CurveToken:
     def burnFrom(_to: address, _value: uint256) -> bool: nonpayable
 
 interface ERC20:
-    def transfer(_to: address, _value: uint256): nonpayable
-    def transferFrom(_from: address, _to: address, _value: uint256): nonpayable
+    def transfer(_to: address, _value: uint256) -> bool: nonpayable
+    def transferFrom(_from: address, _to: address, _value: uint256) -> bool: nonpayable
     def totalSupply() -> uint256: view
     def balanceOf(_addr: address) -> uint256: view
 
@@ -111,6 +111,9 @@ MIN_RAMP_TIME: constant(uint256) = 86400
 coins: public(address[N_COINS])
 underlying_coins: public(address[N_COINS])
 balances: public(uint256[N_COINS])
+
+previous_balances: public(uint256[N_COINS])
+block_timestamp_last: public(uint256)
 
 fee: public(uint256)  # fee * 1e10
 admin_fee: public(uint256)  # admin_fee * 1e10
@@ -229,7 +232,15 @@ def _stored_rates() -> uint256[N_COINS]:
     return result
 
 @internal
+def _update():
+    current: uint256 = block.timestamp
+    if current > self.block_timestamp_last:
+        self.previous_balances = self.balances
+        self.block_timestamp_last = current
+
+@internal
 def _current_rates() -> uint256[N_COINS]:
+    self._update()
     result: uint256[N_COINS] = PRECISION_MUL
     for i in range(N_COINS):
         result[i] *= cyToken(self.coins[i]).exchangeRateCurrent()
@@ -373,7 +384,7 @@ def add_liquidity(
                 assert cyToken(coin).mint(amount) == 0
                 amount = ERC20(coin).balanceOf(self) - before
             else:
-                ERC20(coin).transferFrom(msg.sender, self, amount)
+                assert ERC20(coin).transferFrom(msg.sender, self, amount) == True
             amounts[i] = amount
             new_balances[i] += amount
 
@@ -517,7 +528,6 @@ def get_dx_underlying(i: int128, j: int128, dy: uint256) -> uint256:
     dx: uint256 = (x - xp[i]) / precisions[i]
     return dx
 
-
 @internal
 def _exchange(i: int128, j: int128, dx: uint256) -> uint256:
     assert not self.is_killed
@@ -560,8 +570,8 @@ def exchange(i: int128, j: int128, dx: uint256, min_dy: uint256) -> uint256:
     dy: uint256 = self._exchange(i, j, dx)
     assert dy >= min_dy, "Too few coins in result"
 
-    ERC20(self.coins[i]).transferFrom(msg.sender, self, dx)
-    ERC20(self.coins[j]).transfer(msg.sender, dy)
+    assert ERC20(self.coins[i]).transferFrom(msg.sender, self, dx) == True
+    assert ERC20(self.coins[j]).transfer(msg.sender, dy) == True
 
     log TokenExchange(msg.sender, i, dx, j, dy)
 
@@ -623,6 +633,7 @@ def remove_liquidity(
     total_supply: uint256 = ERC20(_lp_token).totalSupply()
     amounts: uint256[N_COINS] = empty(uint256[N_COINS])
 
+    self._update()
     for i in range(N_COINS):
         _balance: uint256 = self.balances[i]
         value: uint256 = _balance * _amount / total_supply
@@ -636,7 +647,7 @@ def remove_liquidity(
             value = ERC20(underlying).balanceOf(self)
             ERC20(underlying).transfer(msg.sender, value)
         else:
-            ERC20(coin).transfer(msg.sender, value)
+            assert ERC20(coin).transfer(msg.sender, value) == True
 
         assert value >= _min_amounts[i]
 
@@ -715,7 +726,7 @@ def remove_liquidity_imbalance(
                 underlying: address = self.underlying_coins[i]
                 ERC20(underlying).transfer(msg.sender, ERC20(underlying).balanceOf(self))
             else:
-                ERC20(coin).transfer(msg.sender, amount)
+                assert ERC20(coin).transfer(msg.sender, amount) == True
 
     log RemoveLiquidityImbalance(msg.sender, amounts, fees, D1, token_supply - token_amount)
 
@@ -854,7 +865,7 @@ def remove_liquidity_one_coin(
         amount = ERC20(underlying).balanceOf(self)
         ERC20(underlying).transfer(msg.sender, amount)
     else:
-        ERC20(coin).transfer(msg.sender, amount)
+        assert ERC20(coin).transfer(msg.sender, amount) == True
 
     assert amount >= _min_amount, "Not enough coins removed"
     log RemoveLiquidityOne(msg.sender, _token_amount, dy)
@@ -983,14 +994,7 @@ def withdraw_admin_fees():
         coin: address = self.coins[i]
         value: uint256 = ERC20(coin).balanceOf(self) - self.balances[i]
         if value > 0:
-            ERC20(coin).transfer(msg.sender, value)
-
-
-@external
-def donate_admin_fees():
-    assert msg.sender == self.owner  # dev: only owner
-    for i in range(N_COINS):
-        self.balances[i] = ERC20(self.coins[i]).balanceOf(self)
+            assert ERC20(coin).transfer(msg.sender, value) == True
 
 
 @external
