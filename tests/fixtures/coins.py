@@ -65,10 +65,12 @@ def _deploy_wrapped(project, alice, pool_data, idx, underlying, aave_lending_poo
     name = coin_data.get("name", f"Coin {idx}")
     symbol = coin_data.get("name", f"C{idx}")
 
-    if pool_data['wrapped_contract'] == "ATokenMock":
-        contract = deployer.deploy(name, symbol, decimals, underlying, aave_lending_pool, {'from': alice})
+    if pool_data["wrapped_contract"] == "ATokenMock":
+        contract = deployer.deploy(
+            name, symbol, decimals, underlying, aave_lending_pool, {"from": alice}
+        )
     else:
-        contract = deployer.deploy(name, symbol, decimals, underlying, {'from': alice})
+        contract = deployer.deploy(name, symbol, decimals, underlying, {"from": alice})
 
     for target, attr in fn_names.items():
         if target != attr:
