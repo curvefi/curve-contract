@@ -54,7 +54,6 @@ def test_add_liquidity_insufficient_balance(
     # remove liquidity
     with brownie.reverts():
         swap.remove_liquidity(10 ** 18, [0] * n_coins, {"from": charlie})
-    chain.sleep(3600)
 
     # remove liquidity imbalance
     if hasattr(swap, "remove_liquidity_one_coin"):
@@ -63,4 +62,3 @@ def test_add_liquidity_insufficient_balance(
                 swap.remove_liquidity_one_coin(
                     10 ** wrapped_decimals[idx], idx, 0, {"from": charlie}
                 )
-            chain.sleep(3600)
