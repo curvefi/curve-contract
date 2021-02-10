@@ -76,7 +76,7 @@ def transfer(_to : address, _value : uint256) -> bool:
 
 @external
 def transferFrom(_from : address, _to : address, _value : uint256) -> bool:
-    if self.balanceOf[msg.sender] < _value or self.allowances[_from][msg.sender] < _value:
+    if self.balanceOf[_from] < _value or self.allowances[_from][msg.sender] < _value:
         return False
     self.balanceOf[_from] -= _value
     self.balanceOf[_to] += _value

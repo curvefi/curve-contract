@@ -7,7 +7,10 @@ from hypothesis import settings
 
 from simulation import Curve
 
-pytestmark = [pytest.mark.skip_meta, pytest.mark.skip_pool("aave", "aeth", "saave", "seth", "steth")]
+pytestmark = [
+    pytest.mark.skip_meta,
+    pytest.mark.skip_pool("aave", "aeth", "saave", "seth", "steth"),
+]
 
 
 @given(
