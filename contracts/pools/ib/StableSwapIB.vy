@@ -239,10 +239,9 @@ def _update():
     Commits pre-change balances for the previous block
     Can be used to compare against current values for flash loan checks
     """
-    current: uint256 = block.timestamp
-    if current > self.block_timestamp_last:
+    if block.timestamp > self.block_timestamp_last:
         self.previous_balances = self.balances
-        self.block_timestamp_last = current
+        self.block_timestamp_last = block.timestamp
 
 @internal
 def _current_rates() -> uint256[N_COINS]:
@@ -788,12 +787,12 @@ def get_y_D(A_: uint256, i: int128, xp: uint256[N_COINS], D: uint256) -> uint256
 
 @view
 @internal
-def _calc_withdraw_one_coin(_token_amount: uint256, i: int128, _use_underlying: bool) -> (uint256, uint256):
+def _calc_withdraw_one_coin(_token_amount: uint256, i: int128, _use_underlying: bool, _rates: uint256[N_COINS]) -> (uint256, uint256):
     # First, need to calculate
     # * Get current D
     # * Solve Eqn against y_i for D - _token_amount
     amp: uint256 = self._A()
-    rates: uint256[N_COINS] = self._stored_rates()
+    rates: uint256[N_COINS] = _rates
     xp: uint256[N_COINS] = self._xp(rates)
     D0: uint256 = self.get_D(xp, amp)
 
@@ -836,7 +835,7 @@ def calc_withdraw_one_coin(_token_amount: uint256, i: int128, _use_underlying: b
     @param i Index value of the coin to withdraw
     @return Amount of coin received
     """
-    return self._calc_withdraw_one_coin(_token_amount, i, _use_underlying)[0]
+    return self._calc_withdraw_one_coin(_token_amount, i, _use_underlying, self._stored_rates())[0]
 
 
 @external
@@ -859,7 +858,7 @@ def remove_liquidity_one_coin(
 
     dy: uint256 = 0
     dy_fee: uint256 = 0
-    dy, dy_fee = self._calc_withdraw_one_coin(_token_amount, i, False)
+    dy, dy_fee = self._calc_withdraw_one_coin(_token_amount, i, False, self._current_rates())
     amount: uint256 = dy
 
     self.balances[i] -= (dy + dy_fee * self.admin_fee / FEE_DENOMINATOR)
