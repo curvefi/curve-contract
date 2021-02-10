@@ -235,6 +235,10 @@ def _stored_rates() -> uint256[N_COINS]:
 
 @internal
 def _update():
+    """
+    Commits pre-change balances for the previous block
+    Can be used to compare against current values for flash loan checks
+    """
     current: uint256 = block.timestamp
     if current > self.block_timestamp_last:
         self.previous_balances = self.balances
@@ -631,11 +635,11 @@ def remove_liquidity(
     @param _use_underlying If True, withdraw underlying assets instead of cyTokens
     @return List of amounts of coins that were withdrawn
     """
+    self._update()
     _lp_token: address = self.lp_token
     total_supply: uint256 = ERC20(_lp_token).totalSupply()
     amounts: uint256[N_COINS] = empty(uint256[N_COINS])
 
-    self._update()
     for i in range(N_COINS):
         _balance: uint256 = self.balances[i]
         value: uint256 = _balance * _amount / total_supply
