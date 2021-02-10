@@ -8,6 +8,8 @@
 
 # External Contracts
 interface cyToken:
+    def transfer(_to: address, _value: uint256) -> bool: nonpayable
+    def transferFrom(_from: address, _to: address, _value: uint256) -> bool: nonpayable
     def mint(mintAmount: uint256) -> uint256: nonpayable
     def redeem(redeemTokens: uint256) -> uint256: nonpayable
     def exchangeRateStored() -> uint256: view
@@ -20,8 +22,8 @@ interface CurveToken:
     def burnFrom(_to: address, _value: uint256) -> bool: nonpayable
 
 interface ERC20:
-    def transfer(_to: address, _value: uint256) -> bool: nonpayable
-    def transferFrom(_from: address, _to: address, _value: uint256) -> bool: nonpayable
+    def transfer(_to: address, _value: uint256): nonpayable
+    def transferFrom(_from: address, _to: address, _value: uint256): nonpayable
     def totalSupply() -> uint256: view
     def balanceOf(_addr: address) -> uint256: view
 
@@ -384,7 +386,7 @@ def add_liquidity(
                 assert cyToken(coin).mint(amount) == 0
                 amount = ERC20(coin).balanceOf(self) - before
             else:
-                assert ERC20(coin).transferFrom(msg.sender, self, amount) == True
+                assert cyToken(coin).transferFrom(msg.sender, self, amount) == True
             amounts[i] = amount
             new_balances[i] += amount
 
@@ -570,8 +572,8 @@ def exchange(i: int128, j: int128, dx: uint256, min_dy: uint256) -> uint256:
     dy: uint256 = self._exchange(i, j, dx)
     assert dy >= min_dy, "Too few coins in result"
 
-    assert ERC20(self.coins[i]).transferFrom(msg.sender, self, dx) == True
-    assert ERC20(self.coins[j]).transfer(msg.sender, dy) == True
+    assert cyToken(self.coins[i]).transferFrom(msg.sender, self, dx) == True
+    assert cyToken(self.coins[j]).transfer(msg.sender, dy) == True
 
     log TokenExchange(msg.sender, i, dx, j, dy)
 
@@ -647,7 +649,7 @@ def remove_liquidity(
             value = ERC20(underlying).balanceOf(self)
             ERC20(underlying).transfer(msg.sender, value)
         else:
-            assert ERC20(coin).transfer(msg.sender, value) == True
+            assert cyToken(coin).transfer(msg.sender, value) == True
 
         assert value >= _min_amounts[i]
 
@@ -726,7 +728,7 @@ def remove_liquidity_imbalance(
                 underlying: address = self.underlying_coins[i]
                 ERC20(underlying).transfer(msg.sender, ERC20(underlying).balanceOf(self))
             else:
-                assert ERC20(coin).transfer(msg.sender, amount) == True
+                assert cyToken(coin).transfer(msg.sender, amount) == True
 
     log RemoveLiquidityImbalance(msg.sender, amounts, fees, D1, token_supply - token_amount)
 
@@ -865,7 +867,7 @@ def remove_liquidity_one_coin(
         amount = ERC20(underlying).balanceOf(self)
         ERC20(underlying).transfer(msg.sender, amount)
     else:
-        assert ERC20(coin).transfer(msg.sender, amount) == True
+        assert cyToken(coin).transfer(msg.sender, amount) == True
 
     assert amount >= _min_amount, "Not enough coins removed"
     log RemoveLiquidityOne(msg.sender, _token_amount, dy)
@@ -994,7 +996,7 @@ def withdraw_admin_fees():
         coin: address = self.coins[i]
         value: uint256 = ERC20(coin).balanceOf(self) - self.balances[i]
         if value > 0:
-            assert ERC20(coin).transfer(msg.sender, value) == True
+            assert cyToken(coin).transfer(msg.sender, value) == True
 
 
 @external
