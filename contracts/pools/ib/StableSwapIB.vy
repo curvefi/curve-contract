@@ -1,9 +1,9 @@
 # @version 0.2.8
 """
-@title Curve cy Pool
+@title Curve IronBank Pool
 @author Curve.Fi
-@license Copyright (c) Curve.Fi, 2020 - all rights reserved
-@notice Pool for swapping between cy Tokens (cyDAI, cyUSDC, cyUSDT)
+@license Copyright (c) Curve.Fi, 2021 - all rights reserved
+@notice Pool for swapping between cyTokens (cyDAI, cyUSDC, cyUSDT)
 """
 
 # External Contracts
