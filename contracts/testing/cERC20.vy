@@ -65,6 +65,9 @@ def allowance(_owner : address, _spender : address) -> uint256:
 
 @external
 def transfer(_to : address, _value : uint256) -> bool:
+    if self.balanceOf[msg.sender] < _value:
+        # cToken return False on a failed transfer instead of reverting
+        return False
     self.balanceOf[msg.sender] -= _value
     self.balanceOf[_to] += _value
     log Transfer(msg.sender, _to, _value)
@@ -73,6 +76,8 @@ def transfer(_to : address, _value : uint256) -> bool:
 
 @external
 def transferFrom(_from : address, _to : address, _value : uint256) -> bool:
+    if self.balanceOf[_from] < _value or self.allowances[_from][msg.sender] < _value:
+        return False
     self.balanceOf[_from] -= _value
     self.balanceOf[_to] += _value
     self.allowances[_from][msg.sender] -= _value

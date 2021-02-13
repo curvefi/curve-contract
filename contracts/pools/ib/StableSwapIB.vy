@@ -1,13 +1,15 @@
 # @version 0.2.8
 """
-@title Curve cy Pool
+@title Curve IronBank Pool
 @author Curve.Fi
-@license Copyright (c) Curve.Fi, 2020 - all rights reserved
-@notice Pool for swapping between cy Tokens (cyDAI, cyUSDC, cyUSDT)
+@license Copyright (c) Curve.Fi, 2021 - all rights reserved
+@notice Pool for swapping between cyTokens (cyDAI, cyUSDC, cyUSDT)
 """
 
 # External Contracts
 interface cyToken:
+    def transfer(_to: address, _value: uint256) -> bool: nonpayable
+    def transferFrom(_from: address, _to: address, _value: uint256) -> bool: nonpayable
     def mint(mintAmount: uint256) -> uint256: nonpayable
     def redeem(redeemTokens: uint256) -> uint256: nonpayable
     def exchangeRateStored() -> uint256: view
@@ -111,6 +113,9 @@ MIN_RAMP_TIME: constant(uint256) = 86400
 coins: public(address[N_COINS])
 underlying_coins: public(address[N_COINS])
 balances: public(uint256[N_COINS])
+
+previous_balances: public(uint256[N_COINS])
+block_timestamp_last: public(uint256)
 
 fee: public(uint256)  # fee * 1e10
 admin_fee: public(uint256)  # admin_fee * 1e10
@@ -228,8 +233,21 @@ def _stored_rates() -> uint256[N_COINS]:
         result[i] *= rate
     return result
 
+
+@internal
+def _update():
+    """
+    Commits pre-change balances for the previous block
+    Can be used to compare against current values for flash loan checks
+    """
+    if block.timestamp > self.block_timestamp_last:
+        self.previous_balances = self.balances
+        self.block_timestamp_last = block.timestamp
+
+
 @internal
 def _current_rates() -> uint256[N_COINS]:
+    self._update()
     result: uint256[N_COINS] = PRECISION_MUL
     for i in range(N_COINS):
         result[i] *= cyToken(self.coins[i]).exchangeRateCurrent()
@@ -352,10 +370,8 @@ def add_liquidity(
     token_supply: uint256 = ERC20(_lp_token).totalSupply()
 
     # Initial invariant
-    D0: uint256 = 0
     old_balances: uint256[N_COINS] = self.balances
-    if token_supply != 0:
-        D0 = self.get_D_mem(rates, old_balances, amp)
+    D0: uint256 = self.get_D_mem(rates, old_balances, amp)
 
     # Take coins from the sender
     new_balances: uint256[N_COINS] = old_balances
@@ -373,7 +389,7 @@ def add_liquidity(
                 assert cyToken(coin).mint(amount) == 0
                 amount = ERC20(coin).balanceOf(self) - before
             else:
-                ERC20(coin).transferFrom(msg.sender, self, amount)
+                assert cyToken(coin).transferFrom(msg.sender, self, amount)
             amounts[i] = amount
             new_balances[i] += amount
 
@@ -472,8 +488,7 @@ def get_dy(i: int128, j: int128, dx: uint256) -> uint256:
     x: uint256 = xp[i] + dx * rates[i] / PRECISION
     y: uint256 = self.get_y(i, j, x, xp)
     dy: uint256 = xp[j] - y - 1
-    fee: uint256 = self.fee * dy / FEE_DENOMINATOR
-    return (dy - fee) * PRECISION / rates[j]
+    return (dy - (self.fee * dy / FEE_DENOMINATOR)) * PRECISION / rates[j]
 
 
 @view
@@ -485,8 +500,7 @@ def get_dx(i: int128, j: int128, dy: uint256) -> uint256:
 
     y: uint256 = xp[j] - (dy * FEE_DENOMINATOR / (FEE_DENOMINATOR - self.fee)) * rates[j] / PRECISION
     x: uint256 = self.get_y(j, i, y, xp)
-    dx: uint256 = (x - xp[i]) * PRECISION / rates[i]
-    return dx
+    return (x - xp[i]) * PRECISION / rates[i]
 
 
 @view
@@ -498,8 +512,7 @@ def get_dy_underlying(i: int128, j: int128, dx: uint256) -> uint256:
     precisions: uint256[N_COINS] = PRECISION_MUL
 
     x: uint256 = xp[i] + dx * precisions[i]
-    y: uint256 = self.get_y(i, j, x, xp)
-    dy: uint256 = xp[j] - y - 1
+    dy: uint256 = xp[j] - self.get_y(i, j, x, xp) - 1
     _fee: uint256 = self.fee * dy / FEE_DENOMINATOR
     return (dy - _fee) / precisions[j]
 
@@ -513,10 +526,7 @@ def get_dx_underlying(i: int128, j: int128, dy: uint256) -> uint256:
     precisions: uint256[N_COINS] = PRECISION_MUL
 
     y: uint256 = xp[j] - (dy * FEE_DENOMINATOR / (FEE_DENOMINATOR - self.fee)) * precisions[j]
-    x: uint256 = self.get_y(j, i, y, xp)
-    dx: uint256 = (x - xp[i]) / precisions[i]
-    return dx
-
+    return (self.get_y(j, i, y, xp) - xp[i]) / precisions[i]
 
 @internal
 def _exchange(i: int128, j: int128, dx: uint256) -> uint256:
@@ -531,8 +541,7 @@ def _exchange(i: int128, j: int128, dx: uint256) -> uint256:
         xp[k] = rates[k] * old_balances[k] / PRECISION
 
     x: uint256 = xp[i] + dx * rates[i] / PRECISION
-    y: uint256 = self.get_y(i, j, x, xp)
-    dy: uint256 = xp[j] - y - 1  # -1 just in case there were some rounding errors
+    dy: uint256 = xp[j] - self.get_y(i, j, x, xp) - 1  # -1 just in case there were some rounding errors
     dy_fee: uint256 = dy * self.fee / FEE_DENOMINATOR
 
     dy = (dy - dy_fee) * PRECISION / rates[j]
@@ -560,8 +569,8 @@ def exchange(i: int128, j: int128, dx: uint256, min_dy: uint256) -> uint256:
     dy: uint256 = self._exchange(i, j, dx)
     assert dy >= min_dy, "Too few coins in result"
 
-    ERC20(self.coins[i]).transferFrom(msg.sender, self, dx)
-    ERC20(self.coins[j]).transfer(msg.sender, dy)
+    assert cyToken(self.coins[i]).transferFrom(msg.sender, self, dx)
+    assert cyToken(self.coins[j]).transfer(msg.sender, dy)
 
     log TokenExchange(msg.sender, i, dx, j, dy)
 
@@ -619,6 +628,7 @@ def remove_liquidity(
     @param _use_underlying If True, withdraw underlying assets instead of cyTokens
     @return List of amounts of coins that were withdrawn
     """
+    self._update()
     _lp_token: address = self.lp_token
     total_supply: uint256 = ERC20(_lp_token).totalSupply()
     amounts: uint256[N_COINS] = empty(uint256[N_COINS])
@@ -636,7 +646,7 @@ def remove_liquidity(
             value = ERC20(underlying).balanceOf(self)
             ERC20(underlying).transfer(msg.sender, value)
         else:
-            ERC20(coin).transfer(msg.sender, value)
+            assert cyToken(coin).transfer(msg.sender, value)
 
         assert value >= _min_amounts[i]
 
@@ -715,7 +725,7 @@ def remove_liquidity_imbalance(
                 underlying: address = self.underlying_coins[i]
                 ERC20(underlying).transfer(msg.sender, ERC20(underlying).balanceOf(self))
             else:
-                ERC20(coin).transfer(msg.sender, amount)
+                assert cyToken(coin).transfer(msg.sender, amount)
 
     log RemoveLiquidityImbalance(msg.sender, amounts, fees, D1, token_supply - token_amount)
 
@@ -771,13 +781,12 @@ def get_y_D(A_: uint256, i: int128, xp: uint256[N_COINS], D: uint256) -> uint256
 
 @view
 @internal
-def _calc_withdraw_one_coin(_token_amount: uint256, i: int128, _use_underlying: bool) -> (uint256, uint256):
+def _calc_withdraw_one_coin(_token_amount: uint256, i: int128, _use_underlying: bool, _rates: uint256[N_COINS]) -> uint256[2]:
     # First, need to calculate
     # * Get current D
     # * Solve Eqn against y_i for D - _token_amount
     amp: uint256 = self._A()
-    rates: uint256[N_COINS] = self._stored_rates()
-    xp: uint256[N_COINS] = self._xp(rates)
+    xp: uint256[N_COINS] = self._xp(_rates)
     D0: uint256 = self.get_D(xp, amp)
 
     total_supply: uint256 = ERC20(self.lp_token).totalSupply()
@@ -787,7 +796,7 @@ def _calc_withdraw_one_coin(_token_amount: uint256, i: int128, _use_underlying: 
 
     xp_reduced: uint256[N_COINS] = xp
     _fee: uint256 = self.fee * N_COINS / (4 * (N_COINS - 1))
-    rate: uint256 = rates[i]
+    rate: uint256 = _rates[i]
 
     for j in range(N_COINS):
         dx_expected: uint256 = 0
@@ -807,7 +816,7 @@ def _calc_withdraw_one_coin(_token_amount: uint256, i: int128, _use_underlying: 
         precisions: uint256[N_COINS] = PRECISION_MUL
         dy = dy * rate / precisions[i] / PRECISION
 
-    return dy, dy_fee
+    return [dy, dy_fee]
 
 
 @view
@@ -819,7 +828,7 @@ def calc_withdraw_one_coin(_token_amount: uint256, i: int128, _use_underlying: b
     @param i Index value of the coin to withdraw
     @return Amount of coin received
     """
-    return self._calc_withdraw_one_coin(_token_amount, i, _use_underlying)[0]
+    return self._calc_withdraw_one_coin(_token_amount, i, _use_underlying, self._stored_rates())[0]
 
 
 @external
@@ -840,26 +849,24 @@ def remove_liquidity_one_coin(
     """
     assert not self.is_killed  # dev: is killed
 
-    dy: uint256 = 0
-    dy_fee: uint256 = 0
-    dy, dy_fee = self._calc_withdraw_one_coin(_token_amount, i, False)
-    amount: uint256 = dy
+    dy: uint256[2] = self._calc_withdraw_one_coin(_token_amount, i, False, self._current_rates())
+    amount: uint256 = dy[0]
 
-    self.balances[i] -= (dy + dy_fee * self.admin_fee / FEE_DENOMINATOR)
+    self.balances[i] -= (dy[0] + dy[1] * self.admin_fee / FEE_DENOMINATOR)
     CurveToken(self.lp_token).burnFrom(msg.sender, _token_amount)  # dev: insufficient funds
     coin: address = self.coins[i]
     if _use_underlying:
-        assert cyToken(coin).redeem(dy) == 0
+        assert cyToken(coin).redeem(dy[0]) == 0
         underlying: address = self.underlying_coins[i]
         amount = ERC20(underlying).balanceOf(self)
         ERC20(underlying).transfer(msg.sender, amount)
     else:
-        ERC20(coin).transfer(msg.sender, amount)
+        assert cyToken(coin).transfer(msg.sender, amount)
 
     assert amount >= _min_amount, "Not enough coins removed"
-    log RemoveLiquidityOne(msg.sender, _token_amount, dy)
+    log RemoveLiquidityOne(msg.sender, _token_amount, dy[0])
 
-    return dy
+    return dy[0]
 
 
 ### Admin functions ###
@@ -983,14 +990,7 @@ def withdraw_admin_fees():
         coin: address = self.coins[i]
         value: uint256 = ERC20(coin).balanceOf(self) - self.balances[i]
         if value > 0:
-            ERC20(coin).transfer(msg.sender, value)
-
-
-@external
-def donate_admin_fees():
-    assert msg.sender == self.owner  # dev: only owner
-    for i in range(N_COINS):
-        self.balances[i] = ERC20(self.coins[i]).balanceOf(self)
+            assert cyToken(coin).transfer(msg.sender, value)
 
 
 @external
