@@ -1,0 +1,32 @@
+{
+    "lp_contract": "CurveTokenV3",
+    "swap_address": "0x0Ce6a5fF5217e38315f87032CF90686C96627CAA",
+    "lp_token_address": "0x194eBd173F6cDacE046C53eACcE9B953F28411d1",
+    "gauge_addresses": ["0x90Bb609649E0451E5aD952683D64BD2d1f245840"],
+    "lp_constructor": {
+        "symbol": "linkCRV",
+        "name": "Curve.fi LINK/sLINK"
+    },
+    "swap_constructor": {
+        "_A": 100,
+        "_fee": 4000000,
+        "_admin_fee": 5000000000
+    },
+    "coins": [
+        {
+            "name": "LINK",
+            "decimals": 18,
+            "tethered": false,
+            "underlying_address": "0x514910771AF9Ca656af840dff83E8264EcF986CA"
+        },
+        {
+            "name": "sLINK",
+            "decimals": 18,
+            "tethered": false,
+            "underlying_address": "0xbBC455cb4F1B9e4bFC4B73970d360c8f032EfEE6"
+        }
+    ],
+    "testing": {
+        "initial_amount": 10000
+    }
+}
