@@ -78,7 +78,6 @@ event StopRampA:
 
 # These constants must be set prior to compiling
 N_COINS: constant(int128) = 2
-RATES: constant(uint256[N_COINS]) = [0,0]
 
 # fixed constants
 FEE_DENOMINATOR: constant(uint256) = 10 ** 10
@@ -198,19 +197,7 @@ def _update():
 @view
 @internal
 def _xp() -> uint256[N_COINS]:
-    result: uint256[N_COINS] = RATES
-    for i in range(N_COINS):
-        result[i] = result[i] * self.balances[i] / PRECISION
-    return result
-
-
-@pure
-@internal
-def _xp_mem(_balances: uint256[N_COINS]) -> uint256[N_COINS]:
-    result: uint256[N_COINS] = RATES
-    for i in range(N_COINS):
-        result[i] = result[i] * _balances[i] / PRECISION
-    return result
+    return self.balances[i]
 
 
 @pure
@@ -256,7 +243,7 @@ def _get_D(_xp: uint256[N_COINS], _amp: uint256) -> uint256:
 @view
 @internal
 def _get_D_mem(_balances: uint256[N_COINS], _amp: uint256) -> uint256:
-    return self._get_D(self._xp_mem(_balances), _amp)
+    return self._get_D(_balances, _amp)
 
 
 @view
@@ -447,13 +434,12 @@ def _get_y(i: int128, j: int128, x: uint256, _xp: uint256[N_COINS]) -> uint256:
 @external
 def get_dy(i: int128, j: int128, _dx: uint256) -> uint256:
     xp: uint256[N_COINS] = self._xp()
-    rates: uint256[N_COINS] = RATES
 
-    x: uint256 = xp[i] + (_dx * rates[i] / PRECISION)
+    x: uint256 = xp[i] + _dx
     y: uint256 = self._get_y(i, j, x, xp)
     dy: uint256 = xp[j] - y - 1
     fee: uint256 = self.fee * dy / FEE_DENOMINATOR
-    return (dy - fee) * PRECISION / rates[j]
+    return dy - fee
 
 
 @external
@@ -472,21 +458,19 @@ def exchange(i: int128, j: int128, _dx: uint256, _min_dy: uint256) -> uint256:
     self._update()
 
     old_balances: uint256[N_COINS] = self.balances
-    xp: uint256[N_COINS] = self._xp_mem(old_balances)
+    xp: uint256[N_COINS] = old_balances
 
-    rates: uint256[N_COINS] = RATES
-    x: uint256 = xp[i] + _dx * rates[i] / PRECISION
+    x: uint256 = xp[i] + _dx
     y: uint256 = self._get_y(i, j, x, xp)
 
     dy: uint256 = xp[j] - y - 1  # -1 just in case there were some rounding errors
     dy_fee: uint256 = dy * self.fee / FEE_DENOMINATOR
 
     # Convert all to real units
-    dy = (dy - dy_fee) * PRECISION / rates[j]
+    dy = dy - dy_fee
     assert dy >= _min_dy, "Exchange resulted in fewer coins than expected"
 
     dy_admin_fee: uint256 = dy_fee * self.admin_fee / FEE_DENOMINATOR
-    dy_admin_fee = dy_admin_fee * PRECISION / rates[j]
 
     # Change balances exactly in same way as we change actual ERC20 coin amounts
     self.balances[i] = old_balances[i] + _dx
