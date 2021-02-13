@@ -556,10 +556,6 @@ def remove_liquidity_imbalance(_amounts: uint256[N_COINS], _max_burn_amount: uin
         new_balances[i] = old_balances[i] - _amounts[i]
     D1: uint256 = self._get_D(new_balances, amp)
 
-    lp_token: address = self.lp_token
-    token_supply: uint256 = CurveToken(lp_token).totalSupply()
-    assert token_supply != 0  # dev: zero total supply
-
     fees: uint256[N_COINS] = empty(uint256[N_COINS])
     fee: uint256 = self.fee * N_COINS / (4 * (N_COINS - 1))
     admin_fee: uint256 = self.admin_fee
@@ -576,6 +572,8 @@ def remove_liquidity_imbalance(_amounts: uint256[N_COINS], _max_burn_amount: uin
         new_balances[i] = new_balance - fees[i]
     D2: uint256 = self._get_D(new_balances, amp)
 
+    lp_token: address = self.lp_token
+    token_supply: uint256 = CurveToken(lp_token).totalSupply()
     token_amount: uint256 = (D0 - D2) * token_supply / D0
     assert token_amount != 0  # dev: zero tokens burned
     token_amount += 1  # In case of rounding errors - make it unfavorable for the "attacker"

@@ -92,8 +92,8 @@ event StopRampA:
 
 
 # These constants must be set prior to compiling
-N_COINS: constant(int128) = 2
-PRECISION_MUL: constant(uint256[N_COINS]) = [1,1]
+N_COINS: constant(int128) = ___N_COINS___
+PRECISION_MUL: constant(uint256[N_COINS]) = ___PRECISION_MUL___
 
 # fixed constants
 FEE_DENOMINATOR: constant(uint256) = 10 ** 10
@@ -385,14 +385,12 @@ def add_liquidity(_amounts: uint256[N_COINS], _min_mint_amount: uint256, _use_un
 
     amp: uint256 = self._A()
     old_balances: uint256[N_COINS] = self._balances()
-    lp_token: address = self.lp_token
-    token_supply: uint256 = CurveToken(lp_token).totalSupply()
     
     # Initial invariant
-    D0: uint256 = 0
-    if token_supply > 0:
-        D0 = self._get_D_precisions(old_balances, amp)
-
+    D0: uint256 = self._get_D_precisions(old_balances, amp)
+    
+    lp_token: address = self.lp_token
+    token_supply: uint256 = CurveToken(lp_token).totalSupply()
     new_balances: uint256[N_COINS] = old_balances
     for i in range(N_COINS):
         if token_supply == 0:
@@ -771,11 +769,6 @@ def remove_liquidity_imbalance(
         new_balances[i] -= _amounts[i]
     D1: uint256 = self._get_D_precisions(new_balances, amp)
     ys: uint256 = (D0 + D1) / N_COINS
-
-    lp_token: address = self.lp_token
-    token_supply: uint256 = CurveToken(lp_token).totalSupply()
-    assert token_supply != 0  # dev: zero total supply
-
     fee: uint256 = self.fee * N_COINS / (4 * (N_COINS - 1))
     feemul: uint256 = self.offpeg_fee_multiplier
     admin_fee: uint256 = self.admin_fee
@@ -795,6 +788,8 @@ def remove_liquidity_imbalance(
         new_balances[i] -= fees[i]
     D2: uint256 = self._get_D_precisions(new_balances, amp)
 
+    lp_token: address = self.lp_token
+    token_supply: uint256 = CurveToken(lp_token).totalSupply()
     token_amount: uint256 = (D0 - D2) * token_supply / D0
     assert token_amount != 0  # dev: zero tokens burned
     assert token_amount <= _max_burn_amount, "Slippage screwed you"

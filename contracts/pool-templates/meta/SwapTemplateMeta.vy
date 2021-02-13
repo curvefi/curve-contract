@@ -373,16 +373,13 @@ def add_liquidity(_amounts: uint256[N_COINS], _min_mint_amount: uint256) -> uint
 
     amp: uint256 = self._A()
     vp_rate: uint256 = self._vp_rate()
-    lp_token: address = self.lp_token
-    token_supply: uint256 = CurveToken(lp_token).totalSupply()
-    fee: uint256 = self.fee * N_COINS / (4 * (N_COINS - 1))
-    admin_fee: uint256 = self.admin_fee
+    old_balances: uint256[N_COINS] = self.balances
 
     # Initial invariant
-    D0: uint256 = 0
-    old_balances: uint256[N_COINS] = self.balances
-    if token_supply > 0:
-        D0 = self._get_D_mem(vp_rate, old_balances, amp)
+    D0: uint256 = self._get_D_mem(vp_rate, old_balances, amp)
+    
+    lp_token: address = self.lp_token
+    token_supply: uint256 = CurveToken(lp_token).totalSupply()
     new_balances: uint256[N_COINS] = old_balances
 
     for i in range(N_COINS):
@@ -401,6 +398,8 @@ def add_liquidity(_amounts: uint256[N_COINS], _min_mint_amount: uint256) -> uint
     D2: uint256 = D1
     mint_amount: uint256 = 0
     if token_supply > 0:
+        fee: uint256 = self.fee * N_COINS / (4 * (N_COINS - 1))
+        admin_fee: uint256 = self.admin_fee
         # Only account for fees if we are not the first to deposit
         for i in range(N_COINS):
             ideal_balance: uint256 = D1 * old_balances[i] / D0
@@ -822,10 +821,6 @@ def remove_liquidity_imbalance(_amounts: uint256[N_COINS], _max_burn_amount: uin
         new_balances[i] -= _amounts[i]
     D1: uint256 = self._get_D_mem(vp_rate, new_balances, amp)
 
-    lp_token: address = self.lp_token
-    token_supply: uint256 = CurveToken(lp_token).totalSupply()
-    assert token_supply != 0  # dev: zero total supply
-
     fee: uint256 = self.fee * N_COINS / (4 * (N_COINS - 1))
     admin_fee: uint256 = self.admin_fee
     fees: uint256[N_COINS] = empty(uint256[N_COINS])
@@ -841,6 +836,8 @@ def remove_liquidity_imbalance(_amounts: uint256[N_COINS], _max_burn_amount: uin
         new_balances[i] -= fees[i]
     D2: uint256 = self._get_D_mem(vp_rate, new_balances, amp)
 
+    lp_token: address = self.lp_token
+    token_supply: uint256 = CurveToken(lp_token).totalSupply()
     token_amount: uint256 = (D0 - D2) * token_supply / D0
     assert token_amount != 0  # dev: zero tokens burned
     token_amount += 1  # In case of rounding errors - make it unfavorable for the "attacker"

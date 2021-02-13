@@ -7,7 +7,7 @@ from simulation import Curve
 pytestmark = [
     pytest.mark.lending,
     pytest.mark.skip_meta,
-    pytest.mark.skip_pool("aave", "template-a"),
+    pytest.mark.skip_pool("aave", "saave", "template-a"),
 ]
 
 
