@@ -1,6 +1,7 @@
 import pytest
 from brownie.test import given, strategy
 from hypothesis import settings
+
 from simulation import Curve
 
 # do not run this test on pools without lending or meta pools

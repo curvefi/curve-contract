@@ -4,6 +4,7 @@ from itertools import permutations
 import pytest
 from brownie.test import given, strategy
 from hypothesis import settings
+
 from simulation import Curve
 
 pytestmark = [
