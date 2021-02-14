@@ -5,7 +5,9 @@ COMMIT_WAIT = 86400 * 3
 MAX_ADMIN_FEE = 5 * 10 ** 9
 MAX_FEE = 5 * 10 ** 9
 
-pytestmark = pytest.mark.skip_pool("aave", "saave", "busd", "compound", "susd", "usdt", "y")
+pytestmark = pytest.mark.skip_pool(
+    "aave", "busd", "saave", "compound", "susd", "usdt", "y", "template-a"
+)
 
 
 @pytest.mark.parametrize(

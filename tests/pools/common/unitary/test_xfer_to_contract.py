@@ -30,7 +30,11 @@ def __init__(swap: address):
 
 
 @pytest.mark.skip_pool(
-    "aave", "steth", "saave", reason="Aave-style interest accrues by increasing balance"
+    "aave",
+    "steth",
+    "saave",
+    "template-a",
+    reason="Aave-style interest accrues by increasing balance",
 )
 def test_unexpected_coin(swap, alice, bob, get_admin_balances, wrapped_coins):
     virtual_price = swap.get_virtual_price()

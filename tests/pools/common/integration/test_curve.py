@@ -9,7 +9,7 @@ from simulation import Curve
 
 pytestmark = [
     pytest.mark.skip_meta,
-    pytest.mark.skip_pool("aave", "aeth", "saave", "seth", "steth"),
+    pytest.mark.skip_pool("aave", "saave", "aeth", "seth", "steth", "template-eth", "template-a"),
 ]
 
 

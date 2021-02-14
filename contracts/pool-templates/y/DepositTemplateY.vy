@@ -41,7 +41,7 @@ FEE_IMPRECISION: constant(uint256) = 25 * 10 ** 8  # % of the fee
 coins: public(address[N_COINS])
 underlying_coins: public(address[N_COINS])
 curve: public(address)
-token: public(address)
+lp_token: public(address)
 
 
 @external
@@ -91,7 +91,7 @@ def __init__(
     self.coins = _coins
     self.underlying_coins = _underlying_coins
     self.curve = _curve
-    self.token = _token
+    self.lp_token = _token
 
 
 @external
@@ -104,12 +104,12 @@ def add_liquidity(_underlying_amounts: uint256[N_COINS], _min_mint_amount: uint2
     @return Amount of LP tokens received by depositing
     """
     use_lending: bool[N_COINS] = USE_LENDING
-    _wrapped_amounts: uint256[N_COINS] = empty(uint256[N_COINS])
+    wrapped_amounts: uint256[N_COINS] = empty(uint256[N_COINS])
 
     for i in range(N_COINS):
-        _amount: uint256 = _underlying_amounts[i]
+        amount: uint256 = _underlying_amounts[i]
 
-        if _amount != 0:
+        if amount != 0:
             # Transfer the underlying coin from owner
             _response: Bytes[32] = raw_call(
                 self.underlying_coins[i],
@@ -117,7 +117,7 @@ def add_liquidity(_underlying_amounts: uint256[N_COINS], _min_mint_amount: uint2
                     method_id("transferFrom(address,address,uint256)"),
                     convert(msg.sender, bytes32),
                     convert(self, bytes32),
-                    convert(_amount, bytes32)
+                    convert(amount, bytes32)
                 ),
                 max_outsize=32
             )
@@ -126,19 +126,19 @@ def add_liquidity(_underlying_amounts: uint256[N_COINS], _min_mint_amount: uint2
 
             # Mint if needed
             if use_lending[i]:
-                _coin: address = self.coins[i]
-                yERC20(_coin).deposit(_amount)
-                _wrapped_amounts[i] = ERC20(_coin).balanceOf(self)
+                coin: address = self.coins[i]
+                yERC20(coin).deposit(amount)
+                wrapped_amounts[i] = ERC20(coin).balanceOf(self)
             else:
-                _wrapped_amounts[i] = _amount
+                wrapped_amounts[i] = amount
 
-    Curve(self.curve).add_liquidity(_wrapped_amounts, _min_mint_amount)
+    Curve(self.curve).add_liquidity(wrapped_amounts, _min_mint_amount)
 
-    _lp_token: address = self.token
-    _lp_amount: uint256 = ERC20(_lp_token).balanceOf(self)
-    assert ERC20(_lp_token).transfer(msg.sender, _lp_amount)
+    lp_token: address = self.lp_token
+    lp_amount: uint256 = ERC20(lp_token).balanceOf(self)
+    assert ERC20(lp_token).transfer(msg.sender, lp_amount)
 
-    return _lp_amount
+    return lp_amount
 
 
 @internal
@@ -189,7 +189,7 @@ def remove_liquidity(
     @param _min_underlying_amounts Minimum amounts of underlying coins to receive
     @return List of amounts of underlying coins that were withdrawn
     """
-    assert ERC20(self.token).transferFrom(msg.sender, self, _amount)
+    assert ERC20(self.lp_token).transferFrom(msg.sender, self, _amount)
     Curve(self.curve).remove_liquidity(_amount, empty(uint256[N_COINS]))
 
     return self._unwrap_and_transfer(msg.sender, _min_underlying_amounts)
@@ -210,7 +210,7 @@ def remove_liquidity_imbalance(
     @return List of amounts of underlying coins that were withdrawn
     """
     use_lending: bool[N_COINS] = USE_LENDING
-    _token: address = self.token
+    lp_token: address = self.lp_token
 
     amounts: uint256[N_COINS] = _underlying_amounts
     for i in range(N_COINS):
@@ -221,17 +221,17 @@ def remove_liquidity_imbalance(
         # if not use_lending - all good already
 
     # Transfer max tokens in
-    _lp_amount: uint256 = ERC20(_token).balanceOf(msg.sender)
+    _lp_amount: uint256 = ERC20(lp_token).balanceOf(msg.sender)
     if _lp_amount > _max_burn_amount:
         _lp_amount = _max_burn_amount
-    assert ERC20(_token).transferFrom(msg.sender, self, _lp_amount)
+    assert ERC20(lp_token).transferFrom(msg.sender, self, _lp_amount)
 
     Curve(self.curve).remove_liquidity_imbalance(amounts, _max_burn_amount)
 
     # Transfer unused LP tokens back
-    _lp_amount = ERC20(_token).balanceOf(self)
+    _lp_amount = ERC20(lp_token).balanceOf(self)
     if _lp_amount != 0:
-        assert ERC20(_token).transfer(msg.sender, _lp_amount)
+        assert ERC20(lp_token).transfer(msg.sender, _lp_amount)
 
     # Unwrap and transfer all the coins we've got
     return self._unwrap_and_transfer(msg.sender, empty(uint256[N_COINS]))
@@ -251,22 +251,22 @@ def remove_liquidity_one_coin(
     @param _min_underlying_amount Minimum amount of underlying coin to receive
     @return Amount of underlying coin received
     """
-    assert ERC20(self.token).transferFrom(msg.sender, self, _amount)
+    assert ERC20(self.lp_token).transferFrom(msg.sender, self, _amount)
 
     Curve(self.curve).remove_liquidity_one_coin(_amount, i, 0)
 
     use_lending: bool[N_COINS] = USE_LENDING
     if use_lending[i]:
-        _coin: address = self.coins[i]
-        _balance: uint256 = ERC20(_coin).balanceOf(self)
-        yERC20(_coin).withdraw(_balance)
+        coin: address = self.coins[i]
+        _balance: uint256 = ERC20(coin).balanceOf(self)
+        yERC20(coin).withdraw(_balance)
 
-    _coin: address = self.underlying_coins[i]
-    _balance: uint256 = ERC20(_coin).balanceOf(self)
+    coin: address = self.underlying_coins[i]
+    _balance: uint256 = ERC20(coin).balanceOf(self)
     assert _balance >= _min_underlying_amount, "Not enough coins removed"
 
     _response: Bytes[32] = raw_call(
-        _coin,
+        coin,
         concat(
             method_id("transfer(address,uint256)"),
             convert(msg.sender, bytes32),

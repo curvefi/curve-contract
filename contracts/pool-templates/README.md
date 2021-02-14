@@ -6,9 +6,11 @@ Contract templates used as the basis for future pools.
 
 Each subdirectory holds contracts and other files specific to a single Curve pool template.
 
-* [`base`]: Minimal pool implementation optimized for no lending
-* [`meta`]: Metapool implementation for swapping base assets against a Curve LP token
-* [`y`]: Pool implementation with yearn-style lending
+- [`a`]: Pool implementation with aToken-style lending (i.e., interest accrues as balance increases)
+- [`base`]: Minimal pool implementation optimized for no lending
+- [`eth`]: Pool implementation with ETH
+- [`meta`]: Metapool implementation for swapping base assets against a Curve LP token
+- [`y`]: Pool implementation with yearn-style lending (i.e., interest accrues as rate increases)
 
 ## Development
 
@@ -16,16 +18,16 @@ Each subdirectory holds contracts and other files specific to a single Curve poo
 
 Contracts in this subdirectory contain special triple-dunder variables which are modified according to the quantity and properties of each stablecoin in a pool.
 
-* `___USE_LENDING___`: Array of booleans indicating whether each underlying coin in the pool is lent on the associated lending protocol
-* `___N_COINS___`: The number of coins within the pool
-* `___PRECISION_MUL___`: Array of integers that coin balances are multiplied by in order to adjust their precision to 18 decimal places
-* `___RATES___`: Array of integers indicating the relative value of `1e18` tokens for each stablecoin
+- `___USE_LENDING___`: Array of booleans indicating whether each underlying coin in the pool is lent on the associated lending protocol
+- `___N_COINS___`: The number of coins within the pool
+- `___PRECISION_MUL___`: Array of integers that coin balances are multiplied by in order to adjust their precision to 18 decimal places
+- `___RATES___`: Array of integers indicating the relative value of `1e18` tokens for each stablecoin
 
 Metapools also make use of the following variables:
 
-* `___BASE_N_COINS___`: The number of coins within the base pool
-* `___BASE_PRECISION_MUL___`: Array of integers that base coin balances are multiplied by to adjust their precision to 18 decimal places
-* `___BASE_RATES___`: Array of integers indicating the relative walue of `1e18` tokens for each base pool stablecoin
+- `___BASE_N_COINS___`: The number of coins within the base pool
+- `___BASE_PRECISION_MUL___`: Array of integers that base coin balances are multiplied by to adjust their precision to 18 decimal places
+- `___BASE_RATES___`: Array of integers indicating the relative walue of `1e18` tokens for each base pool stablecoin
 
 These variables are substituted out at compile-time. To set the values, edit the `pooldata.json` file within the template directory.
 
@@ -46,3 +48,4 @@ The layout of a template's `pooldata.json` is similar to that of an actual pool,
 }
 ```
 
+_Note_: For `y` and `a` pools, the implementor may have to remove/change some small parts in the template code which is specific to `yearn` and `aave` pools.
