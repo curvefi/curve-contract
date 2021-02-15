@@ -558,7 +558,7 @@ def get_dy(i: int128, j: int128, dx: uint256, _balances: uint256[N_COINS] = [0,0
     @return Amount of `j` predicted
     """
     balances: uint256[N_COINS] = _balances
-    meta_j: uint256 = j
+    meta_j: int128 = j
     if meta_j > MAX_COIN:
       meta_j = MAX_COIN
     if balances[meta_j] == 0:
@@ -631,7 +631,7 @@ def get_dy_underlying(i: int128, j: int128, dx: uint256, _balances: uint256[N_CO
     @return Amount of `j` predicted
     """
     balances: uint256[N_COINS] = _balances
-    meta_j: uint256 = j
+    meta_j: int128 = j
     if meta_j > MAX_COIN:
       meta_j = MAX_COIN
     if balances[meta_j] == 0:
