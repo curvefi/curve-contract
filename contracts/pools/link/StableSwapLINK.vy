@@ -1,4 +1,4 @@
-# @version ^0.2.8
+# @version 0.2.8
 """
 @title StableSwap
 @author Curve.Fi
@@ -297,14 +297,13 @@ def add_liquidity(_amounts: uint256[N_COINS], _min_mint_amount: uint256) -> uint
     assert not self.is_killed  # dev: is killed
 
     amp: uint256 = self._A()
-    lp_token: address = self.lp_token
-    token_supply: uint256 = CurveToken(lp_token).totalSupply()
+    old_balances: uint256[N_COINS] = self.balances
 
     # Initial invariant
-    D0: uint256 = 0
-    old_balances: uint256[N_COINS] = self.balances
-    if token_supply > 0:
-        D0 = self._get_D_mem(old_balances, amp)
+    D0: uint256 = self._get_D_mem(old_balances, amp)
+
+    lp_token: address = self.lp_token
+    token_supply: uint256 = CurveToken(lp_token).totalSupply()
     new_balances: uint256[N_COINS] = old_balances
     for i in range(N_COINS):
         if token_supply == 0:
@@ -461,7 +460,7 @@ def exchange(i: int128, j: int128, _dx: uint256, _min_dy: uint256) -> uint256:
     dy_fee: uint256 = dy * self.fee / FEE_DENOMINATOR
 
     # Convert all to real units
-    dy = dy - dy_fee
+    dy -= dy_fee
     assert dy >= _min_dy, "Exchange resulted in fewer coins than expected"
 
     dy_admin_fee: uint256 = dy_fee * self.admin_fee / FEE_DENOMINATOR
@@ -562,10 +561,6 @@ def remove_liquidity_imbalance(_amounts: uint256[N_COINS], _max_burn_amount: uin
         new_balances[i] -= _amounts[i]
     D1: uint256 = self._get_D_mem(new_balances, amp)
 
-    lp_token: address = self.lp_token
-    token_supply: uint256 = CurveToken(lp_token).totalSupply()
-    assert token_supply != 0  # dev: zero total supply
-
     fee: uint256 = self.fee * N_COINS / (4 * (N_COINS - 1))
     admin_fee: uint256 = self.admin_fee
     fees: uint256[N_COINS] = empty(uint256[N_COINS])
@@ -582,6 +577,8 @@ def remove_liquidity_imbalance(_amounts: uint256[N_COINS], _max_burn_amount: uin
         new_balances[i] = new_balance - fees[i]
     D2: uint256 = self._get_D_mem(new_balances, amp)
 
+    lp_token: address = self.lp_token
+    token_supply: uint256 = CurveToken(lp_token).totalSupply()
     token_amount: uint256 = (D0 - D2) * token_supply / D0
     assert token_amount != 0  # dev: zero tokens burned
     token_amount += 1  # In case of rounding errors - make it unfavorable for the "attacker"
@@ -678,7 +675,7 @@ def _calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> (uint256, uint
         xp_reduced[j] -= fee * dx_expected / FEE_DENOMINATOR
 
     dy: uint256 = xp_reduced[i] - self._get_y_D(amp, i, xp_reduced, D1)
-    dy = dy - 1  # Withdraw less to account for rounding errors
+    dy -= 1  # Withdraw less to account for rounding errors
     dy_0: uint256 = xp[i] - new_y  # w/o fees
 
     return dy, dy_0 - dy, total_supply
