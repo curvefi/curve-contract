@@ -1,10 +1,9 @@
-# @version ^0.2.8
+# @version 0.2.8
 """
 @title "Zap" Depositer for metapool
 @author Curve.Fi
 @license Copyright (c) Curve.Fi, 2020 - all rights reserved
 @notice deposit/withdraw to Curve pool without too many transactions
-@dev Swaps between 3p and USDP
 """
 
 from vyper.interfaces import ERC20
@@ -15,8 +14,8 @@ interface CurveMeta:
     def remove_liquidity(_amount: uint256, min_amounts: uint256[N_COINS]) -> uint256[N_COINS]: nonpayable
     def remove_liquidity_one_coin(_token_amount: uint256, i: int128, min_amount: uint256) -> uint256: nonpayable
     def remove_liquidity_imbalance(amounts: uint256[N_COINS], max_burn_amount: uint256) -> uint256: nonpayable
-    def calc_withdraw_one_coin(_token_amount: uint256, i: int128, _previous: bool) -> uint256: view
-    def calc_token_amount(amounts: uint256[N_COINS], deposit: bool, _previous: bool) -> uint256: view
+    def calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> uint256: view
+    def calc_token_amount(amounts: uint256[N_COINS], deposit: bool) -> uint256: view
     def base_pool() -> address: view
     def coins(i: uint256) -> address: view
 
@@ -337,31 +336,29 @@ def remove_liquidity_imbalance(_amounts: uint256[N_ALL_COINS], _max_burn_amount:
 
 @view
 @external
-def calc_withdraw_one_coin(_token_amount: uint256, i: int128, _previous: bool = False) -> uint256:
+def calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> uint256:
     """
     @notice Calculate the amount received when withdrawing and unwrapping a single coin
     @param _token_amount Amount of LP tokens to burn in the withdrawal
     @param i Index value of the underlying coin to withdraw
-    @param _previous use previous_balances or self.balances
     @return Amount of coin received
     """
     if i < MAX_COIN:
-        return CurveMeta(self.pool).calc_withdraw_one_coin(_token_amount, i, _previous)
+        return CurveMeta(self.pool).calc_withdraw_one_coin(_token_amount, i)
     else:
-        base_tokens: uint256 = CurveMeta(self.pool).calc_withdraw_one_coin(_token_amount, MAX_COIN, _previous)
+        base_tokens: uint256 = CurveMeta(self.pool).calc_withdraw_one_coin(_token_amount, MAX_COIN)
         return CurveBase(self.base_pool).calc_withdraw_one_coin(base_tokens, i-MAX_COIN)
 
 
 @view
 @external
-def calc_token_amount(_amounts: uint256[N_ALL_COINS], _is_deposit: bool, _previous: bool = False) -> uint256:
+def calc_token_amount(_amounts: uint256[N_ALL_COINS], _is_deposit: bool) -> uint256:
     """
     @notice Calculate addition or reduction in token supply from a deposit or withdrawal
     @dev This calculation accounts for slippage, but not fees.
          Needed to prevent front-running, not for precise calculations!
     @param _amounts Amount of each underlying coin being deposited
     @param _is_deposit set True for deposits, False for withdrawals
-    @param _previous use previous_balances or self.balances
     @return Expected amount of LP tokens received
     """
     meta_amounts: uint256[N_COINS] = empty(uint256[N_COINS])
@@ -376,4 +373,4 @@ def calc_token_amount(_amounts: uint256[N_ALL_COINS], _is_deposit: bool, _previo
     base_tokens: uint256 = CurveBase(self.base_pool).calc_token_amount(base_amounts, _is_deposit)
     meta_amounts[MAX_COIN] = base_tokens
 
-    return CurveMeta(self.pool).calc_token_amount(meta_amounts, _is_deposit, _previous)
+    return CurveMeta(self.pool).calc_token_amount(meta_amounts, _is_deposit)
