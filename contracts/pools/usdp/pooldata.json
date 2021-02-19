@@ -1,0 +1,31 @@
+{
+    "base_pool": "3pool",
+    "lp_contract": "CurveTokenV3",
+    "swap_address": "0x36965b1a6b97c1b33416e5d53fb5621ade1f1e80",
+    "lp_token_address": "0x86a91b50af95ff1d9d53ca1e4963ef06d8b31369",
+    "zap_address": "0xF7De9c7d406253F1b54dcF5E8BAc5a921219dE09",
+    "gauge_addresses": ["0x174baa6b56ffe479b604cc20f22d09ad74f1ca49"],
+    "lp_constructor": {
+        "symbol": "usdp3CRV",
+        "name": "Curve.fi USDP/3Crv"
+    },
+    "swap_constructor": {
+        "_A": 100,
+        "_fee": 4000000,
+        "_admin_fee": 5000000000
+    },
+    "coins": [
+        {
+            "name": "USDP",
+            "decimals": 18,
+            "tethered": false,
+            "underlying_address": "0x1456688345527bE1f37E9e627DA0837D6f08C925"
+        },
+        {
+            "name": "3CRV",
+            "decimals": 18,
+            "base_pool_token": true,
+            "underlying_address": "0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490"
+        }
+    ]
+}
