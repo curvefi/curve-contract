@@ -175,7 +175,7 @@ def _underlying(alice, project, pool_data, is_forked, base_pool_token):
             else:
                 coins.append(
                     _MintableTestToken(
-                        data.get("underlying_address", data["wrapped_address"]), pool_data
+                        data.get("underlying_address", data.get("wrapped_address")), pool_data
                     )
                 )
     else:
