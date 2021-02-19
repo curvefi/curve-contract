@@ -9,10 +9,10 @@
 
 ## Deployments
 
-* [`CurveContractV3`](../../tokens/CurveTokenV3.vy): [0x94e131324b6054c0D789b190b2dAC504e4361b53](https://etherscan.io/address/0x94e131324b6054c0D789b190b2dAC504e4361b53)
-* [`DepositUSDP`](DepositUSDP.vy): [0xB0a0716841F2Fc03fbA72A891B8Bb13584F52F2d](https://etherscan.io/address/0xB0a0716841F2Fc03fbA72A891B8Bb13584F52F2d)
-* [`LiquidityGaugeV2`](https://github.com/curvefi/curve-dao-contracts/blob/master/contracts/gauges/LiquidityGaugeV2.vy): [0x3B7020743Bc2A4ca9EaF9D0722d42E20d6935855](https://etherscan.io/address/0x3B7020743Bc2A4ca9EaF9D0722d42E20d6935855)
-* [`StableSwapUSDP`](StableSwapUSDP.vy): [0x890f4e345B1dAED0367A877a1612f86A1f86985f](https://etherscan.io/address/0x890f4e345B1dAED0367A877a1612f86A1f86985f)
+* [`CurveContractV3`](../../tokens/CurveTokenV3.vy): [0x86a91b50af95ff1d9d53ca1e4963ef06d8b31369](https://etherscan.io/address/0x86a91b50af95ff1d9d53ca1e4963ef06d8b31369)
+* [`DepositUSDP`](DepositUSDP.vy): [0xF7De9c7d406253F1b54dcF5E8BAc5a921219dE09](https://etherscan.io/address/0xF7De9c7d406253F1b54dcF5E8BAc5a921219dE09)
+* [`LiquidityGaugeV2`](https://github.com/curvefi/curve-dao-contracts/blob/master/contracts/gauges/LiquidityGaugeV2.vy): [0x174baa6b56ffe479b604cc20f22d09ad74f1ca49](https://etherscan.io/address/0x174baa6b56ffe479b604cc20f22d09ad74f1ca49)
+* [`StableSwapUSDP`](StableSwapUSDP.vy): [0x36965b1a6b97c1b33416e5d53fb5621ade1f1e80](https://etherscan.io/address/0x36965b1a6b97c1b33416e5d53fb5621ade1f1e80)
 
 ## Stablecoins
 

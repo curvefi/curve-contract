@@ -1,10 +1,10 @@
 {
     "base_pool": "3pool",
     "lp_contract": "CurveTokenV3",
-    "swap_address": "0x890f4e345B1dAED0367A877a1612f86A1f86985f",
-    "lp_token_address": "0x94e131324b6054c0D789b190b2dAC504e4361b53",
-    "zap_address": "0xB0a0716841F2Fc03fbA72A891B8Bb13584F52F2d",
-    "gauge_addresses": ["0x3B7020743Bc2A4ca9EaF9D0722d42E20d6935855"],
+    "swap_address": "0x36965b1a6b97c1b33416e5d53fb5621ade1f1e80",
+    "lp_token_address": "0x86a91b50af95ff1d9d53ca1e4963ef06d8b31369",
+    "zap_address": "0xF7De9c7d406253F1b54dcF5E8BAc5a921219dE09",
+    "gauge_addresses": ["0x174baa6b56ffe479b604cc20f22d09ad74f1ca49"],
     "lp_constructor": {
         "symbol": "usdp3CRV",
         "name": "Curve.fi USDP/3Crv"
