@@ -12,10 +12,10 @@ Curve allows users to trade between correlated cryptocurrencies with a bespoke l
 
 ### Dependencies
 
-* [python3](https://www.python.org/downloads/release/python-368/) from version 3.6 to 3.8, python3-dev
-* [brownie](https://github.com/iamdefinitelyahuman/brownie) - tested with version [1.12.0](https://github.com/eth-brownie/brownie/releases/tag/v1.12.0)
-* [ganache-cli](https://github.com/trufflesuite/ganache-cli) - tested with version [6.11.0](https://github.com/trufflesuite/ganache-cli/releases/tag/v6.11.0)
-* [brownie-token-tester](https://github.com/iamdefinitelyahuman/brownie-token-tester) - tested with version [0.0.3](https://github.com/iamdefinitelyahuman/brownie-token-tester/releases/tag/v0.0.3)
+- [python3](https://www.python.org/downloads/release/python-368/) from version 3.6 to 3.8, python3-dev
+- [brownie](https://github.com/iamdefinitelyahuman/brownie) - tested with version [1.12.0](https://github.com/eth-brownie/brownie/releases/tag/v1.12.0)
+- [ganache-cli](https://github.com/trufflesuite/ganache-cli) - tested with version [6.11.0](https://github.com/trufflesuite/ganache-cli/releases/tag/v6.11.0)
+- [brownie-token-tester](https://github.com/iamdefinitelyahuman/brownie-token-tester) - tested with version [0.1.0](https://github.com/iamdefinitelyahuman/brownie-token-tester/releases/tag/v0.1.0)
 
 Curve contracts are compiled using [Vyper](https://github.com/vyperlang/vyper), however installation of the required Vyper versions is handled by Brownie.
 
@@ -31,8 +31,8 @@ pip install -r requirements.txt
 
 ### Organization and Workflow
 
-* New Curve pools are built from the contract templates at [`contracts/pool-templates`](contracts/pool-templates)
-* Once deployed, the contracts for a pool are added to [`contracts/pools`](contracts/pools)
+- New Curve pools are built from the contract templates at [`contracts/pool-templates`](contracts/pool-templates)
+- Once deployed, the contracts for a pool are added to [`contracts/pools`](contracts/pools)
 
 See the documentation within [`contracts`](contracts) and it's subdirectories for more detailed information on how to get started developing on Curve.
 
@@ -62,19 +62,19 @@ To deploy a new pool:
 2. Edit the configuration settings within [`scripts/deploy.py`](scripts/deploy.py).
 3. Test the deployment locally against a forked mainnet.
 
-    ```bash
-    brownie run deploy --network mainnet-fork -I
-    ```
+   ```bash
+   brownie run deploy --network mainnet-fork -I
+   ```
 
-    When the script completes it will open a console. You should call the various getter methods on the deployed contracts to ensure the pool has been configured correctly.
+   When the script completes it will open a console. You should call the various getter methods on the deployed contracts to ensure the pool has been configured correctly.
 
 4. Deploy the pool to the mainnet.
 
-    ```bash
-    brownie run deploy --network mainnet
-    ```
+   ```bash
+   brownie run deploy --network mainnet
+   ```
 
-    Be sure to open a pull request that adds the deployment addresses to the pool `README.md`.
+   Be sure to open a pull request that adds the deployment addresses to the pool `README.md`.
 
 ## Audits and Security
 
