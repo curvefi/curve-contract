@@ -1,3 +1,7 @@
+---
+name: General
+about: Boilerplate pull request template
+---
 ### What I did
 
 Related issue: #

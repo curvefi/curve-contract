@@ -1,4 +1,4 @@
-# default balance of 1 million ether to simplify testing of ETH pools
+# default balance of 10,000 ether to simplify testing of ETH pools
 networks:
   development:
     cmd_settings:
@@ -9,6 +9,9 @@ reports:
   exclude_paths:
     - contracts/testing/*.*
     - contracts/gauges/*.*
+
+dependencies:
+  - curvefi/curve-dao-contracts@1.1.0
 
 hypothesis:
   phases:
