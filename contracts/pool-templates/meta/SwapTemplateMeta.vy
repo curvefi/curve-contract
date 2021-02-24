@@ -184,12 +184,12 @@ def __init__(
     self.base_virtual_price = Curve(_base_pool).get_virtual_price()
     self.base_cache_updated = block.timestamp
     for i in range(BASE_N_COINS):
-        _base_coin: address = Curve(_base_pool).coins(convert(i, uint256))
-        self.base_coins[i] = _base_coin
+        base_coin: address = Curve(_base_pool).coins(convert(i, uint256))
+        self.base_coins[i] = base_coin
 
         # approve underlying coins for infinite transfers
-        _response: Bytes[32] = raw_call(
-            _base_coin,
+        response: Bytes[32] = raw_call(
+            base_coin,
             concat(
                 method_id("approve(address,uint256)"),
                 convert(_base_pool, bytes32),
@@ -197,8 +197,8 @@ def __init__(
             ),
             max_outsize=32,
         )
-        if len(_response) > 0:
-            assert convert(_response, bool)
+        if len(response) > 0:
+            assert convert(response, bool)
 
 
 @view
@@ -377,7 +377,7 @@ def add_liquidity(_amounts: uint256[N_COINS], _min_mint_amount: uint256) -> uint
 
     # Initial invariant
     D0: uint256 = self._get_D_mem(vp_rate, old_balances, amp)
-    
+
     lp_token: address = self.lp_token
     token_supply: uint256 = CurveToken(lp_token).totalSupply()
     new_balances: uint256[N_COINS] = old_balances
@@ -423,7 +423,7 @@ def add_liquidity(_amounts: uint256[N_COINS], _min_mint_amount: uint256) -> uint
     for i in range(N_COINS):
         if _amounts[i] > 0:
             # "safeTransferFrom" which works for ERC20s which return bool or not
-            _response: Bytes[32] = raw_call(
+            response: Bytes[32] = raw_call(
                 self.coins[i],
                 concat(
                     method_id("transferFrom(address,address,uint256)"),
@@ -433,8 +433,8 @@ def add_liquidity(_amounts: uint256[N_COINS], _min_mint_amount: uint256) -> uint
                 ),
                 max_outsize=32,
             )
-            if len(_response) > 0:
-                assert convert(_response, bool)  # dev: failed transfer
+            if len(response) > 0:
+                assert convert(response, bool)  # dev: failed transfer
             # end "safeTransferFrom"
 
     # Mint pool tokens
@@ -605,7 +605,7 @@ def exchange(i: int128, j: int128, _dx: uint256, _min_dy: uint256) -> uint256:
     # When rounding errors happen, we undercharge admin fee in favor of LP
     self.balances[j] = old_balances[j] - dy - dy_admin_fee
 
-    _response: Bytes[32] = raw_call(
+    response: Bytes[32] = raw_call(
         self.coins[i],
         concat(
             method_id("transferFrom(address,address,uint256)"),
@@ -615,10 +615,10 @@ def exchange(i: int128, j: int128, _dx: uint256, _min_dy: uint256) -> uint256:
         ),
         max_outsize=32,
     )
-    if len(_response) > 0:
-        assert convert(_response, bool)
+    if len(response) > 0:
+        assert convert(response, bool)
 
-    response: Bytes[32] = raw_call(
+    response = raw_call(
         self.coins[j],
         concat(
             method_id("transfer(address,uint256)"),
@@ -665,11 +665,11 @@ def exchange_underlying(i: int128, j: int128, _dx: uint256, _min_dy: uint256) ->
 
     # Addresses for input and output coins
     input_coin: address = ZERO_ADDRESS
+    output_coin: address = ZERO_ADDRESS
     if base_i < 0:
         input_coin = self.coins[i]
     else:
         input_coin = self.base_coins[base_i]
-    output_coin: address = ZERO_ADDRESS
     if base_j < 0:
         output_coin = self.coins[j]
     else:
@@ -680,7 +680,7 @@ def exchange_underlying(i: int128, j: int128, _dx: uint256, _min_dy: uint256) ->
     if input_coin == FEE_ASSET:
         dx_w_fee = ERC20(FEE_ASSET).balanceOf(self)
 
-    _response: Bytes[32] = raw_call(
+    response: Bytes[32] = raw_call(
         input_coin,
         concat(
             method_id("transferFrom(address,address,uint256)"),
@@ -690,8 +690,8 @@ def exchange_underlying(i: int128, j: int128, _dx: uint256, _min_dy: uint256) ->
         ),
         max_outsize=32,
     )
-    if len(_response) > 0:
-        assert convert(_response, bool)  
+    if len(response) > 0:
+        assert convert(response, bool)
 
     # Handle potential Tether fees
     if input_coin == FEE_ASSET:
@@ -753,7 +753,7 @@ def exchange_underlying(i: int128, j: int128, _dx: uint256, _min_dy: uint256) ->
         dy = ERC20(output_coin).balanceOf(self) - dy
 
     # "safeTransfer" which works for ERC20s which return bool or not
-    response: Bytes[32] = raw_call(
+    response = raw_call(
         output_coin,
         concat(
             method_id("transfer(address,uint256)"),
@@ -784,7 +784,6 @@ def remove_liquidity(_amount: uint256, _min_amounts: uint256[N_COINS]) -> uint25
     lp_token: address = self.lp_token
     total_supply: uint256 = CurveToken(lp_token).totalSupply()
     amounts: uint256[N_COINS] = empty(uint256[N_COINS])
-    fees: uint256[N_COINS] = empty(uint256[N_COINS])  # Fees are unused but we've got them historically in event
 
     for i in range(N_COINS):
         old_balance: uint256 = self.balances[i]
@@ -793,10 +792,10 @@ def remove_liquidity(_amount: uint256, _min_amounts: uint256[N_COINS]) -> uint25
         self.balances[i] = old_balance - value
         amounts[i] = value
         ERC20(self.coins[i]).transfer(msg.sender, value)
-        
+
     CurveToken(lp_token).burnFrom(msg.sender, _amount)  # dev: insufficient funds
 
-    log RemoveLiquidity(msg.sender, amounts, fees, total_supply - _amount)
+    log RemoveLiquidity(msg.sender, amounts, empty(uint256[N_COINS]), total_supply - _amount)
 
     return amounts
 
@@ -971,7 +970,7 @@ def remove_liquidity_one_coin(_token_amount: uint256, i: int128, _min_amount: ui
     CurveToken(self.lp_token).burnFrom(msg.sender, _token_amount)  # dev: insufficient funds
 
     ERC20(self.coins[i]).transfer(msg.sender, dy)
-    
+
     log RemoveLiquidityOne(msg.sender, _token_amount, dy, total_supply - _token_amount)
 
     return dy
@@ -1028,7 +1027,7 @@ def commit_new_fee(_new_fee: uint256, _new_admin_fee: uint256):
     self.future_admin_fee = _new_admin_fee
 
     log CommitNewFee(deadline, _new_fee, _new_admin_fee)
-    
+
 
 @external
 def apply_new_fee():
