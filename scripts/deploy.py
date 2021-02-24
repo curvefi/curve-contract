@@ -1,9 +1,8 @@
 import json
 
-# modify this import if you wish to deploy a different liquidity gauge
-from brownie import LiquidityGauge as LiquidityGauge
 from brownie import accounts
 from brownie.network.gas.strategies import GasNowScalingStrategy
+from brownie.project import load as load_project
 from brownie.project.main import get_loaded_projects
 
 # set a throwaway admin account here
@@ -13,7 +12,9 @@ REQUIRED_CONFIRMATIONS = 1
 # deployment settings
 # most settings are taken from `contracts/pools/{POOL_NAME}/pooldata.json`
 POOL_NAME = ""
+
 POOL_OWNER = "0xeCb456EA5365865EbAb8a2661B0c503410e9B347"  # PoolProxy
+GAUGE_OWNER = "0x519AFB566c05E00cfB9af73496D00217A630e4D5"  # GaugeProxy
 MINTER = "0xd061D61a4d941c39E5453435B6345Dc261C2fcE0"
 
 
@@ -69,7 +70,8 @@ def main():
     token.set_minter(swap, _tx_params())
 
     # deploy the liquidity gauge
-    LiquidityGauge.deploy(token, MINTER, POOL_OWNER, _tx_params())
+    LiquidityGaugeV2 = load_project("curvefi/curve-dao-contracts@1.1.0").LiquidityGaugeV2
+    LiquidityGaugeV2.deploy(token, MINTER, GAUGE_OWNER, _tx_params())
 
     # deploy the zap
     zap_name = next((i.stem for i in contracts_path.glob(f"{POOL_NAME}/Deposit*")), None)
