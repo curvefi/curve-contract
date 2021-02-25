@@ -1,0 +1,29 @@
+{
+  "lp_contract": "CurveTokenV3",
+  "lp_constructor": {
+    "symbol": "zecCRV",
+    "name": "Curve.fi wZEC/renZEC"
+  },
+  "swap_constructor": {
+    "_A": 100,
+    "_fee": 4000000,
+    "_admin_fee": 5000000000
+  },
+  "coins": [
+    {
+      "decimals": 18,
+      "tethered": false,
+      "name": "wZEC",
+      "underlying_address": "0x4A64515E5E1d1073e83f30cB97BEd20400b66E10"
+    },
+    {
+      "decimals": 8,
+      "tethered": false,
+      "name": "renZEC",
+      "underlying_address": "0x1C5db575E2Ff833E46a2E9864C22F4B22E0B37C2"
+    }
+  ],
+  "testing": {
+    "initial_amount": 100
+  }
+}
