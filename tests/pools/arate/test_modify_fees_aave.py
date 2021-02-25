@@ -9,7 +9,7 @@ MAX_OFFPEG = MAX_FEE * (10 ** 10)
 
 @pytest.mark.parametrize(
     "fee,admin_fee,offpeg",
-    [(0, 0, 0,), (23, 42, 31337), (MAX_FEE, MAX_ADMIN_FEE, 1), (1, MAX_ADMIN_FEE, MAX_OFFPEG)],
+    [(0, 0, 0), (23, 42, 31337), (MAX_FEE, MAX_ADMIN_FEE, 1), (1, MAX_ADMIN_FEE, MAX_OFFPEG)],
 )
 def test_commit(alice, swap, fee, admin_fee, offpeg):
     tx = swap.commit_new_fee(fee, admin_fee, offpeg, {"from": alice})
@@ -57,7 +57,7 @@ def test_commit_offpeg_too_high_max_uint256(alice, swap):
 
 @pytest.mark.parametrize(
     "fee,admin_fee,offpeg",
-    [(0, 0, 0,), (23, 42, 31337), (MAX_FEE, MAX_ADMIN_FEE, 1), (1, MAX_ADMIN_FEE, MAX_OFFPEG)],
+    [(0, 0, 0), (23, 42, 31337), (MAX_FEE, MAX_ADMIN_FEE, 1), (1, MAX_ADMIN_FEE, MAX_OFFPEG)],
 )
 def test_apply(chain, alice, swap, fee, admin_fee, offpeg):
     swap.commit_new_fee(fee, admin_fee, offpeg, {"from": alice})

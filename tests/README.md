@@ -37,9 +37,9 @@ Note that this executes over 10,000 tests and may take a significant amount of t
 
 The test suite is divided into several logical categories. Tests may be filtered using one or more flags:
 
-* `--pool <POOL NAME>`: only run tests against a specific pool
-* `--integration`: only run integration tests (tests within an `integration/` subdirectory)
-* `--unitary`: only run unit tests (tests NOT found in an `integration/` subdirectory)
+- `--pool <POOL NAME>`: only run tests against a specific pool
+- `--integration`: only run integration tests (tests within an `integration/` subdirectory)
+- `--unitary`: only run unit tests (tests NOT found in an `integration/` subdirectory)
 
 For example, to only run the unit tests for 3pool:
 
@@ -68,6 +68,7 @@ All fixtures are [documented](fixtures/README.md) within the fixtures subdirecto
 We use the following custom [markers](https://docs.pytest.org/en/stable/example/markers.html) to parametrize common tests across different pools:
 
 ### `skip_pool(*pools)`
+
 Exclude one or more pools from the given test.
 
 ```python
@@ -87,11 +88,42 @@ def test_btc_pools(swap):
 ```
 
 ### `skip_meta`
+
 Exclude metapools from the given test.
 
 ```python
 @pytest.mark.skip_meta
 def test_not_metapools(swap):
+    ...
+```
+
+### `skip_a_rate`
+
+Exclude aToken-style pools from the given test.
+
+```python
+@pytest.mark.skip_a_rate
+def test_not_a_pools(swap):
+    ...
+```
+
+### `skip_c_rate`
+
+Exclude cToken-style pools from the given test.
+
+```python
+@pytest.mark.skip_c_rate
+def test_not_c_pools(swap):
+    ...
+```
+
+### `skip_eth`
+
+Exclude ETH pools from the given test.
+
+```python
+@pytest.mark.skip_eth
+def test_not_eth_pools(swap):
     ...
 ```
 
@@ -116,6 +148,7 @@ def test_deposits(zap):
 ```
 
 ### `itercoins(*arg, underlying=False)`
+
 Parametrizes each of the given arguments with a range of numbers equal to the total number of coins for the given pool. When multiple arguments are given, each argument has a unique value for every generated test.
 
 For example, `itercoins("send", "recv")` with a pool of 3 coins will parametrize with the sequence `[(0, 1), (0, 2), (1, 0), (1, 2), (2, 0), (2, 1)]`.

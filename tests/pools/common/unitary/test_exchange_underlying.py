@@ -74,7 +74,8 @@ def test_fees(
         assert expected_admin_fee / admin_fees[admin_idx] == approx(1, rel=1e-3)
 
 
-@pytest.mark.skip_pool("compound", "ib", "usdt")
+@pytest.mark.skip_pool("usdt")
+@pytest.mark.skip_c_rate
 @pytest.mark.itercoins("sending", "receiving", underlying=True)
 def test_min_dy_underlying(bob, swap, underlying_coins, sending, receiving, underlying_decimals):
     amount = 10 ** underlying_decimals[sending]

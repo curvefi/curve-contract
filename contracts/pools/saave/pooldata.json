@@ -1,5 +1,6 @@
 {
     "lp_contract": "CurveTokenV3",
+    "pool_type": "arate",
     "wrapped_contract": "ATokenMock",
     "swap_address": "0xeb16ae0052ed37f479f7fe63849198df1765a733",
     "lp_token_address": "0x02d341CcB60fAaf662bC0554d13778015d1b285C",
