@@ -1,0 +1,38 @@
+{
+    "lp_contract": "CurveTokenV3",
+    "lp_constructor": {
+        "symbol": "4CRV",
+        "name": "Curve.fi 4CRV"
+    },
+    "swap_constructor": {
+        "_A": 100,
+        "_fee": 4000000,
+        "_admin_fee": 5000000000
+    },
+    "coins": [
+      {
+          "name": "DAI",
+          "decimals": 18,
+          "tethered": false,
+          "underlying_address": "0x1af3f329e8be154074d8769d1ffa4ee058b1dbc3"
+      },
+      {
+          "name": "USDC",
+          "decimals": 18,
+          "tethered": false,
+          "underlying_address": "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d"
+      },
+      {
+          "name": "USDT",
+          "decimals": 18,
+          "tethered": false,
+          "underlying_address": "0x55d398326f99059ff775485246999027b3197955"
+      },
+      {
+          "name": "BUSD",
+          "decimals": 18,
+          "tethered": false,
+          "underlying_address": "0xe9e7cea3dedca5984780bafc599bd69add087d56"
+      }
+    ]
+}
