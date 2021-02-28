@@ -1,7 +1,3 @@
----
-name: New Pool
-about: Checklist / standard PR format when implementing a new Curve pool
----
 ## New Pool Checklist
 
 ### Pool Info
