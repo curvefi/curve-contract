@@ -86,6 +86,7 @@ def test_min_dy_underlying(bob, swap, underlying_coins, sending, receiving, unde
     assert abs(underlying_coins[receiving].balanceOf(bob) - min_dy) <= 1
 
 
+@pytest.mark.skip_pool("aave", "saave", "a-template")
 @given(delta=strategy("decimal", min_value="0.001", max_value=2, places=3))
 @settings(max_examples=10)
 @pytest.mark.itercoins("sending", "receiving", underlying=True)
@@ -103,15 +104,15 @@ def test_exchange_with_rate(
 ):
     amount = (base_amount // 100) * 10 ** underlying_decimals[sending]
     expected_dy = swap.get_dy_underlying(sending, receiving, amount)
-    rate = wrapped_coins[receiving].exchangeRateCurrent.call()
-    wrapped_coins[receiving].set_exchange_rate(rate * delta)
+    rate = wrapped_coins[sending].exchangeRateCurrent.call()
+    wrapped_coins[sending].set_exchange_rate(rate * delta)
     underlying_coins[sending]._mint_for_testing(bob, amount, {"from": bob})
 
     tx = swap.exchange_underlying(sending, receiving, amount, 0, {"from": bob})
     dy = tx.events["TokenExchangeUnderlying"]["tokens_bought"]
     if delta > 1:
-        assert expected_dy < dy
+        assert dy < expected_dy
     elif delta < 1:
-        assert expected_dy > dy
+        assert dy > expected_dy
     else:
         assert expected_dy == dy
