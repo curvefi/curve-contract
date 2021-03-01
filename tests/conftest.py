@@ -100,6 +100,10 @@ def pytest_ignore_collect(path, config):
     if path_parts[:1] == ("fixtures",):
         return None
 
+    # always allow forked tests
+    if path_parts[0] == "forked":
+        return None
+
     # with the `--unitary` flag, skip any tests in an `integration` subdirectory
     if config.getoption("unitary") and "integration" in path_parts:
         return True
