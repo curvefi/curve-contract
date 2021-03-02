@@ -6,7 +6,7 @@ from brownie.test import given, strategy
 from hypothesis import settings
 from simulation import Curve
 
-pytestmark = pytest.mark.skip_meta
+pytestmark = pytest.mark.skip_pool_type("meta")
 
 
 @given(

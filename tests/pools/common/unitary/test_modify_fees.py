@@ -7,7 +7,7 @@ MAX_FEE = 5 * 10 ** 9
 
 pytestmark = [
     pytest.mark.skip_pool("busd", "compound", "susd", "usdt", "y"),
-    pytest.mark.skip_a_rate,
+    pytest.mark.skip_pool_type("arate"),
 ]
 
 

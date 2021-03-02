@@ -4,7 +4,7 @@ from hypothesis import settings
 from simulation import Curve
 
 # do not run this test on pools without lending, meta pools or aToken-style pools
-pytestmark = [pytest.mark.lending, pytest.mark.skip_meta, pytest.mark.skip_a_rate]
+pytestmark = [pytest.mark.lending, pytest.mark.skip_pool_type("meta", "arate")]
 
 
 @pytest.fixture(scope="module", autouse=True)

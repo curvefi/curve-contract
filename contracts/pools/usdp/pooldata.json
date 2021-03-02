@@ -1,5 +1,6 @@
 {
     "base_pool": "3pool",
+    "pool_types": ["meta"],
     "lp_contract": "CurveTokenV3",
     "swap_address": "0x42d7025938bEc20B69cBae5A77421082407f053A",
     "lp_token_address": "0x7Eb40E450b9655f4B3cC4259BCC731c63ff55ae6",

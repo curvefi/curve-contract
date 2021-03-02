@@ -4,24 +4,24 @@ Test cases for Curve pools.
 
 ## Subdirectories
 
-* [`forked`](forked): Tests designed for use in a forked mainnet
-* [`fixtures`](fixtures): [Pytest fixtures](https://docs.pytest.org/en/latest/fixture.html)
-* [`pools`](pools): Tests for [pool](../contracts/pools) contracts
-* [`token`](token): Tests for [LP token](../contracts/tokens) contracts
-* [`zaps`](zaps): Tests for deposit contracts
+- [`forked`](forked): Tests designed for use in a forked mainnet
+- [`fixtures`](fixtures): [Pytest fixtures](https://docs.pytest.org/en/latest/fixture.html)
+- [`pools`](pools): Tests for [pool](../contracts/pools) contracts
+- [`token`](token): Tests for [LP token](../contracts/tokens) contracts
+- [`zaps`](zaps): Tests for deposit contracts
 
 ## Files
 
-* [`conftest.py`](conftest.py): Base configuration file for the test suite.
-* [`simulation.py`](simulation.py): A python model of the math used within Curve's contracts. Used for testing expected outcomes with actual results.
+- [`conftest.py`](conftest.py): Base configuration file for the test suite.
+- [`simulation.py`](simulation.py): A python model of the math used within Curve's contracts. Used for testing expected outcomes with actual results.
 
 ## Organization
 
-* Tests are organized by general category, then split between unitary and integration tests.
-* Common tests for all pools are located in [`tests/pools/common`](pools/common), for zaps in [`tests/zaps/common`](zaps/common).
-* Common metapool tests are located at [`tests/pools/meta`](pools/meta), for zaps in [`tests/zaps/meta`](zaps/meta).
-* Valid pool names are the names of the subdirectories within [`contracts/pools`](../contracts/pools).
-* For pool templates, prepend `template-` to the subdirectory names within [`contracts/pool-templates`](../contracts/pool-templates). For example, the base template is `template-base`.
+- Tests are organized by general category, then split between unitary and integration tests.
+- Common tests for all pools are located in [`tests/pools/common`](pools/common), for zaps in [`tests/zaps/common`](zaps/common).
+- Common metapool tests are located at [`tests/pools/meta`](pools/meta), for zaps in [`tests/zaps/meta`](zaps/meta).
+- Valid pool names are the names of the subdirectories within [`contracts/pools`](../contracts/pools).
+- For pool templates, prepend `template-` to the subdirectory names within [`contracts/pool-templates`](../contracts/pool-templates). For example, the base template is `template-base`.
 
 ## Running the tests
 
@@ -87,45 +87,18 @@ def test_btc_pools(swap):
     ...
 ```
 
-### `skip_meta`
+### `skip_pool_type(*pool_types)`
 
-Exclude metapools from the given test.
+Exclude specific pool types from the given test.
 
 ```python
-@pytest.mark.skip_meta
+@pytest.mark.skip_pool_type("meta", "eth")
 def test_not_metapools(swap):
     ...
 ```
 
-### `skip_a_rate`
-
-Exclude aToken-style pools from the given test.
-
-```python
-@pytest.mark.skip_a_rate
-def test_not_a_pools(swap):
-    ...
-```
-
-### `skip_c_rate`
-
-Exclude cToken-style pools from the given test.
-
-```python
-@pytest.mark.skip_c_rate
-def test_not_c_pools(swap):
-    ...
-```
-
-### `skip_eth`
-
-Exclude ETH pools from the given test.
-
-```python
-@pytest.mark.skip_eth
-def test_not_eth_pools(swap):
-    ...
-```
+The available pool types are: `arate`, `crate`, `eth`, `meta`.
+By default, the pool type is `base`.
 
 ### `lending`
 

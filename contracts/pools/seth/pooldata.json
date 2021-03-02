@@ -1,6 +1,6 @@
 {
   "lp_contract": "CurveTokenV3",
-  "pool_type": "eth",
+  "pool_types": ["eth"],
   "swap_address": "0xc5424b857f758e906013f3555dad202e4bdb4567",
   "lp_token_address": "0xA3D87FffcE63B53E0d54fAa1cc983B7eB0b74A9c",
   "gauge_addresses": ["0x3C0FFFF15EA30C35d7A85B85c0782D6c94e1d238"],

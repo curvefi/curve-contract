@@ -14,7 +14,7 @@ def test_remove_liquidity(alice, bob, zap, pool_token, underlying_coins, base_am
         assert coin.balanceOf(bob) == expected_amount
 
 
-@pytest.mark.skip_meta
+@pytest.mark.skip_pool_type("meta")
 def test_remove_imbalance(
     alice, bob, zap, initial_amounts_underlying, pool_token, underlying_coins
 ):

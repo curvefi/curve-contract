@@ -39,10 +39,9 @@ def pytest_configure(config):
     # add custom markers
     config.addinivalue_line("markers", "target_pool: run test against one or more specific pool")
     config.addinivalue_line("markers", "skip_pool: exclude one or more pools in this test")
-    config.addinivalue_line("markers", "skip_meta: exclude metapools in this test")
-    config.addinivalue_line("markers", "skip_a_rate: exclude aToken-style pools in this test")
-    config.addinivalue_line("markers", "skip_c_rate: exclude cToken-style pools in this test")
-    config.addinivalue_line("markers", "skip_eth: exclude ETH pools in this test")
+    config.addinivalue_line(
+        "markers", "skip_pool_type: exclude one or more pool types in this test"
+    )
     config.addinivalue_line("markers", "lending: only run test against pools that involve lending")
     config.addinivalue_line("markers", "zap: only run test against pools with a deposit contract")
     config.addinivalue_line(
@@ -128,24 +127,26 @@ def pytest_ignore_collect(path, config):
 
         # only include metapool tests if at least one targeted pool is a metapool
         if path_parts[1] == "meta":
-            return next((None for i in target_pools if _pooldata[i].get("base_pool")), True)
+            return next(
+                (None for i in target_pools if "meta" in _pooldata[i].get("pool_types", [])), True
+            )
 
         # only include a-style tests if at least one targeted pool is an a-style pool
         if path_parts[1] == "arate":
             return next(
-                (None for i in target_pools if _pooldata[i].get("pool_type") == "arate"), True
+                (None for i in target_pools if "arate" in _pooldata[i].get("pool_types", [])), True
             )
 
         # only include c-style tests if at least one targeted pool is an c-style pool
         if path_parts[1] == "crate":
             return next(
-                (None for i in target_pools if _pooldata[i].get("pool_type") == "crate"), True
+                (None for i in target_pools if "crate" in _pooldata[i].get("pool_type", [])), True
             )
 
         # only include eth tests if at least one targeted pool is an eth pool
         if path_parts[1] == "eth":
             return next(
-                (None for i in target_pools if _pooldata[i].get("pool_type") == "eth"), True
+                (None for i in target_pools if "eth" in _pooldata[i].get("pool_type", [])), True
             )
 
         # filter other pool-specific folders
@@ -160,7 +161,7 @@ def pytest_generate_tests(metafunc):
         # parametrize `pool_data`
         test_path = Path(metafunc.definition.fspath).relative_to(project._path)
         if test_path.parts[1] in ("pools", "zaps"):
-            if test_path.parts[2] in ("common", "meta", "arate", "eth"):
+            if test_path.parts[2] in ("common", "meta", "crate", "arate", "eth"):
                 # parametrize common pool/zap tests to run against all pools
                 if metafunc.config.getoption("pool"):
                     params = metafunc.config.getoption("pool").split(",")
@@ -168,13 +169,13 @@ def pytest_generate_tests(metafunc):
                     params = list(_pooldata)
                 # parameterize based on pool type
                 if test_path.parts[2] == "meta":
-                    params = [i for i in params if _pooldata[i].get("base_pool")]
+                    params = [i for i in params if "meta" in _pooldata[i].get("pool_types", [])]
                 if test_path.parts[2] == "arate":
-                    params = [i for i in params if _pooldata[i].get("pool_type") == "arate"]
+                    params = [i for i in params if "arate" in _pooldata[i].get("pool_types", [])]
                 if test_path.parts[2] == "crate":
-                    params = [i for i in params if _pooldata[i].get("pool_type") == "crate"]
+                    params = [i for i in params if "crate" in _pooldata[i].get("pool_types", [])]
                 if test_path.parts[2] == "eth":
-                    params = [i for i in params if _pooldata[i].get("pool_type") == "eth"]
+                    params = [i for i in params if "eth" in _pooldata[i].get("pool_types", [])]
 
             else:
                 # run targetted pool/zap tests against only the specific pool
@@ -246,6 +247,15 @@ def pytest_collection_modifyitems(config, items):
         if item not in items:
             continue
 
+        # apply `skip_pool_type` marker
+        for marker in item.iter_markers(name="skip_pool_type"):
+            if len(set(data.get("pool_types", [])) & set(marker.args)):
+                items.remove(item)
+                break
+
+        if item not in items:
+            continue
+
         # apply `target_pool` marker
         for marker in item.iter_markers(name="target_pool"):
             if params["pool_data"] not in marker.args:
@@ -254,29 +264,6 @@ def pytest_collection_modifyitems(config, items):
 
         if item not in items:
             continue
-
-        # apply `skip_meta` marker
-        if next(item.iter_markers(name="skip_meta"), False) and "base_pool" in data:
-            items.remove(item)
-            continue
-
-        # apply `skip_a_rate` marker
-        if next(item.iter_markers(name="skip_a_rate"), False) and "pool_type" in data:
-            if data["pool_type"] == "arate":
-                items.remove(item)
-                continue
-
-        # apply `skip_c_rate` marker
-        if next(item.iter_markers(name="skip_c_rate"), False) and "pool_type" in data:
-            if data["pool_type"] == "crate":
-                items.remove(item)
-                continue
-
-        # apply `skip_eth` marker
-        if next(item.iter_markers(name="skip_eth"), False) and "pool_type" in data:
-            if data["pool_type"] == "eth":
-                items.remove(item)
-                continue
 
         # apply `lending` marker
         if next(item.iter_markers(name="lending"), False):

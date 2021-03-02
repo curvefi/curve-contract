@@ -62,7 +62,7 @@ def test_j_above_n_coins(bob, swap, idx):
         swap.exchange(0, idx, 0, 0, {"from": bob})
 
 
-@pytest.mark.skip_eth
+@pytest.mark.skip_pool_type("eth")
 def test_nonpayable(swap, bob):
     with brownie.reverts():
         swap.exchange(0, 1, 0, 0, {"from": bob, "value": "1 ether"})

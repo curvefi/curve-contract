@@ -1,5 +1,6 @@
 {
     "base_pool": "3pool",
+    "pool_types": ["meta"],
     "swap_address": "0xC18cC39da8b11dA8c3541C598eE022258F9744da",
     "lp_token_address": "0xC2Ee6b0334C261ED60C72f6054450b61B8f18E35",
     "zap_address": "0xBE175115BF33E12348ff77CcfEE4726866A0Fbd5",

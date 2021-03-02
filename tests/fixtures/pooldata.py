@@ -56,5 +56,5 @@ def n_coins(pool_data):
 
 
 @pytest.fixture(scope="module")
-def is_metapool(base_pool_data):
-    return bool(base_pool_data)
+def is_metapool(pool_data):
+    return "meta" in pool_data.get("pool_types", [])

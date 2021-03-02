@@ -75,7 +75,7 @@ def test_fees(
 
 
 @pytest.mark.skip_pool("usdt")
-@pytest.mark.skip_c_rate
+@pytest.mark.skip_pool_type("crate")
 @pytest.mark.itercoins("sending", "receiving", underlying=True)
 def test_min_dy_underlying(bob, swap, underlying_coins, sending, receiving, underlying_decimals):
     amount = 10 ** underlying_decimals[sending]

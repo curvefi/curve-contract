@@ -1,6 +1,6 @@
 {
   "wrapped_contract": "ATokenMock",
-  "pool_type": "arate",
+  "pool_types": ["arate"],
   "coins": [
     {
       "decimals": 18,
