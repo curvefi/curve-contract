@@ -1,0 +1,32 @@
+{
+    "lp_contract": "CurveTokenV3",
+    "swap_address": "0xf178c0b5bb7e7abf4e12a4838c7b7c5ba2c623c0",
+    "lp_token_address": "0xcee60cfa923170e4f8204ae08b4fa6a3f5656f3a",
+    "gauge_addresses": ["0xFD4D8a17df4C27c1dD245d153ccf4499e806C87D"],
+    "lp_constructor": {
+        "symbol": "aaveCRV",
+        "name": "Curve.fi AAVE/sAAVE"
+    },
+    "swap_constructor": {
+        "_A": 100,
+        "_fee": 4000000,
+        "_admin_fee": 5000000000
+    },
+    "coins": [
+        {
+            "name": "AAVE",
+            "decimals": 18,
+            "tethered": false,
+            "underlying_address": "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9"
+        },
+        {
+            "name": "sAAVE",
+            "decimals": 18,
+            "tethered": false,
+            "underlying_address": "0xd2df355c19471c8bd7d8a3aa27ff4e26a21b4076"
+        }
+    ],
+    "testing": {
+        "initial_amount": 10000
+    }
+}
