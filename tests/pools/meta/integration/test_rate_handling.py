@@ -185,7 +185,7 @@ class StateMachine:
         virtual_price_base = self.base_swap.get_virtual_price()
         virtual_price = self.swap.get_virtual_price()
         assert virtual_price_base >= self.virtual_price_base
-        assert virtual_price >= self.virtual_price
+        assert virtual_price + 1 >= self.virtual_price
         self.virtual_price_base = virtual_price_base
         self.virtual_price = virtual_price
 
