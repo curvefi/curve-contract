@@ -5,6 +5,7 @@ from brownie.test import strategy
 pytestmark = [
     pytest.mark.usefixtures("add_initial_liquidity"),
     pytest.mark.skip_pool("compound", "ib", "usdt", "ren", "sbtc"),
+    pytest.mark.skip_meta,
 ]
 
 ETH_ADDRESS = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
