@@ -1,13 +1,8 @@
 import pytest
-from brownie import chain
+from brownie import ETH_ADDRESS, chain
 from brownie.test import strategy
 
-pytestmark = [
-    pytest.mark.usefixtures("add_initial_liquidity"),
-    # pytest.mark.skip_pool("template-meta"),
-]
-
-ETH_ADDRESS = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
+pytestmark = [pytest.mark.usefixtures("add_initial_liquidity")]
 
 
 class StateMachine:
@@ -38,15 +33,15 @@ class StateMachine:
         cls.underlying_decimals = underlying_decimals
         cls.n_coins = len(wrapped_coins)
 
+        # approve base pool for swaps
+        base_coins = cls.underlying_coins[cls.n_coins - 1 :]
+        for idx in range(len(base_coins)):
+            base_coins[idx].approve(cls.base_swap, 2 ** 256 - 1, {"from": cls.alice})
+
     def setup(self):
         # reset the virtual price between each test run
         self.virtual_price_base = self.base_swap.get_virtual_price()
         self.virtual_price = self.swap.get_virtual_price()
-
-        # approve base pool for swaps
-        base_coins = self.underlying_coins[self.n_coins - 1 :]
-        for idx in range(len(base_coins)):
-            base_coins[idx].approve(self.base_swap, 2 ** 256 - 1, {"from": self.alice})
 
     def _min_max(self):
         # get index values for the coins with the smallest and largest balances in the meta pool
@@ -88,7 +83,7 @@ class StateMachine:
         This action happens at most once per test. If A has already
         been ramped, a swap is performed instead.
         """
-        if not hasattr(self.swap, "ramp_A") or self.swap.future_A_time():
+        if self.swap.future_A_time():
             return self.rule_exchange_underlying(st_pct)
 
         new_A = int(self.swap.A() * (1 + st_pct))
@@ -99,7 +94,7 @@ class StateMachine:
         Increase the virtual price of the base pool.
         """
         if not hasattr(self.base_swap, "donate_admin_fees"):
-            # not all pools include `donate_admin_fees`
+            # not all base pools include `donate_admin_fees`
             return self.rule_generate_fees()
 
         for i, coin in enumerate(self.underlying_coins):
