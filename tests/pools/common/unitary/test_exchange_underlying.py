@@ -87,8 +87,8 @@ def test_min_dy_underlying(bob, swap, underlying_coins, sending, receiving, unde
     assert abs(underlying_coins[receiving].balanceOf(bob) - min_dy) <= 1
 
 
-@pytest.mark.skip_meta
-@pytest.mark.skip_pool("pax", "usdt", "susd", "aave", "saave", "a-template")
+@pytest.mark.skip_pool_type("meta", "arate")
+@pytest.mark.skip_pool("pax", "usdt", "susd")
 @given(delta=strategy("decimal", min_value="0.001", max_value=2, places=3))
 @settings(max_examples=10)
 @pytest.mark.itercoins("sending", "receiving", underlying=True)
