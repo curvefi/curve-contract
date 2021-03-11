@@ -1,5 +1,6 @@
 {
     "base_pool_contract": "SwapTemplateBase",
+    "pool_types": ["meta"],
     "coins": [
         {
             "decimals": 18,

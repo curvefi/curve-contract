@@ -1,4 +1,5 @@
 {
+  "pool_types": ["eth"],
   "coins": [
     {
       "decimals": 18,

@@ -1,5 +1,6 @@
 {
   "lp_contract": "CurveTokenV3",
+  "pool_types": ["eth", "crate"],
   "wrapped_contract": "aETH",
   "swap_address": "0xA96A65c051bF88B4095Ee1f2451C2A9d43F53Ae2",
   "lp_token_address": "0xaA17A236F2bAdc98DDc0Cf999AbB47D47Fc0A6Cf",

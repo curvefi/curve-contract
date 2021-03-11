@@ -1,5 +1,6 @@
 {
     "base_pool": "sbtc",
+    "pool_types": ["meta"],
     "swap_address": "0x071c661B4DeefB59E2a3DdB20Db036821eeE8F4b",
     "lp_token_address": "0x410e3E86ef427e30B9235497143881f717d93c2A",
     "zap_address": "0xC45b2EEe6e09cA176Ca3bB5f7eEe7C47bF93c756",

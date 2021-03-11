@@ -2,10 +2,7 @@ import brownie
 import pytest
 from brownie import compile_source, history
 
-pytestmark = [
-    pytest.mark.usefixtures("add_initial_liquidity", "mint_bob", "approve_bob"),
-    pytest.mark.target_pool("seth", "steth"),
-]
+pytestmark = [pytest.mark.usefixtures("add_initial_liquidity", "mint_bob", "approve_bob")]
 
 
 def test_exchange(swap, alice, wrapped_coins):
