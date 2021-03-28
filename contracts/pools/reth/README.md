@@ -17,4 +17,4 @@
 Curve rETH pool supports swaps between ETH and [`rETH`](https://github.com/stafiprotocol/) staked ETH (rETH):
 
 - `ETH`: represented in the pool as `0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE`
-- `rETH`: [0x9559aaa82d9649c7a7b220e7c461d2e74c9a3593](https://etherscan.io/token/0x9559aaa82d9649c7a7b220e7c461d2e74c9a3593#code)
+- `rETH`: [0x9559Aaa82d9649C7A7b220E7c461d2E74c9a3593](https://etherscan.io/token/0x9559aaa82d9649c7a7b220e7c461d2e74c9a3593#code)
