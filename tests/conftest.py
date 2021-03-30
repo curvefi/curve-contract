@@ -104,7 +104,7 @@ def pytest_ignore_collect(path, config):
         return None
 
     # always allow forked tests
-    if path_parts[:1] == "forked":
+    if path_parts[:1] == ("forked",):
         return None
 
     # with the `--unitary` flag, skip any tests in an `integration` subdirectory
