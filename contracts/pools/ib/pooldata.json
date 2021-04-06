@@ -3,7 +3,7 @@
     "pool_types": ["crate"],
     "wrapped_contract": "cERC20",
     "swap_address": "0x2dded6Da1BF5DBdF597C45fcFaa3194e53EcfeAF",
-    "lp_token_address": "0x5282a4eF67D9C33135340fB3289cc1711c13638C ",
+    "lp_token_address": "0x5282a4eF67D9C33135340fB3289cc1711c13638C",
     "gauge_addresses": ["0xF5194c3325202F456c95c1Cf0cA36f8475C1949F"],
     "lp_constructor": {
         "symbol": "ib3CRV",
