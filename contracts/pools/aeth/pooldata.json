@@ -31,5 +31,6 @@
   ],
   "testing": {
     "initial_amount": 10000
-  }
+  },
+  "rate_calculator_address": ""
 }
