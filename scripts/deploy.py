@@ -95,4 +95,12 @@ def main():
 
         zap_deployer.deploy(*deployment_args)
 
+    # deploy the rate calculator
+    rate_calc_name = next(
+        (i.stem for i in contracts_path.glob(f"{POOL_NAME}/RateCalculator*")), None
+    )
+    if rate_calc_name is not None:
+        rate_calc_deployer = getattr(project, rate_calc_name)
+        rate_calc_deployer.deploy(_tx_params())
+
     print(f"Gas used in deployment: {(balance - DEPLOYER.balance()) / 1e18:.4f} ETH")
