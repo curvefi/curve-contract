@@ -46,6 +46,8 @@ Each subdirectory holds contracts and other files specific to a single Curve poo
 {
     "lp_contract": "CurveTokenV1",       // LP token contract to use with this pool, from `contracts/tokens`
     "wrapped_contract": "yERC20",        // mock wrapped coin contract to use, from `contracts/testing`
+    // optional
+    "rate_calculator_address": ""        // address of exchange rate calculator for with unique pool logic
 
     // constructor settings for the LP token - required for deployment
     "lp_constructor": {
