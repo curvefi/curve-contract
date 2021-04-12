@@ -190,7 +190,7 @@ def A_precise() -> uint256:
 @internal
 def _stored_rates() -> uint256[N_COINS]:
     return [
-        convert(PRECISION, uint256),
+        PRECISION,
         rETH(self.coins[1]).getExchangeRate()
     ]
 
