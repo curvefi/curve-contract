@@ -205,7 +205,7 @@ def _xp(rates: uint256[N_COINS]) -> uint256[N_COINS]:
 
 
 @internal
-@view
+@pure
 def get_D(xp: uint256[N_COINS], amp: uint256) -> uint256:
     S: uint256 = 0
     Dprev: uint256 = 0
