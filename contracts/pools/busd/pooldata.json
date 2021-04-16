@@ -5,9 +5,14 @@
     "lp_token_address": "0x3B3Ac5386837Dc563660FB6a0937DFAa5924333B",
     "zap_address": "0xb6c057591e073249f2d9d88ba59a46cfc9b59edb",
     "gauge_addresses": ["0x69Fb7c45726cfE2baDeE8317005d3F94bE838840"],
+    "lp_constructor": {
+        "name": "Curve.fi yDAI/yUSDC/yUSDT/yBUSD",
+        "symbol": "yDAI+yUSDC+yUSDT+yBUSD"
+    },
     "coins": [
         {
-            "name": "DAI",
+            "name": "yDAI",
+            "underlying_name": "DAI",
             "decimals": 18,
             "tethered": false,
             "wrapped_decimals": 18,
@@ -15,7 +20,8 @@
             "wrapped_address": "0xc2cb1040220768554cf699b0d863a3cd4324ce32"
         },
         {
-            "name": "USDC",
+            "name": "yUSDC",
+            "underlying_name": "USDC",
             "decimals": 6,
             "tethered": false,
             "wrapped_decimals": 6,
@@ -23,7 +29,8 @@
             "wrapped_address": "0x26ea744e5b887e5205727f55dfbe8685e3b21951"
         },
         {
-            "name": "USDT",
+            "name": "yUSDT",
+            "underlying_name": "USDT",
             "decimals": 6,
             "tethered": true,
             "wrapped_decimals": 6,
@@ -31,7 +38,8 @@
             "wrapped_address": "0xe6354ed5bc4b393a5aad09f21c46e101e692d447"
         },
         {
-            "name": "BUSD",
+            "name": "yBUSD",
+            "underlying_name": "BUSD",
             "decimals": 18,
             "tethered": false,
             "wrapped_decimals": 18,

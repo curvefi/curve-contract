@@ -5,9 +5,14 @@
     "lp_token_address": "0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8",
     "zap_address": "0xbbc81d23ea2c3ec7e56d39296f0cbb648873a5d3",
     "gauge_addresses": ["0xFA712EE4788C042e2B7BB55E6cb8ec569C4530c1"],
+    "lp_constructor": {
+        "name": "Curve.fi yDAI/yUSDC/yUSDT/yTUSD",
+        "symbol": "yDAI+yUSDC+yUSDT+yTUSD"
+    },
     "coins": [
         {
-            "name": "DAI",
+            "name": "yDAI",
+            "underlying_name": "DAI",
             "decimals": 18,
             "tethered": false,
             "wrapped_decimals": 18,
@@ -15,7 +20,8 @@
             "wrapped_address": "0x16de59092dAE5CcF4A1E6439D611fd0653f0Bd01"
         },
         {
-            "name": "USDC",
+            "name": "yUSDC",
+            "underlying_name": "USDC",
             "decimals": 6,
             "tethered": false,
             "wrapped_decimals": 6,
@@ -23,7 +29,8 @@
             "wrapped_address": "0xd6aD7a6750A7593E092a9B218d66C0A814a3436e"
         },
         {
-            "name": "USDT",
+            "name": "yUSDT",
+            "underlying_name": "USDT",
             "decimals": 6,
             "tethered": true,
             "wrapped_decimals": 6,
@@ -31,7 +38,8 @@
             "wrapped_address": "0x83f798e925BcD4017Eb265844FDDAbb448f1707D"
         },
         {
-            "name": "TUSD",
+            "name": "yTUSD",
+            "underlying_name": "TUSD",
             "decimals": 18,
             "tethered": false,
             "wrapped_decimals": 18,

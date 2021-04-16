@@ -4,6 +4,10 @@
     "lp_token_address": "0xC25a3A3b969415c80451098fa907EC722572917F",
     "zap_address": "0xfcba3e75865d2d561be8d220616520c171f12851",
     "gauge_addresses": ["0xA90996896660DEcC6E997655E065b23788857849"],
+    "lp_constructor": {
+        "name": "Curve.fi DAI/USDC/USDT/sUSD",
+        "symbol": "crvPlain3andSUSD"
+    },
     "coins": [
         {
             "name": "DAI",

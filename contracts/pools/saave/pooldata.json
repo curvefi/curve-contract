@@ -19,6 +19,7 @@
     "coins": [
         {
             "name": "aDAI",
+            "underlying_name": "DAI",
             "decimals": 18,
             "wrapped_decimals": 18,
             "tethered": false,
@@ -27,6 +28,7 @@
         },
         {
             "name": "aSUSD",
+            "underlying_name": "SUSD",
             "decimals": 18,
             "wrapped_decimals": 18,
             "tethered": false,
