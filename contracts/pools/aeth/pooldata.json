@@ -23,6 +23,7 @@
     },
     {
       "name": "ankrETH",
+      "underlying_name": "ETH",
       "decimals": 18,
       "wrapped_decimals": 18,
       "tethered": false,

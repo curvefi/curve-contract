@@ -5,9 +5,14 @@
     "lp_token_address": "0x9fC689CCaDa600B6DF723D9E47D84d76664a1F23",
     "zap_address": "0xac795d2c97e60df6a99ff1c814727302fd747a80",
     "gauge_addresses": ["0xBC89cd85491d81C6AD2954E6d0362Ee29fCa8F53"],
+    "lp_constructor": {
+        "name": "Curve.fi cDAI/cUSDC/USDT",
+        "symbol": "cDAI+cUSDC+USDT"
+    },
     "coins": [
         {
-            "name": "DAI",
+            "name": "cDAI",
+            "underlying_name": "DAI",
             "decimals": 18,
             "tethered": false,
             "wrapped_decimals": 8,
@@ -15,7 +20,8 @@
             "wrapped_address": "0x5d3a536e4d6dbd6114cc1ead35777bab948e3643"
         },
         {
-            "name": "USDC",
+            "name": "cUSDC",
+            "underlying_name": "USDC",
             "decimals": 6,
             "tethered": false,
             "wrapped_decimals": 8,
