@@ -1,4 +1,4 @@
-# @version ^0.2.8
+# @version ^0.2.12
 """
 @title StableSwap
 @author Curve.Fi
@@ -184,7 +184,7 @@ def __init__(
     self.base_virtual_price = Curve(_base_pool).get_virtual_price()
     self.base_cache_updated = block.timestamp
     for i in range(BASE_N_COINS):
-        base_coin: address = Curve(_base_pool).coins(convert(i, uint256))
+        base_coin: address = Curve(_base_pool).coins(i)
         self.base_coins[i] = base_coin
 
         # approve underlying coins for infinite transfers
