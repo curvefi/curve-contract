@@ -15,6 +15,7 @@ WRAPPED_COIN_METHODS = {
     "renERC20": {"get_rate": "exchangeRateCurrent"},
     "yERC20": {"get_rate": "getPricePerFullShare", "mint": "deposit"},
     "aETH": {"get_rate": "ratio"},
+    "rETH": {"get_rate": "getExchangeRate"},
 }
 
 pytest_plugins = [
@@ -103,7 +104,7 @@ def pytest_ignore_collect(path, config):
         return None
 
     # always allow forked tests
-    if path_parts[0] == "forked":
+    if path_parts[:1] == ("forked",):
         return None
 
     # with the `--unitary` flag, skip any tests in an `integration` subdirectory

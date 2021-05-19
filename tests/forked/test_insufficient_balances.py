@@ -46,8 +46,17 @@ def test_add_liquidity_insufficient_balance(
         value = 0 if wrapped_coins[send] != ETH_ADDRESS else amount
         if underlying_coins[send] == ETH_ADDRESS:
             value = amount - 1
-        with brownie.reverts():
-            swap.exchange(send, recv, amount, 0, {"from": charlie, "value": value})
+        # charlie doesn't have enough ETH
+        if wrapped_coins[send] == ETH_ADDRESS:
+            with pytest.raises(ValueError) as e:
+                swap.exchange(send, recv, amount, 0, {"from": charlie, "value": value})
+            assert "sender doesn't have enough funds to send tx" in str(e.value)
+            with brownie.reverts():
+                # didn't send any ETH this time soooo tx fails
+                swap.exchange(send, recv, amount, 0, {"from": charlie})
+        else:
+            with brownie.reverts():
+                swap.exchange(send, recv, amount, 0, {"from": charlie, "value": value})
 
     # attempt to perform swaps between coins with insufficient funds
     if hasattr(swap, "exchange_underlying"):
