@@ -8,9 +8,9 @@
 
 ## Deployments
 
-- [`CurveContractV3`](../../tokens/CurveTokenV3.vy):
-- [`LiquidityGaugeV2`](https://github.com/curvefi/curve-dao-contracts/blob/master/contracts/gauges/LiquidityGaugeV2.vy):
-- [`StableSwapRETH`](StableSwapRETH.vy):
+- [`CurveContractV3`](../../tokens/CurveTokenV3.vy):  [0x53a901d48795C58f485cBB38df08FA96a24669D5](https://etherscan.io/address/0x53a901d48795C58f485cBB38df08FA96a24669D5)
+- [`LiquidityGaugeV3`](https://github.com/curvefi/curve-dao-contracts/blob/master/contracts/gauges/LiquidityGaugeV3.vy): [0x824F13f1a2F29cFEEa81154b46C0fc820677A637](https://etherscan.io/address/0x824F13f1a2F29cFEEa81154b46C0fc820677A637)
+- [`StableSwapRETH`](StableSwapRETH.vy): [0xF9440930043eb3997fc70e1339dBb11F341de7A8](https://etherscan.io/address/0xF9440930043eb3997fc70e1339dBb11F341de7A8)
 
 ## Stablecoins
 

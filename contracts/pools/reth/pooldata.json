@@ -4,7 +4,7 @@
   "wrapped_contract": "rETH",
   "swap_address": "0xF9440930043eb3997fc70e1339dBb11F341de7A8",
   "lp_token_address": "0x53a901d48795C58f485cBB38df08FA96a24669D5",
-  "gauge_addresses": [""],
+  "gauge_addresses": ["0x824F13f1a2F29cFEEa81154b46C0fc820677A637"],
   "lp_constructor": {
     "symbol": "rCRV",
     "name": "Curve.fi ETH/rETH"
