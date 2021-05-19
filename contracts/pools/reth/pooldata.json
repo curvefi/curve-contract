@@ -2,8 +2,8 @@
   "lp_contract": "CurveTokenV3",
   "pool_types": ["eth", "crate"],
   "wrapped_contract": "rETH",
-  "swap_address": "",
-  "lp_token_address": "",
+  "swap_address": "0xF9440930043eb3997fc70e1339dBb11F341de7A8",
+  "lp_token_address": "0x53a901d48795C58f485cBB38df08FA96a24669D5",
   "gauge_addresses": [""],
   "lp_constructor": {
     "symbol": "rCRV",
