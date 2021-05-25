@@ -11,7 +11,7 @@ reports:
     - contracts/gauges/*.*
 
 dependencies:
-  - curvefi/curve-dao-contracts@1.1.0
+  - curvefi/curve-dao-contracts@1.2.0
 
 hypothesis:
   phases:
