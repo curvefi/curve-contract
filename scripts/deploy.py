@@ -75,8 +75,8 @@ def main():
     token.set_minter(swap, _tx_params())
 
     # deploy the liquidity gauge
-    LiquidityGaugeV2 = load_project("curvefi/curve-dao-contracts@1.1.0").LiquidityGaugeV2
-    LiquidityGaugeV2.deploy(token, MINTER, GAUGE_OWNER, _tx_params())
+    LiquidityGaugeV3 = load_project("curvefi/curve-dao-contracts@1.2.0").LiquidityGaugeV3
+    LiquidityGaugeV3.deploy(token, MINTER, GAUGE_OWNER, _tx_params())
 
     # deploy the zap
     zap_name = next((i.stem for i in contracts_path.glob(f"{POOL_NAME}/Deposit*")), None)
