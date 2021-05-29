@@ -1,0 +1,32 @@
+{
+    "lp_contract": "CurveTokenV3",
+    "swap_address": "0xf178c0b5bb7e7abf4e12a4838c7b7c5ba2c623c0",
+    "lp_token_address": "0xcee60cfa923170e4f8204ae08b4fa6a3f5656f3a",
+    "gauge_addresses": ["0xFD4D8a17df4C27c1dD245d153ccf4499e806C87D"],
+    "lp_constructor": {
+        "symbol": "compCRV",
+        "name": "Curve.fi COMP/sCOMP"
+    },
+    "swap_constructor": {
+        "_A": 100,
+        "_fee": 4000000,
+        "_admin_fee": 5000000000
+    },
+    "coins": [
+        {
+            "name": "COMP",
+            "decimals": 18,
+            "tethered": false,
+            "underlying_address": "0xc00e94cb662c3520282e6f5717214004a7f26888"
+        },
+        {
+            "name": "sCOMP",
+            "decimals": 18,
+            "tethered": false,
+            "underlying_address": "0xEb029507d3e043DD6C87F2917C4E82B902c35618"
+        }
+    ],
+    "testing": {
+        "initial_amount": 10000
+    }
+}
