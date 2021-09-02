@@ -1,0 +1,37 @@
+{
+    "base_pool": "sbtc",
+    "pool_types": ["meta"],
+    "swap_address": "0x9e56512566236b8872b5798C8CB3a2b1a572A16C",
+    "lp_token_address": "0xB6881e8b21a3cd6D23c4F90724E26e35BB8980bE",
+    "zap_address": "0x3264834ADA73a8b0B132ee52Fd5a367CF60E86C6",
+    "gauge_addresses": ["0xF816CFE922E03C2347664a4a61CAec409fcFF738"],
+    "lp_contract": "CurveTokenV3",
+    "lp_constructor": {
+        "symbol": "tBTCv2/sbtcCRV",
+        "name": "Curve.fi tBTCv2/sbtcCRV"
+    },
+    "swap_constructor": {
+        "_A": 200,
+        "_fee": 4000000,
+        "_admin_fee": 0
+    },
+    "coins": [
+        {
+            "name": "tBTCv2",
+            "decimals": 18,
+            "tethered": false,
+            "wrapped": false,
+            "underlying_address": "0x18084fbA666a33d37592fA2633fD49a74DD93a88"
+        },
+        {
+            "name": "sbtcCRV",
+            "decimals": 18,
+            "wrapped": false,
+            "base_pool_token": true,
+            "underlying_address": "0x075b1bb99792c9E1041bA13afEf80C91a1e70fB3"
+        }
+    ],
+    "testing": {
+        "initial_amount": 100
+    }
+}
