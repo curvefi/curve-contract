@@ -28,6 +28,7 @@ Each subdirectory holds contracts and other files specific to a single Curve poo
 * [`steth`](steth): [stETH pool](https://www.curve.fi/steth)
 * [`susd`](susd): [sUSD pool](https://www.curve.fi/susdv2)
 * [`tbtc`](tbtc): [tBTC metapool](https://www.curve.fi/tbtc)
+* [`tbtc2`](tbtc2): [tBTC v2 metapool](https://www.curve.fi/tbtc2)
 * [`usdk`](usdk): [USDK metapool](https://www.curve.fi/usdk)
 * [`usdn`](usdn): [USDN metapool](https://www.curve.fi/usdn)
 * [`usdt`](usdt): [USDT pool](https://www.curve.fi/usdt), with lending on [Compound](https://compound.finance/)
