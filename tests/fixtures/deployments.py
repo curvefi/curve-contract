@@ -12,6 +12,7 @@ def _swap(
     swap_mock,
     base_swap,
     aave_lending_pool,
+    redemption_price_snap,
 ):
     deployer = getattr(project, pool_data["swap_contract"])
 
@@ -31,6 +32,7 @@ def _swap(
         "_reward_claimant": alice,
         "_y_pool": swap_mock,
         "_aave_lending_pool": aave_lending_pool,
+        "_redemption_price_snap": redemption_price_snap,
     }
     deployment_args = [args[i["name"]] for i in abi] + [({"from": alice})]
 
@@ -55,6 +57,7 @@ def swap(
     swap_mock,
     base_swap,
     aave_lending_pool,
+    redemption_price_snap,
 ):
     return _swap(
         project,
@@ -66,6 +69,7 @@ def swap(
         swap_mock,
         base_swap,
         aave_lending_pool,
+        redemption_price_snap,
     )
 
 
@@ -82,6 +86,7 @@ def base_swap(project, charlie, _base_coins, base_pool_token, base_pool_data, is
         _base_coins,
         base_pool_token,
         base_pool_data,
+        None,
         None,
         None,
         None,
@@ -120,3 +125,12 @@ def aave_lending_pool(AaveLendingPoolMock, pool_data, alice, is_forked):
             return Contract("0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9")
         else:
             return AaveLendingPoolMock.deploy({"from": alice})
+
+
+@pytest.fixture(scope="module")
+def redemption_price_snap(RedemptionPriceSnapMock, pool_data, alice, is_forked):
+    if pool_data["name"] in ("rai",):
+        if is_forked:
+            return Contract("0x0000000000000000000000000000000000000000")  # todo after deployment replace this.
+        else:
+            return RedemptionPriceSnapMock.deploy({"from": alice})

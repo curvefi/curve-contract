@@ -1,6 +1,7 @@
 __pycache__
 .history
 .hypothesis/
+.idea/
 build/
 reports/
 .venv/
