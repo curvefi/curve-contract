@@ -1,4 +1,4 @@
-# @version ^0.2.12
+# @version 0.2.12
 """
 @title "Zap" Depositer for metapool
 @author Curve.Fi
