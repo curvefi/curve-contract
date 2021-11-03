@@ -38,6 +38,7 @@ class StateMachine:
         cls.n_coins = len(wrapped_coins)
         cls.virtual_price_base = None
         cls.virtual_price = None
+        cls.redemption_price = None
 
         # approve base pool for swaps
         base_coins = cls.underlying_coins[cls.n_coins - 1:]
@@ -48,6 +49,7 @@ class StateMachine:
         # reset the virtual price between each test run
         self.virtual_price_base = self.base_swap.get_virtual_price()
         self.virtual_price = self.swap.get_virtual_price()
+        self.redemption_price = self.redemption_price_snap.snappedRedemptionPrice()
 
     def _min_max(self):
         # get index values for the coins with the smallest and largest balances in the meta pool
@@ -183,12 +185,20 @@ class StateMachine:
 
     def invariant_check_virtual_price(self):
         """
-        The meta pools virtual price can decrease when the redemption rate decreases.
-        The base pools virtual should either remain constant or increase.
+        Verify that base virtual price never goes down, swap virtual price follows the redemptionPrice when it goes up.
         """
         virtual_price_base = self.base_swap.get_virtual_price()
         assert virtual_price_base >= self.virtual_price_base
         self.virtual_price_base = virtual_price_base
+
+        virtual_price = self.swap.get_virtual_price()
+        redemption_price = self.redemption_price_snap.snappedRedemptionPrice()
+
+        if redemption_price >= self.redemption_price:
+            assert virtual_price + 1 >= self.virtual_price
+
+        self.redemption_price = redemption_price
+        self.virtual_price = virtual_price
 
     def invariant_advance_time(self):
         """
