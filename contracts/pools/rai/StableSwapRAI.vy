@@ -548,10 +548,7 @@ def get_dy_underlying(i: int128, j: int128, _dx: uint256) -> uint256:
 
     x: uint256 = 0
     if base_i < 0:
-        if i == REDEMPTION_COIN:
-            x = xp[i] + (_dx * self._get_scaled_redemption_price() / PRECISION)
-        else:
-            x = xp[i] + _dx
+        x = xp[i] + (_dx * self._get_scaled_redemption_price() / PRECISION)
     else:
         if base_j < 0:
             # i is from BasePool
