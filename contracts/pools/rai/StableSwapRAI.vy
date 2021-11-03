@@ -98,14 +98,14 @@ event StopRampA:
     t: uint256
 
 
-N_COINS: constant(int128) = 2
-MAX_COIN: constant(int128) = N_COINS - 1
-REDEMPTION_COIN: constant(int128) = 0  # Index of asset with moving target redemption price
-REDMPTION_PRICE_SCALE: constant(int128) = 10 ** 9
+N_COINS: constant(uint256) = 2
+MAX_COIN: constant(uint256) = N_COINS - 1
+REDEMPTION_COIN: constant(uint256) = 0  # Index of asset with moving target redemption price
+REDMPTION_PRICE_SCALE: constant(uint256) = 10 ** 9
 
 FEE_DENOMINATOR: constant(uint256) = 10 ** 10
 PRECISION: constant(uint256) = 10 ** 18  # The precision to convert to
-BASE_N_COINS: constant(int128) = 3
+BASE_N_COINS: constant(uint256) = 3
 
 # An asset which may have a transfer fee (USDT)
 FEE_ASSET: constant(address) = 0xdAC17F958D2ee523a2206206994597C13D831ec7
