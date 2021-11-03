@@ -263,8 +263,8 @@ def _xp(_vp_rate: uint256) -> uint256[N_COINS]:
 
 @pure
 @internal
-def _xp_mem(_redemption_price: uint256, _vp_rate: uint256, _balances: uint256[N_COINS]) -> uint256[N_COINS]:
-    result: uint256[N_COINS] = [_redemption_price, _vp_rate]
+def _xp_mem(_rates: uint256[N_COINS], _balances: uint256[N_COINS]) -> uint256[N_COINS]:
+    result: uint256[N_COINS] = _rates
     for i in range(N_COINS):
         result[i] = result[i] * _balances[i] / PRECISION
     return result
@@ -323,8 +323,8 @@ def _get_D(_xp: uint256[N_COINS], _amp: uint256) -> uint256:
 
 @view
 @internal
-def _get_D_mem(_redemption_price: uint256, _vp_rate: uint256, _balances: uint256[N_COINS], _amp: uint256) -> uint256:
-    return self._get_D(self._xp_mem(_redemption_price, _vp_rate, _balances), _amp)
+def _get_D_mem(_rates: uint256[N_COINS], _balances: uint256[N_COINS], _amp: uint256) -> uint256:
+    return self._get_D(self._xp_mem(_rates, _balances), _amp)
 
 
 @view
@@ -357,16 +357,15 @@ def calc_token_amount(_amounts: uint256[N_COINS], _is_deposit: bool) -> uint256:
     @return Expected amount of LP tokens received
     """
     amp: uint256 = self._A()
-    vp_rate: uint256 = self._vp_rate_ro()
-    redemption_price: uint256 = self._get_scaled_redemption_price()
+    rates: uint256[N_COINS] = [self._get_scaled_redemption_price(), self._vp_rate_ro()]
     balances: uint256[N_COINS] = self.balances
-    D0: uint256 = self._get_D_mem(redemption_price, vp_rate, balances, amp)
+    D0: uint256 = self._get_D_mem(rates, balances, amp)
     for i in range(N_COINS):
         if _is_deposit:
             balances[i] += _amounts[i]
         else:
             balances[i] -= _amounts[i]
-    D1: uint256 = self._get_D_mem(redemption_price, vp_rate, balances, amp)
+    D1: uint256 = self._get_D_mem(rates, balances, amp)
     token_amount: uint256 = CurveToken(self.lp_token).totalSupply()
     diff: uint256 = 0
     if _is_deposit:
@@ -388,12 +387,11 @@ def add_liquidity(_amounts: uint256[N_COINS], _min_mint_amount: uint256) -> uint
     assert not self.is_killed  # dev: is killed
 
     amp: uint256 = self._A()
-    vp_rate: uint256 = self._vp_rate()
-    redemption_price: uint256 = self._get_scaled_redemption_price()
+    rates: uint256[N_COINS] = [self._get_scaled_redemption_price(), self._vp_rate_ro()]
     old_balances: uint256[N_COINS] = self.balances
 
     # Initial invariant
-    D0: uint256 = self._get_D_mem(redemption_price, vp_rate, old_balances, amp)
+    D0: uint256 = self._get_D_mem(rates, old_balances, amp)
 
     lp_token: address = self.lp_token
     token_supply: uint256 = CurveToken(lp_token).totalSupply()
@@ -406,7 +404,7 @@ def add_liquidity(_amounts: uint256[N_COINS], _min_mint_amount: uint256) -> uint
         new_balances[i] = old_balances[i] + _amounts[i]
 
     # Invariant after change
-    D1: uint256 = self._get_D_mem(redemption_price, vp_rate, new_balances, amp)
+    D1: uint256 = self._get_D_mem(rates, new_balances, amp)
     assert D1 > D0
 
     # We need to recalculate the invariant accounting for fees
@@ -428,7 +426,7 @@ def add_liquidity(_amounts: uint256[N_COINS], _min_mint_amount: uint256) -> uint
             fees[i] = fee * difference / FEE_DENOMINATOR
             self.balances[i] = new_balances[i] - (fees[i] * admin_fee / FEE_DENOMINATOR)
             new_balances[i] -= fees[i]
-        D2 = self._get_D_mem(redemption_price, vp_rate, new_balances, amp)
+        D2 = self._get_D_mem(rates, new_balances, amp)
         mint_amount = token_supply * (D2 - D0) / D0
     else:
         self.balances = new_balances
@@ -602,7 +600,7 @@ def exchange(i: int128, j: int128, _dx: uint256, _min_dy: uint256) -> uint256:
     rates: uint256[N_COINS] = [self._get_scaled_redemption_price(), self._vp_rate()]
 
     old_balances: uint256[N_COINS] = self.balances
-    xp: uint256[N_COINS] = self._xp_mem(rates[REDEMPTION_COIN], rates[MAX_COIN], old_balances)
+    xp: uint256[N_COINS] = self._xp_mem(rates, old_balances)
 
     x: uint256 = xp[i] + _dx * rates[i] / PRECISION
     y: uint256 = self._get_y(i, j, x, xp)
@@ -715,7 +713,7 @@ def exchange_underlying(i: int128, j: int128, _dx: uint256, _min_dy: uint256) ->
 
     if base_i < 0 or base_j < 0:
         old_balances: uint256[N_COINS] = self.balances
-        xp: uint256[N_COINS] = self._xp_mem(rates[REDEMPTION_COIN], rates[MAX_COIN], old_balances)
+        xp: uint256[N_COINS] = self._xp_mem(rates, old_balances)
 
         x: uint256 = 0
         if base_i < 0:
@@ -828,14 +826,13 @@ def remove_liquidity_imbalance(_amounts: uint256[N_COINS], _max_burn_amount: uin
     assert not self.is_killed  # dev: is killed
 
     amp: uint256 = self._A()
-    vp_rate: uint256 = self._vp_rate()
-    redemption_price: uint256 = self._get_scaled_redemption_price()
+    rates: uint256[N_COINS] = [self._get_scaled_redemption_price(), self._vp_rate_ro()]
     old_balances: uint256[N_COINS] = self.balances
     new_balances: uint256[N_COINS] = old_balances
-    D0: uint256 = self._get_D_mem(redemption_price, vp_rate, old_balances, amp)
+    D0: uint256 = self._get_D_mem(rates, old_balances, amp)
     for i in range(N_COINS):
         new_balances[i] -= _amounts[i]
-    D1: uint256 = self._get_D_mem(redemption_price, vp_rate, new_balances, amp)
+    D1: uint256 = self._get_D_mem(rates, new_balances, amp)
 
     fee: uint256 = self.fee * N_COINS / (4 * (N_COINS - 1))
     admin_fee: uint256 = self.admin_fee
@@ -850,7 +847,7 @@ def remove_liquidity_imbalance(_amounts: uint256[N_COINS], _max_burn_amount: uin
         fees[i] = fee * difference / FEE_DENOMINATOR
         self.balances[i] = new_balances[i] - (fees[i] * admin_fee / FEE_DENOMINATOR)
         new_balances[i] -= fees[i]
-    D2: uint256 = self._get_D_mem(redemption_price, vp_rate, new_balances, amp)
+    D2: uint256 = self._get_D_mem(rates, new_balances, amp)
 
     lp_token: address = self.lp_token
     token_supply: uint256 = CurveToken(lp_token).totalSupply()
