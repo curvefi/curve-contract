@@ -29,6 +29,8 @@ interface Curve:
 interface RedemptionPriceSnap:
     def snappedRedemptionPrice() -> uint256: view
 
+interface Math:
+    def sqrt_int(x: uint256) -> uint256: view
 
 # Events
 event TokenExchange:
@@ -126,6 +128,7 @@ admin_fee: public(uint256)  # admin_fee * 1e10
 owner: public(address)
 lp_token: public(address)
 redemption_price_snap: public(address)
+math: public(address)
 
 # Token corresponding to the pool is always the last one
 BASE_CACHE_EXPIRES: constant(int128) = 10 * 60  # 10 min
@@ -158,6 +161,7 @@ def __init__(
     _pool_token: address,
     _base_pool: address,
     _redemption_price_snap: address,
+    _math: address,
     _A: uint256,
     _fee: uint256,
     _admin_fee: uint256
@@ -169,6 +173,7 @@ def __init__(
     @param _pool_token Address of the token representing LP share
     @param _base_pool Address of the base pool (which will have a virtual price)
     @param _redemption_price_snap Address of contract providing snapshot of redemption price
+    @param _math Address of contract providing snapshot of redemption price
     @param _A Amplification coefficient multiplied by n * (n - 1)
     @param _fee Fee to charge for exchanges
     @param _admin_fee Admin fee
@@ -204,7 +209,6 @@ def __init__(
         )
         if len(response) > 0:
             assert convert(response, bool)
-
 
 @view
 @internal
@@ -343,6 +347,20 @@ def get_virtual_price() -> uint256:
     # When balanced, D = n * x_u - total virtual value of the portfolio
     token_supply: uint256 = CurveToken(self.lp_token).totalSupply()
     return D * PRECISION / token_supply
+
+
+@view
+@external
+def get_virtual_price_2() -> uint256:
+    """
+    @notice Smoother changing virtual price to accomodate for redemption price swings
+    @return LP token smothed virtual price normalized to 1e18
+    """
+    balances: uint256[N_COINS] = self.balances
+    vp_rate: uint256 = self._vp_rate_ro()
+    xp: uint256[N_COINS] = self._xp(vp_rate)
+    token_supply: uint256 = CurveToken(self.lp_token).totalSupply()
+    return 2 * Math(self.math).sqrt_int(balances[0] * xp[1]) / token_supply
 
 
 @view
