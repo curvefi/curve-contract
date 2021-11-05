@@ -29,9 +29,6 @@ interface Curve:
 interface RedemptionPriceSnap:
     def snappedRedemptionPrice() -> uint256: view
 
-interface Math:
-    def sqrt_int(x: uint256) -> uint256: view
-
 # Events
 event TokenExchange:
     buyer: indexed(address)
@@ -128,7 +125,6 @@ admin_fee: public(uint256)  # admin_fee * 1e10
 owner: public(address)
 lp_token: public(address)
 redemption_price_snap: public(address)
-math: public(address)
 
 # Token corresponding to the pool is always the last one
 BASE_CACHE_EXPIRES: constant(int128) = 10 * 60  # 10 min
@@ -161,7 +157,6 @@ def __init__(
     _pool_token: address,
     _base_pool: address,
     _redemption_price_snap: address,
-    _math: address,
     _A: uint256,
     _fee: uint256,
     _admin_fee: uint256
@@ -173,7 +168,6 @@ def __init__(
     @param _pool_token Address of the token representing LP share
     @param _base_pool Address of the base pool (which will have a virtual price)
     @param _redemption_price_snap Address of contract providing snapshot of redemption price
-    @param _math Address of contract providing snapshot of redemption price
     @param _A Amplification coefficient multiplied by n * (n - 1)
     @param _fee Fee to charge for exchanges
     @param _admin_fee Admin fee
@@ -231,6 +225,26 @@ def _A() -> uint256:
     else:  # when t1 == 0 or block.timestamp >= t1
         return A1
 
+@internal
+@view
+def sqrt(x: uint256) -> uint256:
+    """
+    Originating from: https://github.com/vyperlang/vyper/issues/1266
+    """
+
+    if x == 0:
+        return 0
+
+    z: uint256 = (x + 10**18) / 2
+    y: uint256 = x
+
+    for i in range(256):
+        if z == y:
+            return y
+        y = z
+        z = (x * 10**18 / z + z) / 2
+
+    raise "Did not converge"
 
 @view
 @external
@@ -347,6 +361,7 @@ def _get_virtual_price() -> uint256:
     token_supply: uint256 = CurveToken(self.lp_token).totalSupply()
     return D * PRECISION / token_supply
 
+
 @view
 @external
 def get_virtual_price() -> uint256:
@@ -357,6 +372,7 @@ def get_virtual_price() -> uint256:
     """
     return self._get_virtual_price()
 
+
 @view
 @external
 def get_virtual_price_2() -> uint256:
@@ -364,7 +380,7 @@ def get_virtual_price_2() -> uint256:
     @notice Smoother changing virtual price to accomodate for redemption price swings
     @return LP token smoothed virtual price normalized to 1e18
     """
-    return self._get_virtual_price() / Math(self.math).sqrt_int(self._get_scaled_redemption_price())
+    return self._get_virtual_price() / self.sqrt(self._get_scaled_redemption_price())
 
 
 @view
@@ -1130,14 +1146,6 @@ def withdraw_admin_fees():
         value: uint256 = ERC20(coin).balanceOf(self) - self.balances[i]
         if value > 0:
             ERC20(coin).transfer(msg.sender, value)
-
-
-@external
-def donate_admin_fees():
-    assert msg.sender == self.owner  # dev: only owner
-    for i in range(N_COINS):
-        self.balances[i] = ERC20(self.coins[i]).balanceOf(self)
-
 
 @external
 def kill_me():
