@@ -332,11 +332,10 @@ def _get_D_mem(_rates: uint256[N_COINS], _balances: uint256[N_COINS], _amp: uint
 
 
 @view
-@external
-def get_virtual_price() -> uint256:
+@internal
+def _get_virtual_price() -> uint256:
     """
     @notice The current virtual price of the pool LP token
-    @dev Useful for calculating profits
     @return LP token virtual price normalized to 1e18
     """
     amp: uint256 = self._A()
@@ -348,19 +347,24 @@ def get_virtual_price() -> uint256:
     token_supply: uint256 = CurveToken(self.lp_token).totalSupply()
     return D * PRECISION / token_supply
 
+@view
+@external
+def get_virtual_price() -> uint256:
+    """
+    @notice The current virtual price of the pool LP token
+    @dev Useful for calculating profits
+    @return LP token virtual price normalized to 1e18
+    """
+    return self._get_virtual_price()
 
 @view
 @external
 def get_virtual_price_2() -> uint256:
     """
     @notice Smoother changing virtual price to accomodate for redemption price swings
-    @return LP token smothed virtual price normalized to 1e18
+    @return LP token smoothed virtual price normalized to 1e18
     """
-    balances: uint256[N_COINS] = self.balances
-    vp_rate: uint256 = self._vp_rate_ro()
-    xp: uint256[N_COINS] = self._xp(vp_rate)
-    token_supply: uint256 = CurveToken(self.lp_token).totalSupply()
-    return 2 * Math(self.math).sqrt_int(balances[0] * xp[1]) / token_supply
+    return self._get_virtual_price() / Math(self.math).sqrt_int(self._get_scaled_redemption_price())
 
 
 @view
