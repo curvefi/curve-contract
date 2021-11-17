@@ -380,7 +380,7 @@ def get_virtual_price_2() -> uint256:
     @notice Smoother changing virtual price to accomodate for redemption price swings
     @return LP token smoothed virtual price normalized to 1e18
     """
-    return self._get_virtual_price() / self.sqrt(self._get_scaled_redemption_price())
+    return ( self._get_virtual_price() * PRECISION ) / self.sqrt(self._get_scaled_redemption_price())
 
 
 @view
