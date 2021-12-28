@@ -134,7 +134,7 @@ def aave_lending_pool(AaveLendingPoolMock, pool_data, alice, is_forked):
 
 @pytest.fixture(scope="module")
 def redemption_price_snap(RedemptionPriceSnapMock, pool_data, alice, is_forked):
-    if pool_data["name"] in ("rai",):
+    if pool_data["name"] in ("rai", "raiust"):
         if is_forked:
             return Contract("0x0000000000000000000000000000000000000000")  # todo after deployment replace this.
         else:
