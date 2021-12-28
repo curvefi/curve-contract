@@ -3,8 +3,8 @@
 @title StableSwapRAIUST
 @author Curve.Fi
 @license Copyright (c) Curve.Fi, 2020-2021 - all rights reserved
-@notice 2 coin pool implementation with a non-peggie and a peggie, without lending 
-@dev Swaps between a non-peggie(RAI) and a peggie(UST) with 18 decimals.  
+@notice 2 coin pool implementation with a non-peggie and a peggie, without lending
+@dev Swaps between a non-peggie(RAI) and a peggie(UST) with 18 decimals.
 """
 
 from vyper.interfaces import ERC20
@@ -14,7 +14,7 @@ interface CurveToken:
     def mint(_to: address, _value: uint256) -> bool: nonpayable
     def burnFrom(_to: address, _value: uint256) -> bool: nonpayable
 
-### redemption price snap interface 
+### redemption price snap interface
 interface RedemptionPriceSnap:
     def snappedRedemptionPrice() -> uint256: view
 
@@ -99,10 +99,10 @@ MAX_A: constant(uint256) = 10 ** 6
 MAX_A_CHANGE: constant(uint256) = 10
 MIN_RAMP_TIME: constant(uint256) = 86400
 ADMIN_ACTIONS_DELAY: constant(uint256) = 3 * 86400
-### peggie rate; set prior to compiling; this RATES set to be 1e18
-RATES: constant(uint256) = 1000000000000000000     
+### peggie rate; set prior to compiling; this PEGGIE_RATE set to be 1e18
+PEGGIE_RATE: constant(uint256) = 1000000000000000000
 ###  fetched redemption price has 27 decimals, scale to match 18 decmials
-REDMPTION_PRICE_SCALE: constant(uint256) = 10 ** 9   
+REDMPTION_PRICE_SCALE: constant(uint256) = 10 ** 9
 
 MAX_ADMIN_FEE: constant(uint256) = 10 * 10 ** 9
 MAX_FEE: constant(uint256) = 5 * 10 ** 9
@@ -140,7 +140,7 @@ KILL_DEADLINE_DT: constant(uint256) = 2 * 30 * 86400
 @external
 def __init__(
     _owner: address,
-    _coins: address[N_COINS], 
+    _coins: address[N_COINS],
     _pool_token: address,                ### lp token address
     _redemption_price_snap: address,     ### initialise rp snap address
     _A: uint256,
@@ -152,7 +152,7 @@ def __init__(
     @param _owner Contract owner address
     @param _coins Addresses of ERC20 conracts of coins
     @param _pool_token Address of the token representing LP share
-    @param _redemption_price_snap Address of contract providing snapshot of redemption price  
+    @param _redemption_price_snap Address of contract providing snapshot of redemption price
     @param _A Amplification coefficient multiplied by n ** (n - 1)
     @param _fee Fee to charge for exchanges
     @param _admin_fee Admin fee
@@ -190,6 +190,26 @@ def __init__(
 def get_balances() -> uint256[N_COINS]:
     return self.balances
 
+@internal
+@view
+def sqrt(x: uint256) -> uint256:
+    """
+    Originating from: https://github.com/vyperlang/vyper/issues/1266
+    """
+
+    if x == 0:
+        return 0
+
+    z: uint256 = (x + 10**18) / 2
+    y: uint256 = x
+
+    for i in range(256):
+        if z == y:
+            return y
+        y = z
+        z = (x * 10**18 / z + z) / 2
+
+    raise "Did not converge"
 
 @view
 @internal
@@ -241,7 +261,7 @@ def A_precise() -> uint256:
 @view
 @internal
 def _xp() -> uint256[N_COINS]:
-    result: uint256[N_COINS] = [self._get_scaled_redemption_price(), RATES]
+    result: uint256[N_COINS] = [self._get_scaled_redemption_price(), PEGGIE_RATE]
     for i in range(N_COINS):
         result[i] = result[i] * self.balances[i] / PRECISION
     return result
@@ -251,7 +271,7 @@ def _xp() -> uint256[N_COINS]:
 @view
 @internal
 def _xp_mem(_balances: uint256[N_COINS]) -> uint256[N_COINS]:
-    result: uint256[N_COINS] = [self._get_scaled_redemption_price(), RATES]
+    result: uint256[N_COINS] = [self._get_scaled_redemption_price(), PEGGIE_RATE]
     for i in range(N_COINS):
         result[i] = result[i] * _balances[i] / PRECISION
     return result
@@ -299,10 +319,9 @@ def _get_D(_xp: uint256[N_COINS], _amp: uint256) -> uint256:
 def _get_D_mem(_balances: uint256[N_COINS], _amp: uint256) -> uint256:
     return self._get_D(self._xp_mem(_balances), _amp)
 
-
 @view
-@external
-def get_virtual_price() -> uint256:
+@internal
+def _get_virtual_price() -> uint256:
     """
     @notice The current virtual price of the pool LP token
     @dev Useful for calculating profits
@@ -314,6 +333,26 @@ def get_virtual_price() -> uint256:
     # When balanced, D = n * x_u - total virtual value of the portfolio
     token_supply: uint256 = ERC20(self.lp_token).totalSupply()
     return D * PRECISION / token_supply
+
+@view
+@external
+def get_virtual_price() -> uint256:
+    """
+    @notice The current virtual price of the pool LP token
+    @dev Useful for calculating profits
+    @return LP token virtual price normalized to 1e18
+    """
+    return self._get_virtual_price()
+
+
+@view
+@external
+def get_virtual_price_2() -> uint256:
+    """
+    @notice Smoother changing virtual price to accomodate for redemption price swings
+    @return LP token smoothed virtual price normalized to 1e18
+    """
+    return ( self._get_virtual_price() * PRECISION ) / self.sqrt(self._get_scaled_redemption_price())
 
 
 @view
@@ -505,9 +544,9 @@ def get_dy(i: int128, j: int128, dx: uint256) -> uint256:
 
     xp: uint256[N_COINS] = self._xp()    ###
     ### get coin price
-    rates: uint256[N_COINS] = [self._get_scaled_redemption_price(), RATES]
+    rates: uint256[N_COINS] = [self._get_scaled_redemption_price(), PEGGIE_RATE]
 
-    x: uint256 = xp[i] + (dx * rates[i] / PRECISION)         ###     
+    x: uint256 = xp[i] + (dx * rates[i] / PRECISION)         ###
     y: uint256 = self._get_y(i, j, x, xp)
     dy: uint256 = xp[j] - y - 1
     fee: uint256 = self.fee * dy / FEE_DENOMINATOR
@@ -535,8 +574,8 @@ def exchange(
     assert not self.is_killed  # dev: is killed
     old_balances: uint256[N_COINS] = self.balances
 
-    xp: uint256[N_COINS] = self._xp_mem(old_balances)        ### 
-    rates: uint256[N_COINS] = [self._get_scaled_redemption_price(), RATES]   ###
+    xp: uint256[N_COINS] = self._xp_mem(old_balances)        ###
+    rates: uint256[N_COINS] = [self._get_scaled_redemption_price(), PEGGIE_RATE]   ###
     x: uint256 = xp[i] + _dx * rates[i] / PRECISION     ###
 
     y: uint256 = self._get_y(i, j, x, xp)
@@ -761,7 +800,7 @@ def _calc_withdraw_one_coin(_burn_amount: uint256, i: int128) -> uint256[2]:
 
     base_fee: uint256 = self.fee * N_COINS / (4 * (N_COINS - 1))
     xp_reduced: uint256[N_COINS] = xp               ###
-    rates: uint256[N_COINS] = [self._get_scaled_redemption_price(), RATES]
+    rates: uint256[N_COINS] = [self._get_scaled_redemption_price(), PEGGIE_RATE]
 
     for j in range(N_COINS):
         dx_expected: uint256 = 0
@@ -823,7 +862,7 @@ def remove_liquidity_one_coin(
     )
     if len(_response) > 0:
         assert convert(_response, bool)
-    
+
     total_supply: uint256 = CurveToken(self.lp_token).totalSupply()
     log RemoveLiquidityOne(msg.sender, _burn_amount, dy[0], total_supply)
 
