@@ -1,0 +1,31 @@
+{
+    "pool_types": ["arate"],
+    "lp_contract": "CurveTokenV3", 
+    "lp_token_address": "0x0000000000000000000000000000000000000000",
+    "swap_address": "0x0000000000000000000000000000000000000000",
+    "gauge_addresses": ["0x0000000000000000000000000000000000000000"],
+    "lp_constructor": {
+        "symbol": "Raiust",
+        "name": "Curve.fi RAI/UST"
+    },
+    "swap_constructor": {
+        "_redemption_price_snap": "0x0000000000000000000000000000000000000000",
+        "_A": 100,
+        "_fee": 4000000
+    },
+    "coins": [
+        {
+            "name": "RAI",
+            "decimals": 18,
+            "tethered": false,
+            "underlying_address": "0x03ab458634910AaD20eF5f1C8ee96F1D6ac54919"
+        },
+        {
+            "name": "UST",
+            "decimals": 18,
+            "tethered": false,
+            "underlying_address": "0xa47c8bf37f92aBed4A126BDA807A7b7498661acD"
+
+        }
+    ]
+}
