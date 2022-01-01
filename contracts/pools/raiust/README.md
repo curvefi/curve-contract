@@ -1,6 +1,6 @@
 # curve-contract/contracts/pools/raiust
 
-[Curve RAI/UST Pool](): Two coins pool which includes RAI(non-peggie) and UST(peggie) with 18 decimals. 
+[Curve RAI/UST pool](): Two coins pool which includes RAI(non-peggie) and UST(peggie) with 18 decimals. 
 
 ## Contracts
 
