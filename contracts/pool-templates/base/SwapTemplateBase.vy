@@ -211,7 +211,7 @@ def _get_D(_xp: uint256[N_COINS], _amp: uint256) -> uint256:
     A * sum(x_i) * n**n + D = A * D * n**n + D**(n+1) / (n**n * prod(x_i))
 
     Converging solution:
-    D[j+1] = (A * n**n * sum(x_i) - D[j]**(n+1) / (n**n prod(x_i))) / (A * n**n - 1)
+    D[j+1] = (A * n**n * sum(x_i) - D[j]**(n+1) / (n**n prod(x_i))) / (A * n**n + (n+1)*D[j]**n/(n**n prod(x_i)) - 1)
     """
     S: uint256 = 0
     Dprev: uint256 = 0
