@@ -92,9 +92,12 @@ ERC1271_MAGIC_VAL: constant(bytes32) = 0x1626ba7e0000000000000000000000000000000
 VERSION: constant(String[8]) = "v5.0.0"
 
 
+COINS: immutable(address[N_COINS])
+RATE_MULTIPLIERS: immutable(uint256[N_COINS])
+
+
 factory: address
 
-coins: public(address[N_COINS])
 admin_balances: public(uint256[N_COINS])
 fee: public(uint256)  # fee * 1e10
 
@@ -102,8 +105,6 @@ initial_A: public(uint256)
 future_A: public(uint256)
 initial_A_time: public(uint256)
 future_A_time: public(uint256)
-
-rate_multipliers: uint256[N_COINS]
 
 name: public(String[64])
 symbol: public(String[32])
@@ -117,17 +118,11 @@ nonces: public(HashMap[address, uint256])
 
 
 @external
-def __init__():
-    # we do this to prevent the implementation contract from being used as a pool
-    self.fee = 31337
-
-
-@external
-def initialize(
+def __init__(
     _name: String[32],
     _symbol: String[10],
-    _coins: address[4],
-    _rate_multipliers: uint256[4],
+    _coins: address[N_COINS],
+    _rate_multipliers: uint256[N_COINS],
     _A: uint256,
     _fee: uint256,
 ):
@@ -143,12 +138,8 @@ def initialize(
     # check if fee was already set to prevent initializing contract twice
     assert self.fee == 0
 
-    for i in range(N_COINS):
-        coin: address = _coins[i]
-        if coin == ZERO_ADDRESS:
-            break
-        self.coins[i] = coin
-        self.rate_multipliers[i] = _rate_multipliers[i]
+    COINS = _coins
+    RATE_MULTIPLIERS = _rate_multipliers
 
     A: uint256 = _A * A_PRECISION
     self.initial_A = A
@@ -295,7 +286,7 @@ def permit(
 def _balances() -> uint256[N_COINS]:
     result: uint256[N_COINS] = empty(uint256[N_COINS])
     for i in range(N_COINS):
-        result[i] = ERC20(self.coins[i]).balanceOf(self) - self.admin_balances[i]
+        result[i] = ERC20(COINS[i]).balanceOf(self) - self.admin_balances[i]
     return result
 
 
@@ -419,7 +410,7 @@ def get_virtual_price() -> uint256:
     """
     amp: uint256 = self._A()
     balances: uint256[N_COINS] = self._balances()
-    xp: uint256[N_COINS] = self._xp_mem(self.rate_multipliers, balances)
+    xp: uint256[N_COINS] = self._xp_mem(RATE_MULTIPLIERS, balances)
     D: uint256 = self.get_D(xp, amp)
     # D is in the units similar to DAI (e.g. converted to precision 1e18)
     # When balanced, D = n * x_u - total virtual value of the portfolio
@@ -440,14 +431,14 @@ def calc_token_amount(_amounts: uint256[N_COINS], _is_deposit: bool) -> uint256:
     amp: uint256 = self._A()
     balances: uint256[N_COINS] = self._balances()
 
-    D0: uint256 = self.get_D_mem(self.rate_multipliers, balances, amp)
+    D0: uint256 = self.get_D_mem(RATE_MULTIPLIERS, balances, amp)
     for i in range(N_COINS):
         amount: uint256 = _amounts[i]
         if _is_deposit:
             balances[i] += amount
         else:
             balances[i] -= amount
-    D1: uint256 = self.get_D_mem(self.rate_multipliers, balances, amp)
+    D1: uint256 = self.get_D_mem(RATE_MULTIPLIERS, balances, amp)
     diff: uint256 = 0
     if _is_deposit:
         diff = D1 - D0
@@ -472,7 +463,7 @@ def add_liquidity(
     """
     amp: uint256 = self._A()
     old_balances: uint256[N_COINS] = self._balances()
-    rates: uint256[N_COINS] = self.rate_multipliers
+    rates: uint256[N_COINS] = RATE_MULTIPLIERS
 
     # Initial invariant
     D0: uint256 = self.get_D_mem(rates, old_balances, amp)
@@ -482,7 +473,7 @@ def add_liquidity(
     for i in range(N_COINS):
         amount: uint256 = _amounts[i]
         if amount > 0:
-            coin: address = self.coins[i]
+            coin: address = COINS[i]
             initial: uint256 = ERC20(coin).balanceOf(self)
             response: Bytes[32] = raw_call(
                 coin,
@@ -608,7 +599,7 @@ def get_dy(i: int128, j: int128, dx: uint256) -> uint256:
     @param dx Amount of `i` being exchanged
     @return Amount of `j` predicted
     """
-    rates: uint256[N_COINS] = self.rate_multipliers
+    rates: uint256[N_COINS] = RATE_MULTIPLIERS
     xp: uint256[N_COINS] = self._xp_mem(rates, self._balances())
 
     x: uint256 = xp[i] + (dx * rates[i] / PRECISION)
@@ -636,11 +627,11 @@ def exchange(
     @param _min_dy Minimum amount of `j` to receive
     @return Actual amount of `j` received
     """
-    rates: uint256[N_COINS] = self.rate_multipliers
+    rates: uint256[N_COINS] = RATE_MULTIPLIERS
     old_balances: uint256[N_COINS] = self._balances()
     xp: uint256[N_COINS] = self._xp_mem(rates, old_balances)
 
-    coin: address = self.coins[i]
+    coin: address = COINS[i]
     dx: uint256 = ERC20(coin).balanceOf(self)
     response: Bytes[32] = raw_call(
         coin,
@@ -669,7 +660,7 @@ def exchange(
     self.admin_balances[j] += (dy_fee * ADMIN_FEE / FEE_DENOMINATOR) * PRECISION / rates[j]
 
     response = raw_call(
-        self.coins[j],
+        COINS[j],
         concat(
             method_id("transfer(address,uint256)"),
             convert(_receiver, bytes32),
@@ -710,7 +701,7 @@ def remove_liquidity(
         amounts[i] = value
 
         response: Bytes[32] = raw_call(
-            self.coins[i],
+            COINS[i],
             concat(
                 method_id("transfer(address,uint256)"),
                 convert(_receiver, bytes32),
@@ -747,7 +738,7 @@ def remove_liquidity_imbalance(
     """
     amp: uint256 = self._A()
     old_balances: uint256[N_COINS] = self._balances()
-    rates: uint256[N_COINS] = self.rate_multipliers
+    rates: uint256[N_COINS] = RATE_MULTIPLIERS
     D0: uint256 = self.get_D_mem(rates, old_balances, amp)
 
     new_balances: uint256[N_COINS] = old_balances
@@ -756,7 +747,7 @@ def remove_liquidity_imbalance(
         if amount != 0:
             new_balances[i] -= amount
             response: Bytes[32] = raw_call(
-                self.coins[i],
+                COINS[i],
                 concat(
                     method_id("transfer(address,uint256)"),
                     convert(_receiver, bytes32),
@@ -852,7 +843,7 @@ def _calc_withdraw_one_coin(_burn_amount: uint256, i: int128) -> uint256[2]:
     # * Get current D
     # * Solve Eqn against y_i for D - _token_amount
     amp: uint256 = self._A()
-    rates: uint256[N_COINS] = self.rate_multipliers
+    rates: uint256[N_COINS] = RATE_MULTIPLIERS
     xp: uint256[N_COINS] = self._xp_mem(rates, self._balances())
     D0: uint256 = self.get_D(xp, amp)
 
@@ -917,7 +908,7 @@ def remove_liquidity_one_coin(
     log Transfer(msg.sender, ZERO_ADDRESS, _burn_amount)
 
     response: Bytes[32] = raw_call(
-        self.coins[i],
+        COINS[i],
         concat(
             method_id("transfer(address,uint256)"),
             convert(_receiver, bytes32),
@@ -977,7 +968,7 @@ def withdraw_admin_fees():
     for i in range(N_COINS):
         amount: uint256 = self.admin_balances[i]
         if amount != 0:
-            coin: address = self.coins[i]
+            coin: address = COINS[i]
             raw_call(
                 coin,
                 concat(
@@ -993,3 +984,9 @@ def withdraw_admin_fees():
 @external
 def version() -> String[8]:
     return VERSION
+
+
+@pure
+@external
+def coins(_i: uint256) -> address:
+    return COINS[_i]
