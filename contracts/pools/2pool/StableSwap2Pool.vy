@@ -10,13 +10,13 @@
 
 from vyper.interfaces import ERC20
 
+interface ERC1271:
+    def isValidSignature(_hash: bytes32, _signature: Bytes[65]) -> bytes32: view
+
 interface Factory:
     def convert_fees() -> bool: nonpayable
     def get_fee_receiver(_pool: address) -> address: view
     def admin() -> address: view
-
-interface ERC1271:
-    def isValidSignature(_hash: bytes32, _signature: Bytes[65]) -> bytes32: view
 
 
 event Transfer:
@@ -95,8 +95,11 @@ VERSION: constant(String[8]) = "v5.0.0"
 COINS: immutable(address[N_COINS])
 RATE_MULTIPLIERS: immutable(uint256[N_COINS])
 
+NAME: immutable(String[64])
+SYMBOL: immutable(String[32])
 
-factory: address
+DOMAIN_SEPARATOR: immutable(bytes32)
+
 
 admin_balances: public(uint256[N_COINS])
 fee: public(uint256)  # fee * 1e10
@@ -106,15 +109,13 @@ future_A: public(uint256)
 initial_A_time: public(uint256)
 future_A_time: public(uint256)
 
-name: public(String[64])
-symbol: public(String[32])
-
 balanceOf: public(HashMap[address, uint256])
 allowance: public(HashMap[address, HashMap[address, uint256]])
 totalSupply: public(uint256)
 
-DOMAIN_SEPARATOR: public(bytes32)
 nonces: public(HashMap[address, uint256])
+
+factory: address
 
 
 @external
@@ -145,14 +146,12 @@ def __init__(
     self.initial_A = A
     self.future_A = A
     self.fee = _fee
-    self.factory = msg.sender
 
-    name: String[64] = concat("Curve.fi Factory Plain Pool: ", _name)
-    self.name = name
-    self.symbol = concat(_symbol, "-f")
+    NAME = _name
+    SYMBOL = _symbol
 
-    self.DOMAIN_SEPARATOR = keccak256(
-        _abi_encode(EIP712_TYPEHASH, keccak256(name), keccak256(VERSION), chain.id, self)
+    DOMAIN_SEPARATOR = keccak256(
+        _abi_encode(EIP712_TYPEHASH, keccak256(_name), keccak256(VERSION), chain.id, self)
     )
 
     # fire a transfer event so block explorers identify the contract as an ERC20
@@ -260,7 +259,7 @@ def permit(
     digest: bytes32 = keccak256(
         concat(
             b"\x19\x01",
-            self.DOMAIN_SEPARATOR,
+            DOMAIN_SEPARATOR,
             keccak256(_abi_encode(PERMIT_TYPEHASH, _owner, _spender, _value, nonce, _deadline))
         )
     )
@@ -990,3 +989,21 @@ def version() -> String[8]:
 @external
 def coins(_i: uint256) -> address:
     return COINS[_i]
+
+
+@pure
+@external
+def name() -> String[64]:
+    return NAME
+
+
+@pure
+@external
+def symbol() -> String[32]:
+    return SYMBOL
+
+
+@pure
+@external
+def DOMAIN_SEPARATOR() -> bytes32:
+    return DOMAIN_SEPARATOR
