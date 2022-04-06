@@ -3,20 +3,12 @@
 @title StableSwap
 @author Curve.Fi
 @license Copyright (c) Curve.Fi, 2020-2021 - all rights reserved
-@notice 2 coin pool implementation with no lending
-@dev ERC20 support for return True/revert, return True/False, return None
-     Support for positive-rebasing and fee-on-transfer tokens
 """
 
 from vyper.interfaces import ERC20
 
 interface ERC1271:
     def isValidSignature(_hash: bytes32, _signature: Bytes[65]) -> bytes32: view
-
-interface Factory:
-    def convert_fees() -> bool: nonpayable
-    def get_fee_receiver(_pool: address) -> address: view
-    def admin() -> address: view
 
 
 event Transfer:
@@ -72,6 +64,10 @@ event StopRampA:
     A: uint256
     t: uint256
 
+event TransferOwnership:
+    _old_owner: address
+    _new_owner: address
+
 
 N_COINS: constant(int128) = 2
 PRECISION: constant(uint256) = 10 ** 18
@@ -115,7 +111,8 @@ totalSupply: public(uint256)
 
 nonces: public(HashMap[address, uint256])
 
-factory: address
+owner: public(address)
+future_owner: public(address)
 
 
 @external
@@ -136,9 +133,6 @@ def __init__(
     @param _A Amplification coefficient multiplied by n ** (n - 1)
     @param _fee Fee to charge for exchanges
     """
-    # check if fee was already set to prevent initializing contract twice
-    assert self.fee == 0
-
     COINS = _coins
     RATE_MULTIPLIERS = _rate_multipliers
 
@@ -146,6 +140,8 @@ def __init__(
     self.initial_A = A
     self.future_A = A
     self.fee = _fee
+
+    self.owner = msg.sender
 
     NAME = _name
     SYMBOL = _symbol
@@ -925,7 +921,7 @@ def remove_liquidity_one_coin(
 
 @external
 def ramp_A(_future_A: uint256, _future_time: uint256):
-    assert msg.sender == Factory(self.factory).admin()  # dev: only owner
+    assert msg.sender == self.owner  # dev: only owner
     assert block.timestamp >= self.initial_A_time + MIN_RAMP_TIME
     assert _future_time >= block.timestamp + MIN_RAMP_TIME  # dev: insufficient time
 
@@ -948,7 +944,7 @@ def ramp_A(_future_A: uint256, _future_time: uint256):
 
 @external
 def stop_ramp_A():
-    assert msg.sender == Factory(self.factory).admin()  # dev: only owner
+    assert msg.sender == self.owner  # dev: only owner
 
     current_A: uint256 = self._A()
     self.initial_A = current_A
@@ -962,7 +958,7 @@ def stop_ramp_A():
 
 @external
 def withdraw_admin_fees():
-    receiver: address = Factory(self.factory).get_fee_receiver(self)
+    assert msg.sender == self.owner
 
     for i in range(N_COINS):
         amount: uint256 = self.admin_balances[i]
@@ -972,11 +968,26 @@ def withdraw_admin_fees():
                 coin,
                 concat(
                     method_id("transfer(address,uint256)"),
-                    convert(receiver, bytes32),
+                    convert(msg.sender, bytes32),
                     convert(amount, bytes32)
                 )
             )
             self.admin_balances[i] = 0
+
+
+@external
+def commit_transfer_ownership(_future_owner: address):
+    assert msg.sender == self.owner
+
+    self.future_owner = _future_owner
+
+
+@external
+def accept_transfer_ownership():
+    assert msg.sender == self.future_owner
+
+    log TransferOwnership(self.owner, msg.sender)
+    self.owner = msg.sender
 
 
 @pure
