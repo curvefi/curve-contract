@@ -117,8 +117,8 @@ future_owner: public(address)
 
 @external
 def __init__(
-    _name: String[32],
-    _symbol: String[10],
+    _name: String[64],
+    _symbol: String[32],
     _coins: address[N_COINS],
     _rate_multipliers: uint256[N_COINS],
     _A: uint256,
