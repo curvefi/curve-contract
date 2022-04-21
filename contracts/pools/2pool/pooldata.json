@@ -1,7 +1,7 @@
 {
-    "swap_address": "",
-    "lp_token_address": "",
-    "gauge_addresses": [""],
+    "swap_address": "0x1005F7406f32a61BD760CfA14aCCd2737913d546",
+    "lp_token_address": "0x1005F7406f32a61BD760CfA14aCCd2737913d546",
+    "gauge_addresses": ["0x9f330Db38caAAe5B61B410e2f0aaD63fff2109d8"],
     "lp_constructor": {
         "name": "Curve.fi USDC/USDT",
         "symbol": "2Crv"
