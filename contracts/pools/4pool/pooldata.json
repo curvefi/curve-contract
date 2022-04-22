@@ -1,0 +1,37 @@
+{
+    "swap_address": "0x1005F7406f32a61BD760CfA14aCCd2737913d546",
+    "lp_token_address": "0x1005F7406f32a61BD760CfA14aCCd2737913d546",
+    "gauge_addresses": ["0x34883134A39B206A451c2D3B0E7Cac44BE4D9181"],
+    "lp_constructor": {
+        "name": "Curve.fi 4pool USDC/USDT/UST/FRAX",
+        "symbol": "4Crv"
+    },
+    "coins": [
+        {
+            "name": "USDC",
+            "decimals": 6,
+            "tethered": false,
+            "underlying_address": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+
+        },
+        {
+            "name": "USDT",
+            "decimals": 6,
+            "tethered": true,
+            "underlying_address": "0xdac17f958d2ee523a2206206994597c13d831ec7"
+        },
+        {
+            "name": "UST",
+            "decimals": 6,
+            "tethered": false,
+            "underlying_address": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+
+        },
+        {
+            "name": "FRAX",
+            "decimals": 18,
+            "tethered": true,
+            "underlying_address": "0x853d955aCEf822Db058eb8505911ED77F175b99e"
+        }
+    ]
+}
