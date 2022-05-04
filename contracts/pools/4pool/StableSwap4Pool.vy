@@ -1005,6 +1005,9 @@ def withdraw_admin_fees():
 
 @external
 def commit_new_fee(new_fee: uint256, new_admin_fee: uint256):
+    """
+    @dev Admin fee is set to 50%. new_admin_fee is ignored and exists to support PoolProxy's interface
+    """
     assert msg.sender == self.owner  # dev: only owner
     assert self.admin_actions_deadline == 0  # dev: active action
     assert new_fee <= MAX_FEE  # dev: fee exceeds maximum
