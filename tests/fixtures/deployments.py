@@ -31,11 +31,14 @@ def _swap(
         "_reward_claimant": alice,
         "_y_pool": swap_mock,
         "_aave_lending_pool": aave_lending_pool,
+        "_name": pool_data.get("swap_constructor", {"name": None}).get("name"),
+        "_symbol": pool_data.get("swap_constructor", {"symbol": None}).get("symbol"),
     }
     deployment_args = [args[i["name"]] for i in abi] + [({"from": alice})]
 
     contract = deployer.deploy(*deployment_args)
-    pool_token.set_minter(contract, {"from": alice})
+    if hasattr(pool_token, "set_minter"):
+        pool_token.set_minter(contract, {"from": alice})
 
     for coin in [i for i in wrapped if hasattr(i, "_set_pool")]:
         # required for aTokens
@@ -55,7 +58,10 @@ def swap(
     swap_mock,
     base_swap,
     aave_lending_pool,
+    swap_is_pool_token,
 ):
+    if swap_is_pool_token:
+        return pool_token
     return _swap(
         project,
         alice,

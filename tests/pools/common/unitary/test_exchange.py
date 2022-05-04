@@ -22,7 +22,10 @@ def test_exchange(
     base_amount,
     set_fees,
     get_admin_balances,
+    swap_is_pool_token,
 ):
+    if swap_is_pool_token:  # Constant admin fee = 50%
+        admin_fee = 0.5
     if fee or admin_fee:
         set_fees(10 ** 10 * fee, 10 ** 10 * admin_fee)
 

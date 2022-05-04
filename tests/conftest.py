@@ -326,3 +326,8 @@ def project():
 @pytest.fixture(scope="session")
 def is_forked():
     yield "fork" in CONFIG.active_network["id"]
+
+
+@pytest.fixture(scope="module")
+def swap_is_pool_token(pool_data):
+    return pool_data["swap_contract"] == pool_data["lp_contract"]

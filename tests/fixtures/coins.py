@@ -2,6 +2,7 @@ import pytest
 from brownie import ETH_ADDRESS, ZERO_ADDRESS, ERC20Mock, ERC20MockNoReturn
 from brownie_tokens import MintableForkToken
 from conftest import WRAPPED_COIN_METHODS
+from fixtures.deployments import _swap
 
 # public fixtures - these can be used when testing
 
@@ -20,7 +21,9 @@ def underlying_coins(_underlying_coins, _base_coins):
 
 
 @pytest.fixture(scope="module")
-def pool_token(project, alice, pool_data):
+def pool_token(project, alice, wrapped_coins, pool_data, swap_is_pool_token):
+    if swap_is_pool_token:
+        return _swap(project, alice, None, wrapped_coins, None, pool_data, None, None, None,)
     return _pool_token(project, alice, pool_data)
 
 
