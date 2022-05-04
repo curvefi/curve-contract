@@ -1,0 +1,36 @@
+{
+    "lp_contract": "StableSwap4Pool",
+    "swap_address": "",
+    "gauge_addresses": [""],
+    "swap_constructor": {
+        "name": "Curve.fi FRAX/USDC/UST/USDT",
+        "symbol": "4Crv"
+    },
+    "coins": [
+        {
+            "name": "FRAX",
+            "decimals": 18,
+            "tethered": false,
+            "underlying_address": "0x853d955aCEf822Db058eb8505911ED77F175b99e"
+        },
+        {
+            "name": "USDC",
+            "decimals": 6,
+            "tethered": false,
+            "underlying_address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+
+        },
+        {
+            "name": "UST",
+            "decimals": 6,
+            "tethered": true,
+            "underlying_address": "0xa693B19d2931d498c5B318dF961919BB4aee87a5"
+        },
+        {
+            "name": "USDT",
+            "decimals": 6,
+            "tethered": true,
+            "underlying_address": "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+        }
+    ]
+}
