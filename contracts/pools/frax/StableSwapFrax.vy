@@ -1,14 +1,11 @@
-# @version ^0.2.8
+# @version 0.3.1
 """
 @title StableSwap
 @author Curve.Fi
 @license Copyright (c) Curve.Fi, 2020 - all rights reserved
-@notice Minimal pool implementation with no lending
-@dev This contract is only a template, pool-specific constants
-     must be set prior to compiling
 """
-
 from vyper.interfaces import ERC20
+
 
 interface CurveToken:
     def totalSupply() -> uint256: view
@@ -78,9 +75,9 @@ event StopRampA:
 
 
 # These constants must be set prior to compiling
-N_COINS: constant(int128) = ___N_COINS___
-PRECISION_MUL: constant(uint256[N_COINS]) = ___PRECISION_MUL___
-RATES: constant(uint256[N_COINS]) = ___RATES___
+N_COINS: constant(int128) = 2
+PRECISION_MUL: constant(uint256[N_COINS]) = [1, 1000000000000]
+RATES: constant(uint256[N_COINS]) = [1000000000000000000, 1000000000000000000000000000000]
 
 # fixed constants
 FEE_DENOMINATOR: constant(uint256) = 10 ** 10
