@@ -1,8 +1,8 @@
 {
     "lp_contract": "CurveTokenV3",
-    "swap_address": "",
-    "lp_token_address": "",
-    "gauge_addresses": [""],
+    "swap_address": "0xDcEF968d416a41Cdac0ED8702fAC8128A64241A2",
+    "lp_token_address": "0x3175Df0976dFA876431C2E9eE6Bc45b65d3473CC",
+    "gauge_addresses": ["0xCFc25170633581Bf896CB6CDeE170e3E3Aa59503"],
     "lp_constructor": {
         "name": "Curve.fi FRAX/USDC",
         "symbol": "crvFRAX"
