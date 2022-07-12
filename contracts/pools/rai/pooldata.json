@@ -1,0 +1,32 @@
+{
+    "base_pool": "3pool",
+    "pool_types": ["meta"],
+    "lp_contract": "CurveTokenV3",
+    "swap_address": "0x618788357D0EBd8A37e763ADab3bc575D54c2C7d",
+    "lp_token_address": "0x6BA5b4e438FA0aAf7C1bD179285aF65d13bD3D90",
+    "zap_address": "",
+    "gauge_addresses": [""],
+    "lp_constructor": {
+        "symbol": "RAI3CRV",
+        "name": "RAI3CRV"
+    },
+    "swap_constructor": {
+        "_A": 100,
+        "_fee": 4000000,
+        "_admin_fee": 5000000000
+    },
+    "coins": [
+        {
+            "name": "RAI",
+            "decimals": 18,
+            "tethered": false,
+            "underlying_address": "0x03ab458634910AaD20eF5f1C8ee96F1D6ac54919"
+        },
+        {
+            "name": "3CRV",
+            "decimals": 18,
+            "base_pool_token": true,
+            "underlying_address": "0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490"
+        }
+    ]
+}
