@@ -593,7 +593,7 @@ def exchange(i: int128, j: int128, dx: uint256, min_dy: uint256) -> uint256:
     @notice Perform an exchange between two coins
     @dev Index values can be found via the `coins` public getter method
     @param i Index value for the coin to send
-    @param j Index valie of the coin to recieve
+    @param j Index value of the coin to recieve
     @param dx Amount of `i` being exchanged
     @param min_dy Minimum amount of `j` to receive
     @return Actual amount of `j` received
@@ -616,7 +616,7 @@ def exchange_underlying(i: int128, j: int128, dx: uint256, min_dy: uint256) -> u
     @notice Perform an exchange between two underlying coins
     @dev Index values can be found via the `underlying_coins` public getter method
     @param i Index value for the underlying coin to send
-    @param j Index valie of the underlying coin to recieve
+    @param j Index value of the underlying coin to recieve
     @param dx Amount of `i` being exchanged
     @param min_dy Minimum amount of `j` to receive
     @return Actual amount of `j` received
