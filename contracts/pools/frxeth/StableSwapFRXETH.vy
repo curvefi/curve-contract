@@ -309,14 +309,11 @@ def price_oracle() -> uint256:
 
 
 @internal
-def save_p(amp: uint256, D: uint256):
+def save_p(xp: uint256[N_COINS], amp: uint256, D: uint256):
     """
     Saves current price and its EMA
     """
-    # add_liquidity
-    # exchange
-    # remove_liquidity_imbalance
-    self.ma_price = self._ma_price(self.balances, amp, D)
+    self.ma_price = self._ma_price(xp, amp, D)
     self.ma_last_time = block.timestamp
 
 
@@ -416,6 +413,7 @@ def add_liquidity(_amounts: uint256[N_COINS], _min_mint_amount: uint256) -> uint
             new_balances[i] -= fees[i]
         D2 = self._get_D(new_balances, amp)
         mint_amount = token_supply * (D2 - D0) / D0
+        self.save_p(new_balances, amp, D2)
     else:
         self.balances = new_balances
         mint_amount = D1  # Take the dust if there was any
@@ -523,6 +521,9 @@ def exchange(i: int128, j: int128, _dx: uint256, _min_dy: uint256) -> uint256:
     old_balances: uint256[N_COINS] = self.balances
 
     x: uint256 = old_balances[i] + _dx
+
+    amp: uint256 = self._A()
+    D: uint256 = self._get_D(old_balances, amp)
     y: uint256 = self._get_y(i, j, x, old_balances)
 
     dy: uint256 = old_balances[j] - y - 1  # -1 just in case there were some rounding errors
@@ -531,6 +532,12 @@ def exchange(i: int128, j: int128, _dx: uint256, _min_dy: uint256) -> uint256:
     # Convert all to real units
     dy = dy - dy_fee
     assert dy >= _min_dy, "Exchange resulted in fewer coins than expected"
+
+    xp: uint256[N_COINS] = old_balances
+    xp[i] = x
+    xp[j] = y
+
+    self.save_p(xp, amp, D)
 
     dy_admin_fee: uint256 = dy_fee * self.admin_fee / FEE_DENOMINATOR
 
@@ -624,6 +631,8 @@ def remove_liquidity_imbalance(_amounts: uint256[N_COINS], _max_burn_amount: uin
         self.balances[i] = new_balance - (fees[i] * admin_fee / FEE_DENOMINATOR)
         new_balances[i] = new_balance - fees[i]
     D2: uint256 = self._get_D(new_balances, amp)
+
+    self.save_p(new_balances, amp, D2)
 
     lp_token: address = self.lp_token
     token_supply: uint256 = CurveToken(lp_token).totalSupply()
