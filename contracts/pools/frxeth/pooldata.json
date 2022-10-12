@@ -1,0 +1,19 @@
+{
+  "pool_types": ["eth"],
+  "coins": [
+    {
+      "decimals": 18,
+      "tethered": false,
+      "wrapped": false,
+      "underlying_address": "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
+    },
+    {
+      "decimals": 18,
+      "tethered": false,
+      "wrapped": false
+    }
+  ],
+  "testing": {
+    "initial_amount": 10000
+  }
+}
