@@ -1,4 +1,4 @@
-# @version ^0.2.8
+# @version 0.3.7
 """
 @title StableSwap
 @author Curve.Fi
@@ -81,7 +81,8 @@ event StopRampA:
 
 
 # These constants must be set prior to compiling
-N_COINS: constant(int128) = 2
+N_COINS: constant(uint256) = 2
+N_COINS_128: constant(int128) = 2
 
 # fixed constants
 FEE_DENOMINATOR: constant(uint256) = 10 ** 10
@@ -371,11 +372,11 @@ def _get_y(i: int128, j: int128, x: uint256, _xp: uint256[N_COINS]) -> uint256:
 
     assert i != j       # dev: same coin
     assert j >= 0       # dev: j below zero
-    assert j < N_COINS  # dev: j above N_COINS
+    assert j < N_COINS_128  # dev: j above N_COINS
 
     # should be unreachable, but good for safety
     assert i >= 0
-    assert i < N_COINS
+    assert i < N_COINS_128
 
     A: uint256 = self._A()
     D: uint256 = self._get_D(_xp, A)
@@ -385,7 +386,7 @@ def _get_y(i: int128, j: int128, x: uint256, _xp: uint256[N_COINS]) -> uint256:
     _x: uint256 = 0
     y_prev: uint256 = 0
 
-    for _i in range(N_COINS):
+    for _i in range(N_COINS_128):
         if _i == i:
             _x = x
         elif _i != j:
@@ -619,7 +620,7 @@ def _get_y_D(A: uint256, i: int128, _xp: uint256[N_COINS], D: uint256) -> uint25
     # x in the input is converted to the same price/precision
 
     assert i >= 0  # dev: i below zero
-    assert i < N_COINS  # dev: i above N_COINS
+    assert i < N_COINS_128  # dev: i above N_COINS
 
     Ann: uint256 = A * N_COINS
     c: uint256 = D
@@ -627,7 +628,7 @@ def _get_y_D(A: uint256, i: int128, _xp: uint256[N_COINS], D: uint256) -> uint25
     _x: uint256 = 0
     y_prev: uint256 = 0
     
-    for _i in range(N_COINS):
+    for _i in range(N_COINS_128):
         if _i != i:
             _x = _xp[_i]
         else:
@@ -665,7 +666,7 @@ def _calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> (uint256, uint
     new_y: uint256 = self._get_y_D(amp, i, xp, D1)
     fee: uint256 = self.fee * N_COINS / (4 * (N_COINS - 1))
     xp_reduced: uint256[N_COINS] = xp
-    for j in range(N_COINS):
+    for j in range(N_COINS_128):
         dx_expected: uint256 = 0
         if j == i:
             dx_expected = xp[j] * D1 / D0 - new_y
