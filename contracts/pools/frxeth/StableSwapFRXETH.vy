@@ -313,6 +313,9 @@ def save_p(amp: uint256, D: uint256):
     """
     Saves current price and its EMA
     """
+    # add_liquidity
+    # exchange
+    # remove_liquidity_imbalance
     self.ma_price = self._ma_price(self.balances, amp, D)
     self.ma_last_time = block.timestamp
 
@@ -693,7 +696,7 @@ def _get_y_D(A: uint256, i: int128, _xp: uint256[N_COINS], D: uint256) -> uint25
 
 @view
 @internal
-def _calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> (uint256, uint256, uint256):
+def _calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> (uint256, uint256, uint256, uint256):
     # First, need to calculate
     # * Get current D
     # * Solve Eqn against y_i for D - _token_amount
@@ -718,7 +721,12 @@ def _calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> (uint256, uint
     dy -= 1  # Withdraw less to account for rounding errors
     dy_0: uint256 = xp[i] - new_y  # w/o fees
 
-    return dy, dy_0 - dy, total_supply
+    xp[i] = new_y
+    ma_p: uint256 = 0
+    if new_y > 0:
+        ma_p = self._ma_price(xp, amp, D1)
+
+    return dy, dy_0 - dy, total_supply, ma_p
 
 
 @view
@@ -748,7 +756,8 @@ def remove_liquidity_one_coin(_token_amount: uint256, i: int128, _min_amount: ui
     dy: uint256 = 0
     dy_fee: uint256 = 0
     total_supply: uint256 = 0
-    dy, dy_fee, total_supply = self._calc_withdraw_one_coin(_token_amount, i)
+    ma_p: uint256 = 0
+    dy, dy_fee, total_supply, ma_p = self._calc_withdraw_one_coin(_token_amount, i)
     assert dy >= _min_amount, "Not enough coins removed"
 
     self.balances[i] -= (dy + dy_fee * self.admin_fee / FEE_DENOMINATOR)
@@ -761,6 +770,9 @@ def remove_liquidity_one_coin(_token_amount: uint256, i: int128, _min_amount: ui
         assert ERC20(coin).transfer(msg.sender, dy, default_return_value=True)
 
     log RemoveLiquidityOne(msg.sender, _token_amount, dy, total_supply - _token_amount)
+
+    self.ma_price = ma_p
+    self.ma_last_time = block.timestamp
 
     return dy
 
