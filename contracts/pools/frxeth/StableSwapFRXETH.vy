@@ -1,14 +1,9 @@
 # @version 0.3.7
 """
-@title StableSwap
+@title FRXETH StableSwap
 @author Curve.Fi
-@license Copyright (c) Curve.Fi, 2020 - all rights reserved
+@license Copyright (c) Curve.Fi, 2020-2022 - all rights reserved
 @notice Curve ETH pool implementation
-@dev This contract is only a template, pool-specific constants
-     must be set prior to compiling. Note that this template 
-     contains optimizations that depend upon every token within
-     the pool using 18 decimal places and should therefore be 
-     dealt with accordingly.
 """
 
 from vyper.interfaces import ERC20
