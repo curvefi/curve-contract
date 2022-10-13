@@ -149,7 +149,7 @@ def __init__(
     self.kill_deadline = block.timestamp + KILL_DEADLINE_DT
     self.lp_token = _pool_token
 
-    self.ma_exp_time = 866  # = 600 / ln(2)
+    self.ma_exp_time = 2597  # = 1800 / ln(2)  # 30 mins
     self.ma_price = 10**18
     self.ma_last_time = block.timestamp
 
