@@ -284,7 +284,7 @@ def exp(power: int256) -> uint256:
 
     return unsafe_div(
         unsafe_mul(convert(unsafe_div(p, q), uint256), 3822833074963236453042738258902158003155416615667),
-        2**convert(unsafe_sub(195, k), uint256)
+        pow_mod256(2, convert(unsafe_sub(195, k), uint256))
     )
 
 
