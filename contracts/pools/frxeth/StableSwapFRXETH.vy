@@ -860,6 +860,14 @@ def revert_new_parameters():
 
 
 @external
+def set_ma_exp_time(_ma_exp_time: uint256):
+    assert msg.sender == self.owner
+    assert _ma_exp_time != 0
+
+    self.ma_exp_time = _ma_exp_time
+
+
+@external
 def commit_transfer_ownership(_owner: address):
     assert msg.sender == self.owner  # dev: only owner
     assert self.transfer_ownership_deadline == 0  # dev: active transfer
