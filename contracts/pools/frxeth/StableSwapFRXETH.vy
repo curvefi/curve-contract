@@ -333,6 +333,7 @@ def get_virtual_price() -> uint256:
 
 @view
 @external
+@nonreentrant('lock')
 def calc_token_amount(_amounts: uint256[N_COINS], _is_deposit: bool) -> uint256:
     """
     @notice Calculate addition or reduction in token supply from a deposit or withdrawal
@@ -492,6 +493,7 @@ def _get_y(i: int128, j: int128, x: uint256, _xp: uint256[N_COINS]) -> uint256:
 
 @view
 @external
+@nonreentrant('lock')
 def get_dy(i: int128, j: int128, _dx: uint256) -> uint256:
     xp: uint256[N_COINS] = self.balances
     x: uint256 = xp[i] + _dx
@@ -738,6 +740,7 @@ def _calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> (uint256, uint
 
 @view
 @external
+@nonreentrant('lock')
 def calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> uint256:
     """
     @notice Calculate the amount received when withdrawing a single coin
