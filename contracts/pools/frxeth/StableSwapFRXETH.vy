@@ -252,6 +252,8 @@ def get_p() -> uint256:
 @internal
 @view
 def exp(power: int256) -> uint256:
+    # courtesy of solmate
+    # https://github.com/transmissions11/solmate/blob/master/src/utils/SignedWadMath.sol#L83
     if power <= -42139678854452767551:
         return 0
 
@@ -273,16 +275,17 @@ def exp(power: int256) -> uint256:
     p = unsafe_add(unsafe_div(unsafe_mul(p, y), 2**96), 28719021644029726153956944680412240)
     p = unsafe_add(unsafe_mul(p, x), (4385272521454847904659076985693276 * 2**96))
 
-    q: int256 = x - 2855989394907223263936484059900
+    q: int256 = unsafe_sub(x, 2855989394907223263936484059900)
     q = unsafe_add(unsafe_div(unsafe_mul(q, x), 2**96), 50020603652535783019961831881945)
     q = unsafe_sub(unsafe_div(unsafe_mul(q, x), 2**96), 533845033583426703283633433725380)
     q = unsafe_add(unsafe_div(unsafe_mul(q, x), 2**96), 3604857256930695427073651918091429)
     q = unsafe_sub(unsafe_div(unsafe_mul(q, x), 2**96), 14423608567350463180887372962807573)
     q = unsafe_add(unsafe_div(unsafe_mul(q, x), 2**96), 26449188498355588339934803723976023)
 
-    return shift(
+    return unsafe_div(
         unsafe_mul(convert(unsafe_div(p, q), uint256), 3822833074963236453042738258902158003155416615667),
-        unsafe_sub(k, 195))
+        2**convert(unsafe_sub(195, k), uint256)
+    )
 
 
 @internal
