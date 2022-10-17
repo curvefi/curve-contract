@@ -4,7 +4,7 @@ class Curve:
     Python model of Curve pool math.
     """
 
-    def __init__(self, A, D, n, p=None, tokens=None):
+    def __init__(self, A, D, n, p=None, tokens=None, fee=10 ** 7, admin_fee=0):
         """
         A: Amplification coefficient
         D: Total deposit size
@@ -13,7 +13,8 @@ class Curve:
         """
         self.A = A  # actually A * n ** (n - 1) because it's an invariant
         self.n = n
-        self.fee = 10 ** 7
+        self.fee = fee
+        self.admin_fee = admin_fee
         if p:
             self.p = p
         else:
@@ -115,12 +116,51 @@ class Curve:
         y = self.y(i, j, x)
         dy = xp[j] - y
         fee = dy * self.fee // 10 ** 10
+        admin_fee = fee * self.admin_fee // 10 ** 10 
         assert dy > 0
         self.x[i] = x * 10 ** 18 // self.p[i]
-        self.x[j] = (y + fee) * 10 ** 18 // self.p[j]
+        self.x[j] = (y + fee - admin_fee) * 10 ** 18 // self.p[j]
         return dy - fee
 
-    def remove_liquidity_imbalance(self, amounts):
+    def add_liquidity(self, amounts, update_values=False):
+        _fee = self.fee * self.n // (4 * (self.n - 1))
+
+        old_balances = self.x
+        D0 = self.D()
+
+        new_balances = old_balances
+        for i in range(self.n):
+            new_balances[i] += amounts[i]
+        self.x = new_balances
+        D1 = self.D()
+        assert D1 > D0
+
+        fees = [0] * self.n
+        if self.tokens > 0:
+            real_balances = [0] * 3
+            for i in range(self.n):
+                ideal_balance = D1 * old_balances[i] // D0
+                difference = abs(ideal_balance - new_balances[i])
+                fees[i] = _fee * difference // 10 ** 10
+                real_balances[i] = new_balances[i] - (fees[i] * self.admin_fee // 10 ** 10)
+                new_balances[i] -= fees[i]
+            self.x = new_balances
+            D2 = self.D()
+            mint_amount = self.tokens * (D2 - D0) // D0
+
+            self.x = real_balances
+        else:
+            self.x = new_balances
+            mint_amount = D1  # Take the dust if there was any
+
+        if not update_values:
+            self.x = old_balances
+        else:
+            self.tokens += mint_amount
+
+        return mint_amount
+
+    def remove_liquidity_imbalance(self, amounts, update_values=False):
         _fee = self.fee * self.n // (4 * (self.n - 1))
 
         old_balances = self.x
@@ -132,16 +172,23 @@ class Curve:
         D1 = self.D()
         self.x = old_balances
         fees = [0] * self.n
+        real_balances = [0] * self.n
         for i in range(self.n):
             ideal_balance = D1 * old_balances[i] // D0
             difference = abs(ideal_balance - new_balances[i])
             fees[i] = _fee * difference // 10 ** 10
+            real_balances[i] = new_balances[i] - (fees[i] * self.admin_fee // 10 ** 10)
             new_balances[i] -= fees[i]
         self.x = new_balances
         D2 = self.D()
-        self.x = old_balances
 
         token_amount = (D0 - D2) * self.tokens // D0
+
+        self.x = real_balances
+        if not update_values:
+            self.x = old_balances
+        else:
+            self.tokens -= token_amount
 
         return token_amount
 
@@ -157,3 +204,7 @@ class Curve:
         dy = xp[i] - self.y_D(i, D1)
 
         return dy - dy * fee // 10 ** 10
+
+    def get_virtual_price(self):
+        return self.D() * 10 ** 18 // self.tokens
+
