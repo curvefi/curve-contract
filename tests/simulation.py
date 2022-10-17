@@ -4,7 +4,7 @@ class Curve:
     Python model of Curve pool math.
     """
 
-    def __init__(self, A, D, n, p=None, tokens=None, fee=10 ** 7, admin_fee=0):
+    def __init__(self, A, D, n, p=None, tokens=None, fee=10**7, admin_fee=0):
         """
         A: Amplification coefficient
         D: Total deposit size
@@ -18,15 +18,15 @@ class Curve:
         if p:
             self.p = p
         else:
-            self.p = [10 ** 18] * n
+            self.p = [10**18] * n
         if isinstance(D, list):
             self.x = D
         else:
-            self.x = [D // n * 10 ** 18 // _p for _p in self.p]
+            self.x = [D // n * 10**18 // _p for _p in self.p]
         self.tokens = tokens
 
     def xp(self):
-        return [x * p // 10 ** 18 for x, p in zip(self.x, self.p)]
+        return [x * p // 10**18 for x, p in zip(self.x, self.p)]
 
     def D(self):
         """
@@ -76,7 +76,7 @@ class Curve:
         y = D
         while abs(y - y_prev) > 1:
             y_prev = y
-            y = (y ** 2 + c) // (2 * y + b)
+            y = (y**2 + c) // (2 * y + b)
         return y  # the result is in underlying units too
 
     def y_D(self, i, _D):
@@ -102,7 +102,7 @@ class Curve:
         y = _D
         while abs(y - y_prev) > 1:
             y_prev = y
-            y = (y ** 2 + c) // (2 * y + b - _D)
+            y = (y**2 + c) // (2 * y + b - _D)
         return y  # the result is in underlying units too
 
     def dy(self, i, j, dx):
@@ -115,11 +115,11 @@ class Curve:
         x = xp[i] + dx
         y = self.y(i, j, x)
         dy = xp[j] - y
-        fee = dy * self.fee // 10 ** 10
-        admin_fee = fee * self.admin_fee // 10 ** 10 
+        fee = dy * self.fee // 10**10
+        admin_fee = fee * self.admin_fee // 10**10
         assert dy > 0
-        self.x[i] = x * 10 ** 18 // self.p[i]
-        self.x[j] = (y + fee - admin_fee) * 10 ** 18 // self.p[j]
+        self.x[i] = x * 10**18 // self.p[i]
+        self.x[j] = (y + fee - admin_fee) * 10**18 // self.p[j]
         return dy - fee
 
     def add_liquidity(self, amounts, update_values=False):
@@ -141,8 +141,8 @@ class Curve:
             for i in range(self.n):
                 ideal_balance = D1 * old_balances[i] // D0
                 difference = abs(ideal_balance - new_balances[i])
-                fees[i] = _fee * difference // 10 ** 10
-                real_balances[i] = new_balances[i] - (fees[i] * self.admin_fee // 10 ** 10)
+                fees[i] = _fee * difference // 10**10
+                real_balances[i] = new_balances[i] - (fees[i] * self.admin_fee // 10**10)
                 new_balances[i] -= fees[i]
             self.x = new_balances
             D2 = self.D()
@@ -176,8 +176,8 @@ class Curve:
         for i in range(self.n):
             ideal_balance = D1 * old_balances[i] // D0
             difference = abs(ideal_balance - new_balances[i])
-            fees[i] = _fee * difference // 10 ** 10
-            real_balances[i] = new_balances[i] - (fees[i] * self.admin_fee // 10 ** 10)
+            fees[i] = _fee * difference // 10**10
+            real_balances[i] = new_balances[i] - (fees[i] * self.admin_fee // 10**10)
             new_balances[i] -= fees[i]
         self.x = new_balances
         D2 = self.D()
@@ -195,7 +195,7 @@ class Curve:
     def calc_withdraw_one_coin(self, token_amount, i):
         xp = self.xp()
         if self.fee:
-            fee = self.fee - self.fee * xp[i] // sum(xp) + 5 * 10 ** 5
+            fee = self.fee - self.fee * xp[i] // sum(xp) + 5 * 10**5
         else:
             fee = 0
 
@@ -203,8 +203,7 @@ class Curve:
         D1 = D0 - token_amount * D0 // self.tokens
         dy = xp[i] - self.y_D(i, D1)
 
-        return dy - dy * fee // 10 ** 10
+        return dy - dy * fee // 10**10
 
     def get_virtual_price(self):
-        return self.D() * 10 ** 18 // self.tokens
-
+        return self.D() * 10**18 // self.tokens
