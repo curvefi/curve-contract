@@ -182,14 +182,6 @@ def A_precise() -> uint256:
 
 @pure
 @internal
-def _xp_mem(_balances: uint256[N_COINS]) -> uint256[N_COINS]:
-    for i in range(N_COINS):
-        result[i] = 10**18 * _balances[i] / PRECISION
-    return result
-
-
-@pure
-@internal
 def _get_D(_xp: uint256[N_COINS], _amp: uint256) -> uint256:
     """
     D invariant calculation in non-overflowing integer operations
@@ -231,7 +223,7 @@ def _get_D(_xp: uint256[N_COINS], _amp: uint256) -> uint256:
 @view
 @internal
 def _get_D_mem(_balances: uint256[N_COINS], _amp: uint256) -> uint256:
-    return self._get_D(self._xp_mem(_balances), _amp)
+    return self._get_D(_balances, _amp)
 
 
 @view
@@ -443,7 +435,7 @@ def exchange(i: int128, j: int128, _dx: uint256, _min_dy: uint256) -> uint256:
     assert not self.is_killed  # dev: is killed
 
     old_balances: uint256[N_COINS] = self.balances
-    xp: uint256[N_COINS] = self._xp_mem(old_balances)
+    xp: uint256[N_COINS] = old_balances
 
     x: uint256 = xp[i] + _dx * 10**18 / PRECISION
     y: uint256 = self._get_y(i, j, x, xp)
