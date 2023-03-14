@@ -407,11 +407,11 @@ def _get_y(i: int128, j: int128, x: uint256, _xp: uint256[N_COINS]) -> uint256:
 def get_dy(i: int128, j: int128, _dx: uint256) -> uint256:
     xp: uint256[N_COINS] = self.balances
 
-    x: uint256 = xp[i] + (_dx * 10**18 / PRECISION)
+    x: uint256 = xp[i] + _dx
     y: uint256 = self._get_y(i, j, x, xp)
     dy: uint256 = xp[j] - y - 1
     fee: uint256 = self.fee * dy / FEE_DENOMINATOR
-    return (dy - fee) * PRECISION / 10**18
+    return dy - fee
 
 
 @external
@@ -431,18 +431,17 @@ def exchange(i: int128, j: int128, _dx: uint256, _min_dy: uint256) -> uint256:
     old_balances: uint256[N_COINS] = self.balances
     xp: uint256[N_COINS] = old_balances
 
-    x: uint256 = xp[i] + _dx * 10**18 / PRECISION
+    x: uint256 = xp[i] + _dx
     y: uint256 = self._get_y(i, j, x, xp)
 
     dy: uint256 = xp[j] - y - 1  # -1 just in case there were some rounding errors
     dy_fee: uint256 = dy * self.fee / FEE_DENOMINATOR
 
     # Convert all to real units
-    dy = (dy - dy_fee) * PRECISION / 10**18
+    dy = dy - dy_fee
     assert dy >= _min_dy, "Exchange resulted in fewer coins than expected"
 
     dy_admin_fee: uint256 = dy_fee * self.admin_fee / FEE_DENOMINATOR
-    dy_admin_fee = dy_admin_fee * PRECISION / 10**18
 
     # Change balances exactly in same way as we change actual ERC20 coin amounts
     self.balances[i] = old_balances[i] + _dx
