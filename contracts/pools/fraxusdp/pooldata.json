@@ -1,0 +1,25 @@
+{
+    "lp_contract": "",
+    "swap_address": "",
+    "lp_token_address": "",
+    "gauge_addresses": [""],
+    "lp_constructor": {
+        "name": "Curve.fi FRAX/USDP",
+        "symbol": "fraxusdp"
+    },
+    "coins": [
+        {
+            "name": "FRAX",
+            "decimals": 18,
+            "tethered": false,
+            "underlying_address": "0x853d955aCEf822Db058eb8505911ED77F175b99e"
+        },
+        {
+            "name": "USDP",
+            "decimals": 18,
+            "tethered": false,
+            "underlying_address": "0x8E870D67F660D95d5be530380D0eC0bd388289E1"
+
+        }
+    ]
+}
