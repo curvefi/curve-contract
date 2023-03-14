@@ -1,11 +1,16 @@
 {
-    "lp_contract": "",
+    "lp_contract": "CurveTokenV3",
     "swap_address": "",
     "lp_token_address": "",
     "gauge_addresses": [""],
     "lp_constructor": {
         "name": "Curve.fi FRAX/USDP",
-        "symbol": "fraxusdp"
+        "symbol": "crvfraxUSDP"
+    },
+    "swap_constructor": {
+        "_A": 1000,
+        "_fee": 1000000,
+        "_admin_fee": 5000000000
     },
     "coins": [
         {
