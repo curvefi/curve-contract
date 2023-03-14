@@ -83,6 +83,7 @@ N_COINS: constant(int128) = 2
 FEE_DENOMINATOR: constant(uint256) = 10 ** 10
 PRECISION: constant(uint256) = 10 ** 18  # The precision to convert to
 
+A_PRECISION: constant(uint256) = 100
 MAX_ADMIN_FEE: constant(uint256) = 10 * 10 ** 9
 MAX_FEE: constant(uint256) = 5 * 10 ** 9
 MAX_A: constant(uint256) = 10 ** 6
@@ -99,7 +100,6 @@ admin_fee: public(uint256)  # admin_fee * 1e10
 owner: public(address)
 lp_token: public(address)
 
-A_PRECISION: constant(uint256) = 100
 initial_A: public(uint256)
 future_A: public(uint256)
 initial_A_time: public(uint256)
@@ -180,14 +180,6 @@ def A_precise() -> uint256:
     return self._A()
 
 
-@view
-@internal
-def _xp() -> uint256[N_COINS]:
-    for i in range(N_COINS):
-        result[i] = 10**18 * self.balances[i] / PRECISION
-    return result
-
-
 @pure
 @internal
 def _xp_mem(_balances: uint256[N_COINS]) -> uint256[N_COINS]:
@@ -250,7 +242,7 @@ def get_virtual_price() -> uint256:
     @dev Useful for calculating profits
     @return LP token virtual price normalized to 1e18
     """
-    D: uint256 = self._get_D(self._xp(), self._A())
+    D: uint256 = self._get_D(self.balances, self._A())
     # D is in the units similar to DAI (e.g. converted to precision 1e18)
     # When balanced, D = n * x_u - total virtual value of the portfolio
     token_supply: uint256 = ERC20(self.lp_token).totalSupply()
@@ -427,7 +419,7 @@ def _get_y(i: int128, j: int128, x: uint256, _xp: uint256[N_COINS]) -> uint256:
 @view
 @external
 def get_dy(i: int128, j: int128, _dx: uint256) -> uint256:
-    xp: uint256[N_COINS] = self._xp()
+    xp: uint256[N_COINS] = self.balances
 
     x: uint256 = xp[i] + (_dx * 10**18 / PRECISION)
     y: uint256 = self._get_y(i, j, x, xp)
@@ -656,7 +648,7 @@ def _calc_withdraw_one_coin(_token_amount: uint256, i: int128) -> (uint256, uint
     # * Get current D
     # * Solve Eqn against y_i for D - _token_amount
     amp: uint256 = self._A()
-    xp: uint256[N_COINS] = self._xp()
+    xp: uint256[N_COINS] = self.balances
     D0: uint256 = self._get_D(xp, amp)
 
     total_supply: uint256 = CurveToken(self.lp_token).totalSupply()
