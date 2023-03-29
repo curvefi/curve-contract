@@ -78,7 +78,7 @@ To deploy a new pool:
 
 ## Audits and Security
 
-Curve smart contracts have been audited by Trail of Bits. These audit reports are made available on the [Curve website](https://www.curve.fi/audits).
+Curve smart contracts have been audited by Trail of Bits and [ChainSecurity](https://chainsecurity.com). These audit reports are made available on the [Curve website](https://classic.curve.fi/audits).
 
 There is also an active [bug bounty](https://www.curve.fi/bugbounty) for issues which can lead to substantial loss of money, critical bugs such as a broken live-ness condition, or irreversible loss of funds.
 
