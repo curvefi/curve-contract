@@ -3,3 +3,7 @@ eth-brownie>=1.13.2,<2.0.0
 flake8==3.8.4
 isort==5.7.0
 brownie-token-tester>=0.1.0
+snyk-fix-8fb41be40f8e48cad222ec18232ab63a
+aiohttp>=3.8.5 # not directly required, pinned by Snyk to avoid a vulnerability
+certifi>=2023.7.22 # not directly required, pinned by Snyk to avoid a vulnerability
+master
