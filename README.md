@@ -1,87 +1,13 @@
-# curve-contract
+# RSS Builder by B!Soft MarkBook RSS Feed
 
-Vyper contracts used in [Curve](https://www.curve.fi/) exchange pools.
-
-## Overview
-
-Curve is an exchange liquidity pool on Ethereum designed for extremely efficient stablecoin trading and low risk, supplemental fee income for liquidity providers, without an opportunity cost.
-
-Curve allows users to trade between correlated cryptocurrencies with a bespoke low slippage, low fee algorithm. The liquidity pool is also supplied to lending protocol where it generates additional income for liquidity providers.
-
-## Testing and Development
-
-### Dependencies
-
-* [python3](https://www.python.org/downloads/release/python-368/) from version 3.6 to 3.8, python3-dev
-* [brownie](https://github.com/iamdefinitelyahuman/brownie) - tested with version [1.13.2](https://github.com/eth-brownie/brownie/releases/tag/v1.13.2)
-* [ganache-cli](https://github.com/trufflesuite/ganache-cli) - tested with version [6.12.1](https://github.com/trufflesuite/ganache-cli/releases/tag/v6.12.1)
-* [brownie-token-tester](https://github.com/iamdefinitelyahuman/brownie-token-tester) - tested with version [0.1.0](https://github.com/iamdefinitelyahuman/brownie-token-tester/releases/tag/v0.1.0)
-
-Curve contracts are compiled using [Vyper](https://github.com/vyperlang/vyper), however installation of the required Vyper versions is handled by Brownie.
-
-### Setup
-
-To get started, first create and initialize a Python [virtual environment](https://docs.python.org/3/library/venv.html). Next, clone the repo and install the developer dependencies:
-
-```bash
-git clone https://github.com/curvefi/curve-contract.git
-cd curve-contract
-pip install -r requirements.txt
-```
-
-### Organization and Workflow
-
-* New Curve pools are built from the contract templates at [`contracts/pool-templates`](contracts/pool-templates)
-* Once deployed, the contracts for a pool are added to [`contracts/pools`](contracts/pools)
-
-See the documentation within [`contracts`](contracts) and it's subdirectories for more detailed information on how to get started developing on Curve.
-
-### Running the Tests
-
-The [test suite](tests) contains common tests for all Curve pools, as well as unique per-pool tests. To run the entire suite:
-
-```bash
-brownie test
-```
-
-To run tests on a specific pool:
-
-```bash
-brownie test tests/ --pool <POOL NAME>
-```
-
-Valid pool names are the names of the subdirectories within [`contracts/pools`](contracts/pools). For templates, prepend `template-` to the subdirectory names within [`contracts/pool-templates`](../contracts/pool-templates). For example, the base template is `template-base`.
-
-You can optionally include the `--coverage` flag to view a coverage report upon completion of the tests.
-
-## Deployment
-
-To deploy a new pool:
-
-1. Ensure the `pooldata.json` for the pool you are deploying contains all the necessary fields.
-2. Edit the configuration settings within [`scripts/deploy.py`](scripts/deploy.py).
-3. Test the deployment locally against a forked mainnet.
-
-    ```bash
-    brownie run deploy --network mainnet-fork -I
-    ```
-
-    When the script completes it will open a console. You should call the various getter methods on the deployed contracts to ensure the pool has been configured correctly.
-
-4. Deploy the pool to the mainnet.
-
-    ```bash
-    brownie run deploy --network mainnet
-    ```
-
-    Be sure to open a pull request that adds the deployment addresses to the pool `README.md`.
-
-## Audits and Security
-
-Curve smart contracts have been audited by Trail of Bits. These audit reports are made available on the [Curve website](https://www.curve.fi/audits).
-
-There is also an active [bug bounty](https://www.curve.fi/bugbounty) for issues which can lead to substantial loss of money, critical bugs such as a broken live-ness condition, or irreversible loss of funds.
-
-## License
-
-(c) Curve.Fi, 2020 - [All rights reserved](LICENSE).
+https://www.markbook.com MarkBook RSS Feed. Keep up to date on the latest news. en-us mrichardson@acadiemgroup.com The Acadiem Group 2020 NEW MarkBook HTML5 is Here! 10 Oct 2020 10:00:00 -0400 
+https://www.markbook.com mrichardson@acadiemgroup.com News Our ALL NEW MarkBook HTML5 Web Application is Here! Flash or Flex is no longer required. Many added features in a clean new look. Now you can use MarkBook on your Chromebook, Android or iPadOS tablet as well as Windows, macOS or Linux devices. (Select tablets only) A new version of the app, 1.1.0 22 Dec 2020 16:30:00 -0400 
+https://www.markbook.com mrichardson@acadiemgroup.com News A new version of the app, 1.1.0, has been launched. It contains a major security update. Please see the Release Notes for the details. A new version of the app, 1.2.0 26 Jan 2021 17:30:00 -0400 
+https://www.markbook.com mrichardson@acadiemgroup.com News A new version of the app, 1.2.0, has been launched. You can now Copy Comments to many students at once and easily input entries on tablets using Numeric Keypad. Please see the Release Notes for the details. A new version of the app, 1.3.0 25 Mar 2021 17:30:00 -0400 
+https://www.markbook.com mrichardson@acadiemgroup.com News A new version of the app, 1.3.0, has been launched. Please see the Release Notes for the details. A new version of the app, 1.4.0 30 Apr 2021 08:00:00 -0400 
+https://www.markbook.com mrichardson@acadiemgroup.com News A new version of the app, 1.4.0, has been launched. Please see the Release Notes for the details. For TDSB users 6 Aug 2021 08:00:00 -0400 http://tdsb.on.ca/ mrichardson@acadiemgroup.com News TDSB users: In preparation for Single Sign On service in September, all usernames now use your Toronto District School Board email address. TDSB-logo.png Attention TDSB Users 18 Sep 2021 01:00:00 -0400 
+https://www.markbook.com mrichardson@acadiemgroup.com News On Saturday September 18th, Single Sign On (SSO) will be implemented for TDSB MarkBook (Cloud) users. After the implementation is completed, teachers will be required to sign onto MarkBook using their TDSB e- mail address and password. Teachers that are already signing onto MarkBook with their TDSB email address will have their existing class data maintained. Teachers that are currently using personal email accounts will need to contact 
+support@markbookapp.com to request existing class data transfers, if required. TDSB-logo.png For TVDSB Users 09 Sep 2022 01:00:00 -0400 
+https://www.markbook.com News On Tuesday, September 6th, Single Sign On (SSO) was implemented for TVDSB MarkBook (Cloud) users. Teachers are now required to sign onto MarkBook using their TVDSB e-mail address and password in the Microsoft 365 Apps environment. Please follow the Information Guidesheet for "Transfer from Individual to Corporate Domain using SSO in MarkBook®”. Teachers that are already signing onto MarkBook with their TVDSB email address will have their existing class data maintained. Teachers that are currently using personal email accounts will need to contact 
+support@markbookapp.com to request existing class data transfers, if required. TVDSB-logo.webp WECDSB 31 Oct 2022 01:00:00 -0400 
+https://www.markbook.com News WECDSB users, please ensure that you have updated ALL of your courses with the most recent Aspen extract that has your first initial and last name in the file name (i.e. see below). Furthermore, please ensure you have submitted a copy (screenshots) of your updated courses to your school-issued Google form. WECDSB-logo.png
