@@ -4,7 +4,14 @@
     "swap_address": "0x06364f10B501e868329afBc005b3492902d6C763",
     "lp_token_address": "0xD905e2eaeBe188fc92179b6350807D8bd91Db0D8",
     "zap_address": "0xa50ccc70b6a011cffddf45057e39679379187287",
-    "gauge_addresses": ["0x64E3C23bfc40722d3B649844055F1D51c1ac041d"],
+    "gauge_addresses": [
+        "0x64E3C23bfc40722d3B649844055F1D51c1ac041d"
+    ],
+    "swap_constructor": {
+        "_A": 200,
+        "_fee": 4000000,
+        "_admin_fee": 0
+    },
     "lp_constructor": {
         "name": "Curve.fi DAI/USDC/USDT/PAX",
         "symbol": "ypaxCrv"
