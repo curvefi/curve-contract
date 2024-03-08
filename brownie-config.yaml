@@ -1,5 +1,10 @@
+dotenv: .env
 # default balance of 10,000 ether to simplify testing of ETH pools
 networks:
+  athens:
+    host: https://zetachain-testnet-evm.itrocket.net  # Example RPC URL
+    chainId: 7001
+    
   development:
     cmd_settings:
       default_balance: 10000
