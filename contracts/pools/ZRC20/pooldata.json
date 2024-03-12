@@ -17,6 +17,7 @@
             "name": "ZETA",
             "decimals": 18,
             "tethered": false,
+            "wrapped": false,
             "underlying_address": "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
         },
         {
@@ -24,14 +25,14 @@
             "decimals": 18,
             "tethered": false,
             "wrapped": false,
-            "underlying_address": "0x48f80608B672DC30DC7e3dbBd0343c5F02C738Eb"
+            "underlying_address": "0xd97B1de3619ed2c6BEb3860147E30cA8A7dC9891"
         },
         {
             "name": "ycETH.ETH",
             "decimals": 18,
-            "tethered": true,
+            "tethered": false,
             "wrapped": false,
-            "underlying_address": "0xd97B1de3619ed2c6BEb3860147E30cA8A7dC9891"
+            "underlying_address": "0x13A0c5930C028511Dc02665E7285134B6d11A5f4"
         }
     ]
 }

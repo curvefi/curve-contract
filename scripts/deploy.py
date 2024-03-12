@@ -20,17 +20,17 @@ REQUIRED_CONFIRMATIONS = 1
 POOL_NAME = "ZRC20"
 
 # temporary owner address
-POOL_OWNER = "0xedf2c58e16cc606da1977e79e1e69e79c54fe242"
-GAUGE_OWNER = "0xedf2c58e16cc606da1977e79e1e69e79c54fe242"
+POOL_OWNER = "0x19caCb4c0A7fC25598CC44564ED0eCA01249fc31"
+# GAUGE_OWNER = "0xedf2c58e16cc606da1977e79e1e69e79c54fe242"
 
-MINTER = "0xd061D61a4d941c39E5453435B6345Dc261C2fcE0"
+# MINTER = "0xd061D61a4d941c39E5453435B6345Dc261C2fcE0"
 
 
 def _tx_params():
     return {
         # "gas": 12000000,
         "from": DEPLOYER,
-        "gasPrice": 80000000000,  # Optional: Adjust gas price if needed
+        "gasPrice": 8000000000,  # Optional: Adjust gas price if needed
     }
 
 
@@ -64,7 +64,7 @@ def main():
 
     # deploy the token
     decimals = 18
-    total_supply = 10000000
+    total_supply = 0
     token_args = pool_data["lp_constructor"]
 
     token = token_deployer.deploy(
