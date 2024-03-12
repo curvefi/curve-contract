@@ -1,5 +1,5 @@
 black==19.10b0
-eth-brownie>=1.13.2,<2.0.0
+eth-brownie>=1.20,<2.0.0
 flake8==3.8.4
 isort==5.7.0
 brownie-token-tester>=0.1.0
