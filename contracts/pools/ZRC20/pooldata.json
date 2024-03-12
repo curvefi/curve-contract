@@ -9,7 +9,7 @@
         "_admin_fee": 0
     },
     "lp_constructor": {
-        "name": "Curve.fi ETH/BTC/BNB/ZETA",
+        "name": "Curve.fi ETH/BNB/ZETA",
         "symbol": "yZRC20"
     },
     "coins": [
@@ -18,13 +18,6 @@
             "decimals": 18,
             "tethered": false,
             "underlying_address": "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
-        },
-        {
-            "name": "ycBTC.BTC",
-            "decimals": 8,
-            "tethered": false,
-            "wrapped": false,
-            "underlying_address": "0x13A0c5930C028511Dc02665E7285134B6d11A5f4"
         },
         {
             "name": "ycBNB.BSC",

@@ -81,7 +81,7 @@ event StopRampA:
 
 
 # These constants must be set prior to compiling
-N_COINS: constant(int128) = ___N_COINS___
+N_COINS: constant(int128) = 3
 
 # fixed constants
 FEE_DENOMINATOR: constant(uint256) = 10 ** 10
