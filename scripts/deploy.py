@@ -17,7 +17,7 @@ REQUIRED_CONFIRMATIONS = 1
 
 # deployment settings
 # most settings are taken from `contracts/pools/{POOL_NAME}/pooldata.json`
-POOL_NAME = "pax"
+POOL_NAME = "ZRC20"
 
 # temporary owner address
 POOL_OWNER = "0xedf2c58e16cc606da1977e79e1e69e79c54fe242"
@@ -25,20 +25,11 @@ GAUGE_OWNER = "0xedf2c58e16cc606da1977e79e1e69e79c54fe242"
 
 MINTER = "0xd061D61a4d941c39E5453435B6345Dc261C2fcE0"
 
-# POOL_OWNER = "0xeCb456EA5365865EbAb8a2661B0c503410e9B347"  # PoolProxy
-# GAUGE_OWNER = "0x519AFB566c05E00cfB9af73496D00217A630e4D5"  # GaugeProxy
-
 
 def _tx_params():
     return {
-        # "chainId": 7001,
-        # "from": DEPLOYER,
-        # # "required_confs": REQUIRED_CONFIRMATIONS,
-        # "gas_price": 80000000000,
         # "gas": 12000000,
         "from": DEPLOYER,
-        # "chainId": 0x2b51,  # 7001
-        # "chain_id": 0x2b51,  # 7001
         "gasPrice": 80000000000,  # Optional: Adjust gas price if needed
     }
 
@@ -75,16 +66,13 @@ def main():
     decimals = 18
     total_supply = 10000000
     token_args = pool_data["lp_constructor"]
-    # token = token_deployer.deploy(
-    #     token_args["name"], token_args["symbol"], decimals, total_supply, chain_id=7001, from=DEPLOYER)
 
     token = token_deployer.deploy(
         token_args["name"],
         token_args["symbol"],
         decimals,
         total_supply,
-        {'from': DEPLOYER, 'chainId': network.chain.id, "gasPrice": 80000000000, "gas": 12000000},
-        # _tx_params(),
+        _tx_params(),
     )
 
     # deploy the pool

@@ -7,6 +7,11 @@ pip3 install urllib3==1.26.6
 
 brownie run deploy --network athens
 
-working versions:
+work    ing versions:
 pip: pip 24.0 from /Users/andresaiello/Library/Python/3.9/lib/python/site-packages/pip (python 3.9)
 brownie: Brownie v1.14.5 - Python development framework for Ethereum
+
+command to install brownie latest version:
+Workaround:
+pip install "cython<3.0.0" && pip install --no-build-isolation eth-brownie
+
