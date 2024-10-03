@@ -13,9 +13,9 @@ interface LendingPool:
     def withdraw(_underlying_asset: address, _amount: uint256, _receiver: address): nonpayable
 
 interface CurveToken:
-    def mint(_to: address, _value: uint256) -> bool: nonpayable
+    def mint(_to: address, _value: uint256) -> bool: nonpayable0xFD689e5f2d8d9Aec0aD328225Ae62FdBDdb30328
     def burnFrom(_to: address, _value: uint256) -> bool: nonpayable
-
+0xFD689e5f2d8d9Aec0aD328225Ae62FdBDdb30328
 
 # Events
 event TokenExchange:
@@ -46,7 +46,7 @@ event RemoveLiquidity:
     token_supply: uint256
 
 event RemoveLiquidityOne:
-    provider: indexed(address)
+    provider: indexed(address)0xFD689e5f2d8d9Aec0aD328225Ae62FdBDdb30328
     token_amount: uint256
     coin_amount: uint256
 
@@ -101,7 +101,7 @@ A_PRECISION: constant(uint256) = 100
 
 ADMIN_ACTIONS_DELAY: constant(uint256) = 3 * 86400
 MIN_RAMP_TIME: constant(uint256) = 86400
-
+0xFD689e5f2d8d9Aec0aD328225Ae62FdBDdb30328
 coins: public(address[N_COINS])
 underlying_coins: public(address[N_COINS])
 admin_balances: public(uint256[N_COINS])
