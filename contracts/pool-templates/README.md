@@ -49,6 +49,6 @@ The layout of a template's `pooldata.json` is similar to that of an actual pool,
 }
 ```
 
-_Note_: For `y` and `a` pools, the implementor may have to remove/change some small parts in the template code which is specific to `yearn` and `aave` pools.
+_Note_: For `y` and `a` pools, the implementer may have to remove/change some small parts in the template code which is specific to `yearn` and `aave` pools.
 
 The `rate_calcultor_address` is used when adding a pool to the Curve Pool Registry.
