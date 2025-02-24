@@ -5,7 +5,7 @@ First of all, you'll need to know the contract's
 Addresses of the contract and the token representing liquidity are
 [here](https://github.com/curvefi/curve-contract/blob/compounded/deployed/2020-01-21_mainnet/mainnet.log).
 
-Next is the breif description of methods you need to fascilitate exchanges.
+Next is the brief description of methods you need to fascilitate exchanges.
 
 ## Getting static information
 
