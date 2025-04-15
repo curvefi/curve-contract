@@ -1,13 +1,13 @@
 repos:
--   repo: https://github.com/psf/black
+-   repo: https://github.com/VersoriumX/black
     rev: 19.3b0
     hooks:
     -   id: black
--   repo: https://gitlab.com/pycqa/flake8
+-   repo: https://gitlab.com/VersoriumX/flake8
     rev: 3.8.4
     hooks:
     -   id: flake8
--   repo: https://github.com/PyCQA/isort
+-   repo: https://github.com//isort
     rev: 5.7.0
     hooks:
     -   id: isort
