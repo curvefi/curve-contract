@@ -4,8 +4,8 @@
     "lp_token_address": "0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490",
     "gauge_addresses": ["0xbFcF63294aD7105dEa65aA58F8AE5BE2D9d0952A"],
     "lp_constructor": {
-        "name": "Curve.fi DAI/USDC/USDT",
-        "symbol": "3Crv"
+        "name": "Curve.fi DAI/USDC/USDT/ETHX",
+        "symbol": "4Crv"
     },
     "coins": [
         {
@@ -19,6 +19,13 @@
             "decimals": 6,
             "tethered": false,
             "underlying_address": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+
+        },
+         {
+            "name": "ETHX",
+            "decimals": 18,
+            "tethered": false,
+            "underlying_address": "0x8487B97c91ecC1a03b4907B64Bdeab306B888c0E"
 
         },
         {
