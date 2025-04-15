@@ -4,7 +4,7 @@
 
 ## Contracts
 
-- [`StableSwapAETH`](StableSwapETHX.vy): Curve stablecoin AMM contract
+- [`StableSwapETHX`](StableSwapETHX.vy): Curve stablecoin AMM contract
 
 ## Deployments
 
