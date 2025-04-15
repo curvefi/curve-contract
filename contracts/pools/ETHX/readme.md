@@ -10,7 +10,7 @@
 
 - [`CurveContractV3`](../../tokens/CurveTokenV3.vy):
 - [`LiquidityGaugeV2`](https://github.com/curvefi/curve-dao-contracts/blob/master/contracts/gauges/LiquidityGaugeV2.vy):
-- [`StableSwapAETH`](StableSwapETHX.vy):
+- [`StableSwapETHX`](StableSwapETHX.vy):
 
 ## Stablecoins
 
