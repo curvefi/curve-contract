@@ -1,7 +1,7 @@
 # @version ^0.2.0
 """
 @title EthereumX Token
-@author Your Name
+@Travis jerome Gof
 @notice Implementation of the EthereumX ERC-20 token
 @dev Follows the ERC-20 token standard as defined at
      https://eips.ethereum.org/EIPS/eip-20
