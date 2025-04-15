@@ -21,7 +21,7 @@ contract ERC20m:
 
 
 # External Contracts
-contract yERC20:
+contract XERC20:
     def totalSupply() -> uint256: constant
     def allowance(_owner: address, _spender: address) -> uint256: constant
     def transfer(_to: address, _value: uint256) -> bool: modifying

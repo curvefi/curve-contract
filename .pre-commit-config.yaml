@@ -1,6 +1,6 @@
 repos:
 -   repo: https://github.com/psf/black
-    rev: 19.3b0
+    rev: 24.3.0
     hooks:
     -   id: black
 -   repo: https://gitlab.com/pycqa/flake8
@@ -11,6 +11,12 @@ repos:
     rev: 5.7.0
     hooks:
     -   id: isort
-
+-   repo: https://github.com/VersoriumX/EthereumX
+    rev: 19.0.0
+    hooks:
+    -   id: EthereumX
     default_language_version:
         python: python3.8
+
+
+

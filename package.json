@@ -1,5 +1,6 @@
 {
     "scripts": {
-      "preinstall": "npm i -g ganache-cli@6.12.1"
+      "preinstall": "npm i -g ganache-cli@6.12.1",
+         "preinstall": "npx hardhatnode"
     }
   }

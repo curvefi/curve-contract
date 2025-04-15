@@ -1,17 +1,17 @@
 {
     "lp_contract": "CurveTokenV1",
-    "wrapped_contract": "yERC20",
+    "wrapped_contract": "XERC20",
     "swap_address": "0x45F783CCE6B7FF23B2ab2D70e416cdb7D6055f51",
-    "lp_token_address": "0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8",
+    "lp_token_address": "0x8487B97c91ecC1a03b4907B64Bdeab306B888c0E",
     "zap_address": "0xbbc81d23ea2c3ec7e56d39296f0cbb648873a5d3",
     "gauge_addresses": ["0xFA712EE4788C042e2B7BB55E6cb8ec569C4530c1"],
     "lp_constructor": {
-        "name": "Curve.fi yDAI/yUSDC/yUSDT/yTUSD",
-        "symbol": "yDAI+yUSDC+yUSDT+yTUSD"
+        "name": "Curve.fi XDAI/XUSDC/XUSDT/XTUSD",
+        "symbol": "XDAI+XUSDC+XUSDT+XTUSD"
     },
     "coins": [
         {
-            "name": "yDAI",
+            "name": "XDAI",
             "underlying_name": "DAI",
             "decimals": 18,
             "tethered": false,
@@ -20,7 +20,7 @@
             "wrapped_address": "0x16de59092dAE5CcF4A1E6439D611fd0653f0Bd01"
         },
         {
-            "name": "yUSDC",
+            "name": "XUSDC",
             "underlying_name": "USDC",
             "decimals": 6,
             "tethered": false,
@@ -29,7 +29,7 @@
             "wrapped_address": "0xd6aD7a6750A7593E092a9B218d66C0A814a3436e"
         },
         {
-            "name": "yUSDT",
+            "name": "XUSDT",
             "underlying_name": "USDT",
             "decimals": 6,
             "tethered": true,
@@ -38,7 +38,7 @@
             "wrapped_address": "0x83f798e925BcD4017Eb265844FDDAbb448f1707D"
         },
         {
-            "name": "yTUSD",
+            "name": "XTUSD",
             "underlying_name": "TUSD",
             "decimals": 18,
             "tethered": false,
