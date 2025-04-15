@@ -1,9 +1,8 @@
 # @version ^0.2.0
 """
-@title Curve LP Token
-@author Curve.Fi
-@notice Base implementation for an LP token provided for
-        supplying liquidity to `StableSwap`
+@title EthereumX Token
+@author Your Name
+@notice Implementation of the EthereumX ERC-20 token
 @dev Follows the ERC-20 token standard as defined at
      https://eips.ethereum.org/EIPS/eip-20
 """
@@ -27,6 +26,7 @@ event Approval:
     _value: uint256
 
 
+# Token details
 name: public(String[64])
 symbol: public(String[32])
 
@@ -38,9 +38,9 @@ minter: public(address)
 
 
 @external
-def __init__(_name: String[64], _symbol: String[32]):
-    self.name = _name
-    self.symbol = _symbol
+def __init__():
+    self.name = "EthereumX"
+    self.symbol = "ETHX"
     self.minter = msg.sender
     log Transfer(ZERO_ADDRESS, msg.sender, 0)
 
@@ -57,14 +57,12 @@ def decimals() -> uint256:
 
 
 @external
-def transfer(_to : address, _value : uint256) -> bool:
+def transfer(_to: address, _value: uint256) -> bool:
     """
     @dev Transfer token for a specified address
     @param _to The address to transfer to.
     @param _value The amount to be transferred.
     """
-    # NOTE: vyper does not allow underflows
-    #       so the following subtraction would revert on insufficient balance
     self.balanceOf[msg.sender] -= _value
     self.balanceOf[_to] += _value
 
@@ -73,7 +71,7 @@ def transfer(_to : address, _value : uint256) -> bool:
 
 
 @external
-def transferFrom(_from : address, _to : address, _value : uint256) -> bool:
+def transferFrom(_from: address, _to: address, _value: uint256) -> bool:
     """
      @dev Transfer tokens from one address to another.
      @param _from address The address which you want to send tokens from
@@ -92,15 +90,10 @@ def transferFrom(_from : address, _to : address, _value : uint256) -> bool:
 
 
 @external
-def approve(_spender : address, _value : uint256) -> bool:
+def approve(_spender: address, _value: uint256) -> bool:
     """
     @notice Approve the passed address to transfer the specified amount of
             tokens on behalf of msg.sender
-    @dev Beware that changing an allowance via this method brings the risk
-         that someone may use both the old and new allowance by unfortunate
-         transaction ordering. This may be mitigated with the use of
-         {increaseAllowance} and {decreaseAllowance}.
-         https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
     @param _spender The address which will transfer the funds
     @param _value The amount of tokens that may be transferred
     @return bool success
@@ -115,8 +108,6 @@ def approve(_spender : address, _value : uint256) -> bool:
 def increaseAllowance(_spender: address, _added_value: uint256) -> bool:
     """
     @notice Increase the allowance granted to `_spender` by the caller
-    @dev This is alternative to {approve} that can be used as a mitigation for
-         the potential race condition
     @param _spender The address which will transfer the funds
     @param _added_value The amount of to increase the allowance
     @return bool success
@@ -132,8 +123,6 @@ def increaseAllowance(_spender: address, _added_value: uint256) -> bool:
 def decreaseAllowance(_spender: address, _subtracted_value: uint256) -> bool:
     """
     @notice Decrease the allowance granted to `_spender` by the caller
-    @dev This is alternative to {approve} that can be used as a mitigation for
-         the potential race condition
     @param _spender The address which will transfer the funds
     @param _subtracted_value The amount of to decrease the allowance
     @return bool success
@@ -151,42 +140,4 @@ def mint(_to: address, _value: uint256) -> bool:
     @dev Mint an amount of the token and assigns it to an account.
          This encapsulates the modification of balances such that the
          proper events are emitted.
-    @param _to The account that will receive the created tokens.
-    @param _value The amount that will be created.
-    """
-    assert msg.sender == self.minter
-
-    self.totalSupply += _value
-    self.balanceOf[_to] += _value
-
-    log Transfer(ZERO_ADDRESS, _to, _value)
-    return True
-
-
-@external
-def burnFrom(_to: address, _value: uint256) -> bool:
-    """
-    @dev Burn an amount of the token from a given account.
-    @param _to The account whose tokens will be burned.
-    @param _value The amount that will be burned.
-    """
-    assert msg.sender == self.minter
-
-    self.totalSupply -= _value
-    self.balanceOf[_to] -= _value
-
-    log Transfer(_to, ZERO_ADDRESS, _value)
-    return True
-
-
-@external
-def set_minter(_minter: address):
-    assert msg.sender == self.minter
-    self.minter = _minter
-
-
-@external
-def set_name(_name: String[64], _symbol: String[32]):
-    assert Curve(self.minter).owner() == msg.sender
-    self.name = _name
-    self.symbol = _symbol
+    @param
