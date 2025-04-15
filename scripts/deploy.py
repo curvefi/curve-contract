@@ -11,7 +11,7 @@ REQUIRED_CONFIRMATIONS = 1
 
 # deployment settings
 # most settings are taken from `contracts/pools/{POOL_NAME}/pooldata.json`
-POOL_NAME = "EthereumX"
+POOL_NAME = "ETHX"
 
 # temporary owner address
 POOL_OWNER = "0x608cfC1575b56a82a352f14d61be100FA9709D75"
