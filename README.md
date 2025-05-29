@@ -1,6 +1,6 @@
 # curve-contract
 
-Vyper contracts used in [Curve](https://www.curve.fi/) exchange pools.
+Vyper contracts used in [Curve](https://www.curve.finance/) exchange pools.
 
 ## Overview
 
@@ -78,9 +78,9 @@ To deploy a new pool:
 
 ## Audits and Security
 
-Curve smart contracts have been audited by Trail of Bits. These audit reports are made available on the [Curve website](https://www.curve.fi/audits).
+Curve smart contracts have been audited by Trail of Bits. These audit reports are made available on the [Curve Docs](https://docs.curve.finance/security/security/#security-audits).
 
-There is also an active [bug bounty](https://www.curve.fi/bugbounty) for issues which can lead to substantial loss of money, critical bugs such as a broken live-ness condition, or irreversible loss of funds.
+There is also an active [bug bounty](https://docs.curve.finance/security/security/#bug-bounty) for issues which can lead to substantial loss of money, critical bugs such as a broken live-ness condition, or irreversible loss of funds.
 
 ## License
 
