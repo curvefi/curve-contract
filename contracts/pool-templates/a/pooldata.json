@@ -1,5 +1,7 @@
 {
-  "wrapped_contract": "ATokenMock",
+  "wrapped_contract": "EthereumX",
+  "contract_address": "0x8487B97c91ecC1a03b4907B64Bdeab306B888c0E",
+  "constructor_owner": "0x608cfC1575b56a82a352f14d61be100FA9709D75",
   "pool_types": ["arate"],
   "coins": [
     {
@@ -12,7 +14,7 @@
       "decimals": 18,
       "wrapped_decimals": 18,
       "wrapped": true,
-      "tethered": false
+      "tethered": true
     }
   ]
 }
