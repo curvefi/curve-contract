@@ -6,3 +6,4 @@ reports/
 .venv/
 venv/
 .vscode/
+.python-version
