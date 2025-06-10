@@ -1,0 +1,38 @@
+{
+    "lp_contract": "CurveTokenV3",
+    "pool_types": ["crate"],
+    "wrapped_contract": "cERC20",
+    "swap_address": "0x2dded6Da1BF5DBdF597C45fcFaa3194e53EcfeAF",
+    "lp_token_address": "0x5282a4eF67D9C33135340fB3289cc1711c13638C",
+    "gauge_addresses": ["0xF5194c3325202F456c95c1Cf0cA36f8475C1949F"],
+    "lp_constructor": {
+        "symbol": "ibEUR",
+        "name": "Curve.fi cyEUR/cyEURt"
+    },
+    "swap_constructor": {
+        "_A": 600,
+        "_fee": 4000000,
+        "_admin_fee": 5000000000
+    },
+    "coins": [
+        {
+            "name": "cyEUR",
+            "underlying_name": "ibEUR",
+            "decimals": 18,
+            "wrapped_decimals": 8,
+            "tethered": false,
+            "underlying_address": "0x96E61422b6A9bA0e068B6c5ADd4fFaBC6a4aae27",
+            "wrapped_address": "0x00e5c0774A5F065c285068170b20393925C84BF3"
+        },
+        {
+            "name": "cyEURt",
+            "underlying_name": "EURt",
+            "decimals": 6,
+            "wrapped_decimals": 8,
+            "tethered": true,
+            "underlying_address": "0xC581b735A1688071A1746c968e0798D642EDE491",
+            "wrapped_address": "0x27260EEb2a6C382A6e7D14b8991892790ca929bb"
+
+        }
+    ]
+}
