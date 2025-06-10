@@ -1,39 +1,48 @@
 import json
+import os
+from dotenv import load_dotenv
 
 from brownie import accounts
-from brownie.network.gas.strategies import GasNowScalingStrategy
 from brownie.project import load as load_project
 from brownie.project.main import get_loaded_projects
+from brownie import network
+
+load_dotenv()
 
 # set a throwaway admin account here
-DEPLOYER = accounts.add()
+deployer_pk = os.getenv('DEPLOYER_PK')
+
+DEPLOYER = accounts.add(deployer_pk)
 REQUIRED_CONFIRMATIONS = 1
 
 # deployment settings
 # most settings are taken from `contracts/pools/{POOL_NAME}/pooldata.json`
-POOL_NAME = ""
+POOL_NAME = "ZRC20"
 
 # temporary owner address
-POOL_OWNER = "0xedf2c58e16cc606da1977e79e1e69e79c54fe242"
-GAUGE_OWNER = "0xedf2c58e16cc606da1977e79e1e69e79c54fe242"
+POOL_OWNER = "0x19caCb4c0A7fC25598CC44564ED0eCA01249fc31"
+# GAUGE_OWNER = "0xedf2c58e16cc606da1977e79e1e69e79c54fe242"
 
-MINTER = "0xd061D61a4d941c39E5453435B6345Dc261C2fcE0"
-
-# POOL_OWNER = "0xeCb456EA5365865EbAb8a2661B0c503410e9B347"  # PoolProxy
-# GAUGE_OWNER = "0x519AFB566c05E00cfB9af73496D00217A630e4D5"  # GaugeProxy
+# MINTER = "0xd061D61a4d941c39E5453435B6345Dc261C2fcE0"
 
 
 def _tx_params():
     return {
+        # "gas": 12000000,
         "from": DEPLOYER,
-        "required_confs": REQUIRED_CONFIRMATIONS,
-        "gas_price": GasNowScalingStrategy("standard", "fast"),
+        "gasPrice": 8000000000,  # Optional: Adjust gas price if needed
     }
 
 
 def main():
+    print(network.show_active())  # Shows the active network
+    print(network.chain.id)
+
     project = get_loaded_projects()[0]
     balance = DEPLOYER.balance()
+
+    print(f"Deployer address: {DEPLOYER}")
+    print(f"Deployer balance: {balance / 1e18:.4f} ETH")
 
     # load data about the deployment from `pooldata.json`
     contracts_path = project._path.joinpath("contracts/pools")
@@ -54,8 +63,17 @@ def main():
             base_pool = base_pool_data["swap_address"]
 
     # deploy the token
+    decimals = 18
+    total_supply = 0
     token_args = pool_data["lp_constructor"]
-    token = token_deployer.deploy(token_args["name"], token_args["symbol"], _tx_params())
+
+    token = token_deployer.deploy(
+        token_args["name"],
+        token_args["symbol"],
+        decimals,
+        total_supply,
+        _tx_params(),
+    )
 
     # deploy the pool
     abi = next(i["inputs"] for i in swap_deployer.abi if i["type"] == "constructor")
@@ -74,15 +92,15 @@ def main():
     # set the minter
     token.set_minter(swap, _tx_params())
 
+    # @dev: not working, check why
     # deploy the liquidity gauge
-    LiquidityGaugeV3 = load_project("curvefi/curve-dao-contracts@1.2.0").LiquidityGaugeV3
-    LiquidityGaugeV3.deploy(token, MINTER, GAUGE_OWNER, _tx_params())
+    # LiquidityGaugeV3 = load_project("curvefi/curve-dao-contracts@1.2.0").LiquidityGaugeV3
+    # LiquidityGaugeV3.deploy(token, MINTER, GAUGE_OWNER, _tx_params())
 
     # deploy the zap
     zap_name = next((i.stem for i in contracts_path.glob(f"{POOL_NAME}/Deposit*")), None)
     if zap_name is not None:
         zap_deployer = getattr(project, zap_name)
-
         abi = next(i["inputs"] for i in zap_deployer.abi if i["type"] == "constructor")
         args = {
             "_coins": wrapped_coins,
@@ -92,7 +110,6 @@ def main():
             "_curve": swap,
         }
         deployment_args = [args[i["name"]] for i in abi] + [_tx_params()]
-
         zap_deployer.deploy(*deployment_args)
 
     # deploy the rate calculator
