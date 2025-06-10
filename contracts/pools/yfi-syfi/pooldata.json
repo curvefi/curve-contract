@@ -1,0 +1,32 @@
+{
+    "lp_contract": "CurveTokenV3",
+    "swap_address": "0xf178c0b5bb7e7abf4e12a4838c7b7c5ba2c623c0",
+    "lp_token_address": "0xcee60cfa923170e4f8204ae08b4fa6a3f5656f3a",
+    "gauge_addresses": ["0xFD4D8a17df4C27c1dD245d153ccf4499e806C87D"],
+    "lp_constructor": {
+        "symbol": "yfiCRV",
+        "name": "Curve.fi YFI/sYFI"
+    },
+    "swap_constructor": {
+        "_A": 100,
+        "_fee": 4000000,
+        "_admin_fee": 5000000000
+    },
+    "coins": [
+        {
+            "name": "YFI",
+            "decimals": 18,
+            "tethered": false,
+            "underlying_address": "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e"
+        },
+        {
+            "name": "sYFI",
+            "decimals": 18,
+            "tethered": false,
+            "underlying_address": "0x992058B7DB08F9734d84485bfbC243C4ee6954A7"
+        }
+    ],
+    "testing": {
+        "initial_amount": 10000
+    }
+}

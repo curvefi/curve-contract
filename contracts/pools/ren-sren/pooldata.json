@@ -1,0 +1,32 @@
+{
+    "lp_contract": "CurveTokenV3",
+    "swap_address": "0xf178c0b5bb7e7abf4e12a4838c7b7c5ba2c623c0",
+    "lp_token_address": "0xcee60cfa923170e4f8204ae08b4fa6a3f5656f3a",
+    "gauge_addresses": ["0xFD4D8a17df4C27c1dD245d153ccf4499e806C87D"],
+    "lp_constructor": {
+        "symbol": "renCRV",
+        "name": "Curve.fi REN/sREN"
+    },
+    "swap_constructor": {
+        "_A": 100,
+        "_fee": 4000000,
+        "_admin_fee": 5000000000
+    },
+    "coins": [
+        {
+            "name": "REN",
+            "decimals": 18,
+            "tethered": false,
+            "underlying_address": "0x408e41876cccdc0f92210600ef50372656052a38"
+        },
+        {
+            "name": "sREN",
+            "decimals": 18,
+            "tethered": false,
+            "underlying_address": "0xD31533E8d0f3DF62060e94B3F1318137bB6E3525"
+        }
+    ],
+    "testing": {
+        "initial_amount": 10000
+    }
+}
