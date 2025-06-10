@@ -1,6 +1,8 @@
 import brownie
 import pytest
 
+pytestmark = pytest.mark.skip_pool("4pool")
+
 
 def test_kill(alice, swap):
     swap.kill_me({"from": alice})
