@@ -3,7 +3,7 @@ import pytest
 pytestmark = pytest.mark.usefixtures("add_initial_liquidity", "approve_bob")
 
 
-@pytest.mark.skip_pool("bbtc", "tbtc", "obtc", "pbtc", "template-meta")
+@pytest.mark.skip_pool("bbtc", "tbtc", "tbtc2", "obtc", "pbtc", "template-meta")
 @pytest.mark.itercoins("sending", "receiving")
 def test_exchange_with_virtual_price(
     alice,
