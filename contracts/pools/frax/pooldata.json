@@ -1,0 +1,30 @@
+{
+    "lp_contract": "CurveTokenV3",
+    "swap_address": "0xDcEF968d416a41Cdac0ED8702fAC8128A64241A2",
+    "lp_token_address": "0x3175Df0976dFA876431C2E9eE6Bc45b65d3473CC",
+    "gauge_addresses": ["0xCFc25170633581Bf896CB6CDeE170e3E3Aa59503"],
+    "lp_constructor": {
+        "name": "Curve.fi FRAX/USDC",
+        "symbol": "crvFRAX"
+    },
+    "swap_constructor": {
+        "_A": 1500,
+        "_fee": 4000000,
+        "_admin_fee": 5000000000
+    },
+    "coins": [
+        {
+            "name": "FRAX",
+            "decimals": 18,
+            "tethered": false,
+            "underlying_address": "0x853d955aCEf822Db058eb8505911ED77F175b99e"
+        },
+        {
+            "name": "USDC",
+            "decimals": 6,
+            "tethered": false,
+            "underlying_address": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+
+        }
+    ]
+}
